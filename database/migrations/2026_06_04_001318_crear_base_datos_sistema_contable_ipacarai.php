@@ -106,9 +106,8 @@ return new class extends Migration
             $table->foreignId('rol_id')->constrained('roles')->restrictOnDelete();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->rememberToken();
+            $table->string('remember_token', 100)->default('');
             $table->boolean('estado')->default(true);
             $table->dateTime('created_at')->useCurrent();
             $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
@@ -625,11 +624,17 @@ return new class extends Migration
             $table->dateTime('created_at')->useCurrent();
         });
 
+        /*
+        |--------------------------------------------------------------------------
+        | TABLAS DEL FRAMEWORK (requeridas por Laravel para sesiones y caché)
+        |--------------------------------------------------------------------------
+        */
+
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
+            $table->unsignedBigInteger('user_id')->default(0)->index();
+            $table->string('ip_address', 45)->default('');
+            $table->text('user_agent');
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
