@@ -106,7 +106,9 @@ return new class extends Migration
             $table->foreignId('rol_id')->constrained('roles')->restrictOnDelete();
             $table->string('name');
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->rememberToken();
             $table->boolean('estado')->default(true);
             $table->dateTime('created_at')->useCurrent();
             $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
