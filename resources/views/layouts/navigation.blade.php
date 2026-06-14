@@ -120,11 +120,49 @@
                 </a>
             @endif
 
+            @if(Auth::user()->tienePermiso('ver_contabilidad'))
+                <a href="{{ route('contabilidad.cuentas.index') }}"
+                   class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
+                   {{ request()->routeIs('contabilidad.cuentas.*') ? 'bg-[#c62828] text-white shadow-md' : 'text-gray-700 hover:bg-[#f8e8e8] hover:text-[#c62828]' }}">
+                    Catálogo de Cuentas
+                </a>
+
+                <a href="{{ route('contabilidad.asientos.index') }}"
+                   class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
+                   {{ request()->routeIs('contabilidad.asientos.*') ? 'bg-[#c62828] text-white shadow-md' : 'text-gray-700 hover:bg-[#f8e8e8] hover:text-[#c62828]' }}">
+                    Asientos Contables
+                </a>
+            @endif
+
+            @if(Auth::user()->tienePermiso('ver_inventario'))
+                <a href="{{ route('inventario.index') }}"
+                   class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
+                   {{ request()->routeIs('inventario.*') ? 'bg-[#c62828] text-white shadow-md' : 'text-gray-700 hover:bg-[#f8e8e8] hover:text-[#c62828]' }}">
+                    Inventario
+                </a>
+            @endif
+
+            @if(Auth::user()->tienePermiso('ver_consultas'))
+                <a href="{{ route('consultas.index') }}"
+                   class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
+                   {{ request()->routeIs('consultas.*') ? 'bg-[#c62828] text-white shadow-md' : 'text-gray-700 hover:bg-[#f8e8e8] hover:text-[#c62828]' }}">
+                    Consultas
+                </a>
+            @endif
+
             @if(Auth::user()->tienePermiso('ver_usuarios'))
                 <a href="{{ route('usuarios.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                    {{ request()->routeIs('usuarios.*') ? 'bg-[#c62828] text-white shadow-md' : 'text-gray-700 hover:bg-[#f8e8e8] hover:text-[#c62828]' }}">
                     Usuarios
+                </a>
+            @endif
+
+            @if(Auth::user()->tienePermiso('ver_bitacora'))
+                <a href="{{ route('bitacora.index') }}"
+                   class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
+                   {{ request()->routeIs('bitacora.*') ? 'bg-[#c62828] text-white shadow-md' : 'text-gray-700 hover:bg-[#f8e8e8] hover:text-[#c62828]' }}">
+                    Bitácora
                 </a>
             @endif
 

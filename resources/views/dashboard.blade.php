@@ -120,6 +120,70 @@
 
     </div>
 
+    <!-- Alertas de Morosidad -->
+    @if($cuentasVencidas->count() > 0)
+        <div class="mt-10">
+            <h2 class="text-2xl font-bold text-[#2b2b2b] mb-4">Alertas de Morosidad</h2>
+            <div class="bg-white rounded-3xl shadow-md border border-red-200 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-red-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-red-700">Factura</th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-red-700">Cliente</th>
+                            <th class="px-6 py-4 text-right text-sm font-bold text-red-700">Saldo</th>
+                            <th class="px-6 py-4 text-center text-sm font-bold text-red-700">Días de Atraso</th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-red-700">Vencimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($cuentasVencidas as $cuenta)
+                            <tr class="border-b border-red-100">
+                                <td class="px-6 py-3 font-semibold">{{ $cuenta->numero_factura }}</td>
+                                <td class="px-6 py-3">{{ $cuenta->cliente_nombre }}</td>
+                                <td class="px-6 py-3 text-right font-mono text-red-600">₡{{ number_format($cuenta->saldo_pendiente, 2) }}</td>
+                                <td class="px-6 py-3 text-center">
+                                    <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+                                        {{ $cuenta->dias_atraso }} días
+                                    </span>
+                                </td>
+                                <td class="px-6 py-3 text-sm">{{ \Carbon\Carbon::parse($cuenta->fecha_vencimiento)->format('d/m/Y') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    <!-- Cuentas por Pagar Próximas -->
+    @if($cuentasPorVencer->count() > 0)
+        <div class="mt-10">
+            <h2 class="text-2xl font-bold text-[#2b2b2b] mb-4">Obligaciones Próximas a Vencer</h2>
+            <div class="bg-white rounded-3xl shadow-md border border-yellow-200 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-yellow-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-yellow-700">Compra</th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-yellow-700">Proveedor</th>
+                            <th class="px-6 py-4 text-right text-sm font-bold text-yellow-700">Saldo</th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-yellow-700">Vencimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($cuentasPorVencer as $cuenta)
+                            <tr class="border-b border-yellow-100">
+                                <td class="px-6 py-3 font-semibold">{{ $cuenta->numero_compra }}</td>
+                                <td class="px-6 py-3">{{ $cuenta->proveedor_nombre }}</td>
+                                <td class="px-6 py-3 text-right font-mono text-yellow-700">₡{{ number_format($cuenta->saldo_pendiente, 2) }}</td>
+                                <td class="px-6 py-3 text-sm">{{ \Carbon\Carbon::parse($cuenta->fecha_vencimiento)->format('d/m/Y') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
 </div>
 
 </x-app-layout>

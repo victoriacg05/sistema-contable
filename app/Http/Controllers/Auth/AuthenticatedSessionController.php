@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\BitacoraService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,11 +25,29 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        try {
+            $request->authenticate();
 
-        $request->session()->regenerate();
+            $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+            BitacoraService::registrarIntentoAcceso(
+                $request->email,
+                $request->ip(),
+                true,
+                'Inicio de sesión exitoso'
+            );
+
+            return redirect()->intended(route('dashboard', absolute: false));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            BitacoraService::registrarIntentoAcceso(
+                $request->email,
+                $request->ip(),
+                false,
+                'Credenciales incorrectas'
+            );
+
+            throw $e;
+        }
     }
 
     /**

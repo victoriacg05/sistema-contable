@@ -9,6 +9,7 @@ use App\Models\Producto;
 use App\Models\MetodoPago;
 use App\Models\Estado;
 use App\Models\CuentaCobrar;
+use App\Services\BitacoraService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -149,6 +150,8 @@ class FacturaController extends Controller
             );
         }
 
+        BitacoraService::registrar('crear', 'facturas', "Factura {$factura->numero_factura} creada por ₡" . number_format($factura->total, 2));
+
         return redirect()
             ->route('facturas.index')
             ->with('success', 'Factura creada correctamente.');
@@ -288,5 +291,52 @@ class FacturaController extends Controller
         return redirect()
             ->route('facturas.index')
             ->with('success', 'Factura marcada como pagada.');
+    }
+
+    public function anular(Request $request, Factura $factura)
+    {
+        $request->validate([
+            'motivo' => 'required|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($request, $factura) {
+            $estadoAnulado = Estado::where('nombre', 'Anulado')->first();
+
+            // Registrar anulación
+            DB::table('anulaciones_facturas')->insert([
+                'numero_factura' => $factura->numero_factura,
+                'cliente_id' => $factura->cliente_id,
+                'usuario_id' => Auth::id(),
+                'estado_id' => $estadoAnulado?->id ?? 5,
+                'motivo' => $request->motivo,
+                'fecha_anulacion' => now()->toDateString(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Actualizar estado de la factura
+            $factura->update([
+                'estado_id' => $estadoAnulado?->id ?? 5,
+            ]);
+
+            // Revertir stock
+            foreach ($factura->detalles as $detalle) {
+                $producto = Producto::find($detalle->producto_id);
+                if ($producto) {
+                    $producto->increment('stock', $detalle->cantidad);
+                }
+            }
+
+            // Eliminar cuenta por cobrar asociada
+            CuentaCobrar::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->delete();
+
+            BitacoraService::registrar('anular', 'facturas', "Factura {$factura->numero_factura} anulada. Motivo: {$request->motivo}");
+        });
+
+        return redirect()
+            ->route('facturas.index')
+            ->with('success', 'Factura anulada correctamente.');
     }
 }

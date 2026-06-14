@@ -6,7 +6,9 @@ use App\Models\CuentaCobrar;
 use App\Models\PagoCuentaCobrar;
 use App\Models\MetodoPago;
 use App\Models\Estado;
+use App\Services\BitacoraService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CuentaCobrarController extends Controller
@@ -51,6 +53,8 @@ class CuentaCobrarController extends Controller
                 abort(422, 'El monto pagado no puede ser mayor al saldo pendiente.');
             }
 
+            $saldoAnterior = $cuenta->saldo_pendiente;
+
             PagoCuentaCobrar::create([
                 'numero_factura' => $cuenta->numero_factura,
                 'cliente_id' => $cuenta->cliente_id,
@@ -73,6 +77,20 @@ class CuentaCobrarController extends Controller
                         ? ($estadoPagado?->id ?? 2)
                         : ($estadoPendiente?->id ?? 1),
                 ]);
+
+            DB::table('historial_saldos')->insert([
+                'referencia_documento' => $numero_factura,
+                'tipo_documento' => 'cuenta_cobrar',
+                'usuario_id' => Auth::id(),
+                'saldo_anterior' => $saldoAnterior,
+                'monto_movimiento' => $request->monto_pagado,
+                'saldo_nuevo' => $nuevoSaldo,
+                'fecha' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            BitacoraService::registrar('pago', 'cuentas_cobrar', "Pago de ₡{$request->monto_pagado} a factura $numero_factura");
         });
 
         return redirect()

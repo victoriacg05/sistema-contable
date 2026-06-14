@@ -22,6 +22,10 @@ use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\GastoController;
 use App\Http\Controllers\PresupuestoController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\ContabilidadController;
+use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\ConsultaController;
+use App\Http\Controllers\BitacoraController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -42,6 +46,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('facturas', FacturaController::class);
     Route::put('/facturas/{factura}/pagar', [FacturaController::class, 'pagar'])
         ->name('facturas.pagar');
+    Route::put('/facturas/{factura}/anular', [FacturaController::class, 'anular'])
+        ->name('facturas.anular');
 
     Route::resource('compras', CompraController::class);
     Route::put('/compras/{compra}/pagar', [CompraController::class, 'pagar'])
@@ -53,8 +59,6 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('categorias-gastos', CategoriaGastoController::class);
     Route::resource('metodos-pago', MetodoPagoController::class);
     Route::resource('estados', EstadoController::class);
-
-    Route::resource('cuentas-cobrar', CuentaCobrarController::class);
 
     Route::resource('cuentas-cobrar', CuentaCobrarController::class)
     ->only(['index']);
@@ -91,8 +95,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/gastos/create', [GastoController::class, 'create'])->name('gastos.create');
     Route::post('/gastos', [GastoController::class, 'store'])->name('gastos.store');
 
-    Route::resource('presupuesto', PresupuestoController::class);
-
     Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
     Route::get('/presupuesto/create', [PresupuestoController::class, 'create'])->name('presupuesto.create');
     Route::post('/presupuesto', [PresupuestoController::class, 'store'])->name('presupuesto.store');
@@ -120,6 +122,31 @@ Route::middleware(['auth'])->group(function () {
 
     Route::delete('/gastos/{numero_comprobante}/{categoria_gasto_id}/{fecha}', [GastoController::class, 'destroy'])
         ->name('gastos.destroy');
+
+    // Contabilidad
+    Route::get('/contabilidad/cuentas', [ContabilidadController::class, 'indexCuentas'])->name('contabilidad.cuentas.index');
+    Route::get('/contabilidad/cuentas/create', [ContabilidadController::class, 'createCuenta'])->name('contabilidad.cuentas.create');
+    Route::post('/contabilidad/cuentas', [ContabilidadController::class, 'storeCuenta'])->name('contabilidad.cuentas.store');
+    Route::get('/contabilidad/cuentas/{codigo}/edit', [ContabilidadController::class, 'editCuenta'])->name('contabilidad.cuentas.edit');
+    Route::put('/contabilidad/cuentas/{codigo}', [ContabilidadController::class, 'updateCuenta'])->name('contabilidad.cuentas.update');
+
+    Route::get('/contabilidad/asientos', [ContabilidadController::class, 'indexAsientos'])->name('contabilidad.asientos.index');
+    Route::get('/contabilidad/asientos/create', [ContabilidadController::class, 'createAsiento'])->name('contabilidad.asientos.create');
+    Route::post('/contabilidad/asientos', [ContabilidadController::class, 'storeAsiento'])->name('contabilidad.asientos.store');
+    Route::get('/contabilidad/asientos/{numero}/{fecha}', [ContabilidadController::class, 'showAsiento'])->name('contabilidad.asientos.show');
+
+    // Inventario
+    Route::get('/inventario', [InventarioController::class, 'index'])->name('inventario.index');
+    Route::get('/inventario/create', [InventarioController::class, 'create'])->name('inventario.create');
+    Route::post('/inventario', [InventarioController::class, 'store'])->name('inventario.store');
+
+    // Consultas
+    Route::get('/consultas', [ConsultaController::class, 'index'])->name('consultas.index');
+    Route::get('/consultas/buscar', [ConsultaController::class, 'buscar'])->name('consultas.buscar');
+
+    // Bitácora
+    Route::get('/bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
+    Route::get('/bitacora/intentos', [BitacoraController::class, 'intentosAcceso'])->name('bitacora.intentos');
 
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');

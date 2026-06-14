@@ -6,7 +6,9 @@ use App\Models\CuentaPagar;
 use App\Models\PagoCuentaPagar;
 use App\Models\MetodoPago;
 use App\Models\Estado;
+use App\Services\BitacoraService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CuentaPagarController extends Controller
@@ -51,6 +53,8 @@ class CuentaPagarController extends Controller
                 abort(422, 'El monto pagado no puede ser mayor al saldo pendiente.');
             }
 
+            $saldoAnterior = $cuenta->saldo_pendiente;
+
             PagoCuentaPagar::create([
                 'numero_compra' => $cuenta->numero_compra,
                 'proveedor_id' => $cuenta->proveedor_id,
@@ -73,6 +77,20 @@ class CuentaPagarController extends Controller
                         ? ($estadoPagado?->id ?? 2)
                         : ($estadoPendiente?->id ?? 1),
                 ]);
+
+            DB::table('historial_saldos')->insert([
+                'referencia_documento' => $numero_compra,
+                'tipo_documento' => 'cuenta_pagar',
+                'usuario_id' => Auth::id(),
+                'saldo_anterior' => $saldoAnterior,
+                'monto_movimiento' => $request->monto_pagado,
+                'saldo_nuevo' => $nuevoSaldo,
+                'fecha' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            BitacoraService::registrar('pago', 'cuentas_pagar', "Pago de ₡{$request->monto_pagado} a compra $numero_compra");
         });
 
         return redirect()

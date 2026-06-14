@@ -6,6 +6,7 @@ use App\Models\Gasto;
 use App\Models\CategoriaGasto;
 use App\Models\TipoGasto;
 use App\Models\MetodoPago;
+use App\Services\BitacoraService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +56,8 @@ class GastoController extends Controller
             'monto' => $request->monto,
             'fecha' => $request->fecha,
         ]);
+
+        BitacoraService::registrar('crear', 'gastos', 'Gasto registrado por ₡' . $request->monto);
 
         return redirect()
             ->route('gastos.index')
