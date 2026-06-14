@@ -7,6 +7,7 @@ use App\Models\DetalleCompra;
 use App\Models\Proveedor;
 use App\Models\Producto;
 use App\Models\Estado;
+use App\Models\CuentaPagar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +71,16 @@ class CompraController extends Controller
                 'precio_unitario' => $request->precio_unitario,
                 'subtotal' => $subtotal,
             ]);
+
+            CuentaPagar::create([
+            'numero_compra' => $numeroCompra,
+            'proveedor_id' => $request->proveedor_id,
+            'monto_original' => $total,
+            'saldo_pendiente' => $total,
+            'fecha_emision' => now(),
+            'fecha_vencimiento' => now()->addDays(30),
+            'estado_id' => $estadoPendiente?->id ?? 1,
+        ]);
 
             $producto->stock += $request->cantidad;
             $producto->save();
