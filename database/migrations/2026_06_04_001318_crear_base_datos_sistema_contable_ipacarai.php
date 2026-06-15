@@ -492,37 +492,16 @@ return new class extends Migration
             $table->primary(['numero_comprobante', 'categoria_gasto_id', 'fecha']);
         });
 
-        Schema::create('presupuestos', function (Blueprint $table) {
-            $table->string('periodo');
-            $table->string('nombre');
-            $table->foreignId('usuario_id')->constrained('users')->restrictOnDelete();
-            $table->foreignId('estado_id')->constrained('estados')->restrictOnDelete();
-            $table->string('descripcion', 500)->default('');
-            $table->date('fecha_inicio');
-            $table->date('fecha_fin');
-            $table->decimal('monto_total', 10, 2);
-            $table->dateTime('created_at')->useCurrent();
-            $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
-
-            $table->primary(['periodo', 'nombre']);
-        });
-
-        Schema::create('detalle_presupuestos', function (Blueprint $table) {
-            $table->string('periodo');
-            $table->string('nombre_presupuesto');
+        Schema::create('presupuesto', function (Blueprint $table) {
+            $table->integer('anio');
+            $table->integer('mes');
             $table->foreignId('categoria_gasto_id')->constrained('categorias_gastos')->restrictOnDelete();
             $table->decimal('monto_presupuestado', 10, 2);
-            $table->decimal('monto_ejecutado', 10, 2)->default(0);
-            $table->decimal('diferencia', 10, 2)->default(0);
+            $table->string('descripcion', 500)->default('');
             $table->dateTime('created_at')->useCurrent();
             $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
 
-            $table->primary(['periodo', 'nombre_presupuesto', 'categoria_gasto_id']);
-
-            $table->foreign(['periodo', 'nombre_presupuesto'])
-                ->references(['periodo', 'nombre'])
-                ->on('presupuestos')
-                ->cascadeOnDelete();
+            $table->primary(['anio', 'mes', 'categoria_gasto_id']);
         });
 
         /*
@@ -664,8 +643,7 @@ return new class extends Migration
         Schema::dropIfExists('reportes_generados');
         Schema::dropIfExists('historial_saldos');
         Schema::dropIfExists('movimientos_inventario');
-        Schema::dropIfExists('detalle_presupuestos');
-        Schema::dropIfExists('presupuestos');
+        Schema::dropIfExists('presupuesto');
         Schema::dropIfExists('gastos');
         Schema::dropIfExists('ingresos');
         Schema::dropIfExists('pagos_proveedores');
