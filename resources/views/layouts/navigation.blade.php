@@ -32,11 +32,11 @@
                 Inicio
             </a>
 
-            <!-- Facturacion -->
-            @if(Auth::user()->tienePermiso('ver_facturas') || Auth::user()->tienePermiso('ver_clientes') || Auth::user()->tienePermiso('ver_proveedores') || Auth::user()->tienePermiso('ver_productos') || Auth::user()->tienePermiso('ver_compras'))
-            <details {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*') ? 'open' : '' }}>
+            <!-- Modulo 7: Facturacion Electronica -->
+            @if(Auth::user()->tienePermiso('ver_facturas') || Auth::user()->tienePermiso('ver_clientes') || Auth::user()->tienePermiso('ver_proveedores') || Auth::user()->tienePermiso('ver_productos') || Auth::user()->tienePermiso('ver_compras') || Auth::user()->tienePermiso('ver_inventario'))
+            <details {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'open' : '' }}>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
-                    {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
+                    {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
                     <span>Facturacion</span>
                     <svg class="w-4 h-4 menu-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -78,11 +78,18 @@
                         Productos
                     </a>
                     @endif
+                    @if(Auth::user()->tienePermiso('ver_inventario'))
+                    <a href="{{ route('inventario.index') }}"
+                       class="block px-4 py-2 rounded-xl text-sm font-medium transition
+                       {{ request()->routeIs('inventario.*') ? 'bg-red-100 text-[#b71c1c] font-bold' : 'text-gray-700 hover:bg-red-50 hover:text-[#b71c1c]' }}">
+                        Inventario
+                    </a>
+                    @endif
                 </div>
             </details>
             @endif
 
-            <!-- Contabilidad -->
+            <!-- Modulo 2: Gestion Contable -->
             @if(Auth::user()->tienePermiso('ver_contabilidad'))
             <details {{ request()->routeIs('contabilidad.*') ? 'open' : '' }}>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -107,7 +114,7 @@
             </details>
             @endif
 
-            <!-- Cuentas por Cobrar -->
+            <!-- Modulo 3: Cuentas por Cobrar -->
             @if(Auth::user()->tienePermiso('ver_cuentas_cobrar'))
                 <a href="{{ route('cuentas-cobrar.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -116,7 +123,7 @@
                 </a>
             @endif
 
-            <!-- Cuentas por Pagar -->
+            <!-- Modulo 4: Cuentas por Pagar -->
             @if(Auth::user()->tienePermiso('ver_cuentas_pagar'))
                 <a href="{{ route('cuentas-pagar.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -125,7 +132,7 @@
                 </a>
             @endif
 
-            <!-- Ingresos -->
+            <!-- Modulo 5: Ingresos -->
             @if(Auth::user()->tienePermiso('ver_ingresos'))
                 <a href="{{ route('ingresos.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -134,7 +141,7 @@
                 </a>
             @endif
 
-            <!-- Gastos -->
+            <!-- Modulo 6: Gastos -->
             @if(Auth::user()->tienePermiso('ver_gastos'))
                 <a href="{{ route('gastos.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -143,7 +150,7 @@
                 </a>
             @endif
 
-            <!-- Presupuesto -->
+            <!-- Modulo 8: Gestion Presupuestaria -->
             @if(Auth::user()->tienePermiso('ver_presupuesto'))
                 <a href="{{ route('presupuesto.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -152,16 +159,7 @@
                 </a>
             @endif
 
-            <!-- Inventario -->
-            @if(Auth::user()->tienePermiso('ver_inventario'))
-                <a href="{{ route('inventario.index') }}"
-                   class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
-                   {{ request()->routeIs('inventario.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
-                    Inventario
-                </a>
-            @endif
-
-            <!-- Reportes -->
+            <!-- Modulo 9: Reportes -->
             @if(Auth::user()->tienePermiso('ver_reportes'))
                 <a href="{{ route('reportes.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -170,7 +168,7 @@
                 </a>
             @endif
 
-            <!-- Consultas -->
+            <!-- Modulo 10: Consultas -->
             @if(Auth::user()->tienePermiso('ver_consultas'))
                 <a href="{{ route('consultas.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -179,12 +177,12 @@
                 </a>
             @endif
 
-            <!-- Administracion -->
+            <!-- Modulo 1: Gestion de Usuarios + Modulo 11: Seguridad -->
             @if(Auth::user()->tienePermiso('ver_usuarios') || Auth::user()->tienePermiso('ver_bitacora'))
             <details {{ request()->routeIs('usuarios.*', 'bitacora.*') ? 'open' : '' }}>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                     {{ request()->routeIs('usuarios.*', 'bitacora.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
-                    <span>Administracion</span>
+                    <span>Seguridad</span>
                     <svg class="w-4 h-4 menu-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
