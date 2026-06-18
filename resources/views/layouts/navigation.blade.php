@@ -24,11 +24,7 @@
             Menú principal
         </p>
 
-        <div class="space-y-1" x-data="{ openMenu: '{{ 
-            request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*') ? 'facturacion' : 
-            (request()->routeIs('contabilidad.*') ? 'contabilidad' : 
-            (request()->routeIs('usuarios.*', 'bitacora.*') ? 'administracion' : '')) 
-        }}' ">
+        <div class="space-y-1" x-data="{ openMenu: '{{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*') ? 'facturacion' : (request()->routeIs('contabilidad.*') ? 'contabilidad' : (request()->routeIs('usuarios.*', 'bitacora.*') ? 'administracion' : '')) }}' ">
 
             <!-- Inicio -->
             <a href="{{ route('dashboard') }}"
@@ -37,19 +33,26 @@
                 Inicio
             </a>
 
-            <!-- Facturación (módulo con submenú) -->
+            <!-- Facturación -->
             @if(Auth::user()->tienePermiso('ver_facturas') || Auth::user()->tienePermiso('ver_clientes') || Auth::user()->tienePermiso('ver_proveedores') || Auth::user()->tienePermiso('ver_productos') || Auth::user()->tienePermiso('ver_compras'))
             <div>
-                <button @click="openMenu = openMenu === 'facturacion' ? '' : 'facturacion'"
+                <button type="button" x-on:click="openMenu = openMenu === 'facturacion' ? '' : 'facturacion'"
                         class="w-full flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                         {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
                     <span>Facturación</span>
-                    <svg class="w-4 h-4 transition-transform" :class="openMenu === 'facturacion' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 transition-transform duration-200" x-bind:class="openMenu === 'facturacion' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
 
-                <div x-show="openMenu === 'facturacion'" x-collapse class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
+                <div x-show="openMenu === 'facturacion'"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
                     @if(Auth::user()->tienePermiso('ver_facturas'))
                     <a href="{{ route('facturas.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
@@ -93,19 +96,26 @@
             </div>
             @endif
 
-            <!-- Contabilidad (módulo con submenú) -->
+            <!-- Contabilidad -->
             @if(Auth::user()->tienePermiso('ver_contabilidad'))
             <div>
-                <button @click="openMenu = openMenu === 'contabilidad' ? '' : 'contabilidad'"
+                <button type="button" x-on:click="openMenu = openMenu === 'contabilidad' ? '' : 'contabilidad'"
                         class="w-full flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                         {{ request()->routeIs('contabilidad.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
                     <span>Contabilidad</span>
-                    <svg class="w-4 h-4 transition-transform" :class="openMenu === 'contabilidad' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 transition-transform duration-200" x-bind:class="openMenu === 'contabilidad' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
 
-                <div x-show="openMenu === 'contabilidad'" x-collapse class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
+                <div x-show="openMenu === 'contabilidad'"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
                     <a href="{{ route('contabilidad.cuentas.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
                        {{ request()->routeIs('contabilidad.cuentas.*') ? 'bg-red-100 text-[#b71c1c] font-bold' : 'text-gray-700 hover:bg-red-50 hover:text-[#b71c1c]' }}">
@@ -193,19 +203,26 @@
                 </a>
             @endif
 
-            <!-- Administración (módulo con submenú) -->
+            <!-- Administración -->
             @if(Auth::user()->tienePermiso('ver_usuarios') || Auth::user()->tienePermiso('ver_bitacora'))
             <div>
-                <button @click="openMenu = openMenu === 'administracion' ? '' : 'administracion'"
+                <button type="button" x-on:click="openMenu = openMenu === 'administracion' ? '' : 'administracion'"
                         class="w-full flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                         {{ request()->routeIs('usuarios.*', 'bitacora.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
                     <span>Administración</span>
-                    <svg class="w-4 h-4 transition-transform" :class="openMenu === 'administracion' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 transition-transform duration-200" x-bind:class="openMenu === 'administracion' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
 
-                <div x-show="openMenu === 'administracion'" x-collapse class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
+                <div x-show="openMenu === 'administracion'"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
                     @if(Auth::user()->tienePermiso('ver_usuarios'))
                     <a href="{{ route('usuarios.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
