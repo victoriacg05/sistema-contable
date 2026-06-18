@@ -9,13 +9,14 @@
     <title>Ipacaraí - Sistema Contable</title>
 
     @vite(['resources/css/app.css'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body class="font-sans antialiased bg-[#f4f5f7]">
+<body class="font-sans antialiased bg-gray-100">
 
     @include('layouts.navigation')
 
-    <div class="ml-[320px] min-h-screen bg-[#f4f5f7]">
+    <div class="ml-[320px] min-h-screen bg-gray-100">
 
         @isset($header)
             <header class="bg-white border-b border-gray-200 shadow-sm px-10 py-6">

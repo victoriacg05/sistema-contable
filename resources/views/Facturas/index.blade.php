@@ -13,7 +13,7 @@
             </div>
 
             <a href="{{ route('facturas.create') }}"
-               class="bg-[#c62828] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
+               class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
                 Nueva Factura
             </a>
         </div>
@@ -67,7 +67,7 @@
                                         Pagado
                                     </span>
                                 @else
-                                    <span class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-bold">
+                                    <span class="px-4 py-2 rounded-full bg-amber-100 text-amber-800 text-sm font-bold">
                                         Pendiente
                                     </span>
                                 @endif
@@ -103,7 +103,7 @@
                                     @method('DELETE')
 
                                     <button type="submit"
-                                            class="bg-[#c62828] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
+                                            class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
                                         Eliminar
                                     </button>
                                 </form>

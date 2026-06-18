@@ -8,7 +8,7 @@
             </div>
 
             <a href="{{ route('contabilidad.asientos.create') }}"
-               class="bg-[#c62828] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
+               class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
                 Nuevo Asiento
             </a>
         </div>
@@ -55,7 +55,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-gray-400">No hay asientos registrados.</td>
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-600">No hay asientos registrados.</td>
                         </tr>
                     @endforelse
                 </tbody>

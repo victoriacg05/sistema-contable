@@ -2,7 +2,7 @@
     <div class="max-w-5xl mx-auto">
 
         <div class="mb-8">
-            <span class="inline-block bg-[#c62828] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
+            <span class="inline-block bg-[#b71c1c] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
                 Administración
             </span>
 
@@ -49,8 +49,13 @@
                         <input type="text"
                                name="name"
                                value="{{ old('name', $usuario->name) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"
+                               title="Solo se permiten letras y espacios"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
+                        @error('name')
+                            <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
@@ -61,8 +66,13 @@
                         <input type="email"
                                name="email"
                                value="{{ old('email', $usuario->email) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
+                               title="Ingrese un correo válido (ejemplo@dominio.com)"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
+                        @error('email')
+                            <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
@@ -72,7 +82,7 @@
 
                         <input type="password"
                                name="password"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                placeholder="Dejar en blanco si no desea cambiarla">
                     </div>
 
@@ -82,7 +92,7 @@
                         </label>
 
                         <select name="rol_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione un rol</option>
 
@@ -99,7 +109,7 @@
                             <input type="checkbox"
                                    name="estado"
                                    value="1"
-                                   class="rounded border-gray-300 text-[#c62828] focus:ring-[#c62828]"
+                                   class="rounded border-gray-300 text-[#b71c1c] focus:ring-[#b71c1c]"
                                    {{ $usuario->estado ? 'checked' : '' }}>
 
                             <span class="font-semibold text-gray-700">
@@ -117,7 +127,7 @@
                     </a>
 
                     <button type="submit"
-                            class="px-8 py-3 rounded-2xl bg-[#c62828] text-white font-bold hover:bg-red-700 transition shadow-md">
+                            class="px-8 py-3 rounded-2xl bg-[#b71c1c] text-white font-bold hover:bg-red-700 transition shadow-md">
                         Actualizar Usuario
                     </button>
                 </div>

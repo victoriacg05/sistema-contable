@@ -25,7 +25,7 @@
                     <input type="number"
                            name="anio"
                            value="{{ $anio }}"
-                           class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition">
+                           class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
                 </div>
 
                 <div>
@@ -34,7 +34,7 @@
                     </label>
 
                     <select name="mes"
-                            class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition">
+                            class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
                         @foreach(range(1, 12) as $m)
                             <option value="{{ $m }}" {{ $mes == $m ? 'selected' : '' }}>
                                 {{ str_pad($m, 2, '0', STR_PAD_LEFT) }}
@@ -44,7 +44,7 @@
                 </div>
 
                 <button type="submit"
-                        class="bg-[#c62828] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
+                        class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
                     Filtrar Reporte
                 </button>
             </div>
@@ -106,7 +106,7 @@
 
             <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
                 <p class="text-gray-500 font-semibold">Cuentas por cobrar pendientes</p>
-                <h2 class="text-3xl font-extrabold text-yellow-700 mt-2">
+                <h2 class="text-3xl font-extrabold text-amber-800 mt-2">
                     ₡{{ number_format($cuentasCobrar, 2) }}
                 </h2>
             </div>

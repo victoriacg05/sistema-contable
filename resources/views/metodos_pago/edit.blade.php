@@ -9,18 +9,18 @@
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Nombre</label>
                         <input type="text" name="nombre" value="{{ old('nombre', $metodo->nombre) }}" required
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent">
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent">
                         @error('nombre') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Descripción</label>
                         <textarea name="descripcion" rows="3"
-                                  class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent">{{ old('descripcion', $metodo->descripcion) }}</textarea>
+                                  class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent">{{ old('descripcion', $metodo->descripcion) }}</textarea>
                     </div>
                 </div>
                 <div class="mt-8 flex justify-end space-x-4">
                     <a href="{{ route('metodos-pago.index') }}" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition">Cancelar</a>
-                    <button type="submit" class="bg-[#c62828] hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-md transition">Actualizar</button>
+                    <button type="submit" class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-md transition">Actualizar</button>
                 </div>
             </form>
         </div>

@@ -40,7 +40,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-gray-400">No hay intentos registrados.</td>
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-600">No hay intentos registrados.</td>
                         </tr>
                     @endforelse
                 </tbody>

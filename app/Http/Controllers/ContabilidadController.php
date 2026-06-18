@@ -34,13 +34,21 @@ class ContabilidadController extends Controller
             'tipo_cuenta_contable_id' => 'required|exists:tipos_cuenta_contable,id',
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string|max:500',
+            'banco_nombre' => 'nullable|string|max:100',
+            'banco_moneda' => 'nullable|string|in:CRC,USD',
         ]);
+
+        $descripcion = $request->descripcion ?? '';
+        if ($request->filled('banco_nombre')) {
+            $moneda = $request->banco_moneda === 'USD' ? 'Dólares ($)' : 'Colones (₡)';
+            $descripcion = "Banco: {$request->banco_nombre} | Moneda: {$moneda}" . ($descripcion ? " | {$descripcion}" : '');
+        }
 
         DB::table('catalogo_cuentas')->insert([
             'codigo_cuenta' => $request->codigo_cuenta,
             'tipo_cuenta_contable_id' => $request->tipo_cuenta_contable_id,
             'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion ?? '',
+            'descripcion' => $descripcion,
             'estado' => true,
             'created_at' => now(),
             'updated_at' => now(),

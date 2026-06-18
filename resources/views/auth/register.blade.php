@@ -1,6 +1,6 @@
 <x-guest-layout>
 
-<div class="min-h-screen flex items-center justify-center bg-[#f4f5f7]">
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
 
     <div class="w-full max-w-md bg-white rounded-3xl shadow-xl p-10">
 
@@ -32,7 +32,7 @@
 
                 <x-text-input
                     id="name"
-                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#c62828] focus:ring-[#c62828]"
+                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#b71c1c] focus:ring-[#b71c1c]"
                     type="text"
                     name="name"
                     :value="old('name')"
@@ -50,7 +50,7 @@
 
                 <x-text-input
                     id="email"
-                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#c62828] focus:ring-[#c62828]"
+                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#b71c1c] focus:ring-[#b71c1c]"
                     type="email"
                     name="email"
                     :value="old('email')"
@@ -67,7 +67,7 @@
 
                 <x-text-input
                     id="password"
-                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#c62828] focus:ring-[#c62828]"
+                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#b71c1c] focus:ring-[#b71c1c]"
                     type="password"
                     name="password"
                     required />
@@ -85,7 +85,7 @@
 
                 <x-text-input
                     id="password_confirmation"
-                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#c62828] focus:ring-[#c62828]"
+                    class="block mt-2 w-full rounded-xl border-gray-300 focus:border-[#b71c1c] focus:ring-[#b71c1c]"
                     type="password"
                     name="password_confirmation"
                     required />
@@ -96,13 +96,13 @@
             <div class="flex items-center justify-between mt-8">
 
                 <a href="{{ route('login') }}"
-                   class="text-sm text-gray-600 hover:text-[#c62828]">
+                   class="text-sm text-gray-600 hover:text-[#b71c1c]">
 
                     Ya tengo cuenta
 
                 </a>
 
-                <x-primary-button class="bg-[#c62828] hover:bg-red-700 rounded-xl px-6 py-3">
+                <x-primary-button class="bg-[#b71c1c] hover:bg-red-700 rounded-xl px-6 py-3">
 
                     Registrarse
 

@@ -66,7 +66,7 @@
                                         Vencida
                                     </span>
                                 @else
-                                    <span class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-bold">
+                                    <span class="px-4 py-2 rounded-full bg-amber-100 text-amber-800 text-sm font-bold">
                                         Pendiente
                                     </span>
                                 @endif
@@ -75,11 +75,11 @@
                             <td class="px-6 py-5 text-center">
                                 @if(optional($cuenta->estado)->nombre !== 'pagado')
                                     <a href="{{ route('cuentas-cobrar.pago.create', [$cuenta->numero_factura, $cuenta->cliente_id]) }}"
-                                       class="inline-block bg-[#c62828] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition">
+                                       class="inline-block bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition">
                                         Registrar Pago
                                     </a>
                                 @else
-                                    <span class="text-gray-400 font-semibold">
+                                    <span class="text-gray-600 font-semibold">
                                         Sin acciones
                                     </span>
                                 @endif

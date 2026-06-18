@@ -2,7 +2,7 @@
     <div class="max-w-5xl mx-auto">
 
         <div class="mb-8">
-            <span class="inline-block bg-[#c62828] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
+            <span class="inline-block bg-[#b71c1c] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
                 Finanzas
             </span>
 
@@ -51,7 +51,7 @@
                         <input type="text"
                                name="origen"
                                value="{{ old('origen', $ingreso->origen) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -61,7 +61,7 @@
                         </label>
 
                         <select name="metodo_pago_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione método de pago</option>
 
@@ -83,7 +83,7 @@
                                name="monto"
                                value="{{ old('monto', $ingreso->monto) }}"
                                min="1"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -95,7 +95,7 @@
                         <input type="date"
                                name="fecha"
                                value="{{ old('fecha', \Carbon\Carbon::parse($ingreso->fecha)->format('Y-m-d')) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -106,7 +106,7 @@
 
                         <textarea name="descripcion"
                                   rows="3"
-                                  class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition">{{ old('descripcion', $ingreso->descripcion) }}</textarea>
+                                  class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">{{ old('descripcion', $ingreso->descripcion) }}</textarea>
                     </div>
 
                 </div>
@@ -118,7 +118,7 @@
                     </a>
 
                     <button type="submit"
-                            class="px-8 py-3 rounded-2xl bg-[#c62828] text-white font-bold hover:bg-red-700 transition shadow-md">
+                            class="px-8 py-3 rounded-2xl bg-[#b71c1c] text-white font-bold hover:bg-red-700 transition shadow-md">
                         Actualizar Ingreso
                     </button>
                 </div>

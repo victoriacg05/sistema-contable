@@ -5,7 +5,7 @@
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">Resultados de Consulta</h1>
                 <p class="mt-2 text-gray-500 text-lg">
-                    Módulo: <span class="font-semibold text-[#c62828]">{{ ucfirst($modulo) }}</span>
+                    Módulo: <span class="font-semibold text-[#b71c1c]">{{ ucfirst($modulo) }}</span>
                     @if($termino)
                         | Término: <span class="font-semibold">{{ $termino }}</span>
                     @endif
@@ -51,7 +51,7 @@
                     </tbody>
                 </table>
             @else
-                <div class="px-6 py-10 text-center text-gray-400">
+                <div class="px-6 py-10 text-center text-gray-600">
                     No se encontraron resultados con los criterios especificados.
                 </div>
             @endif

@@ -8,7 +8,7 @@
             </div>
 
             <a href="{{ route('estados.create') }}"
-               class="bg-[#c62828] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
+               class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
                 Nuevo Estado
             </a>
         </div>
@@ -43,7 +43,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="3" class="px-6 py-10 text-center text-gray-400">No hay estados registrados.</td></tr>
+                        <tr><td colspan="3" class="px-6 py-10 text-center text-gray-600">No hay estados registrados.</td></tr>
                     @endforelse
                 </tbody>
             </table>

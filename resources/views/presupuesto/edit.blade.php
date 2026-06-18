@@ -2,7 +2,7 @@
     <div class="max-w-5xl mx-auto">
 
         <div class="mb-8">
-            <span class="inline-block bg-[#c62828] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
+            <span class="inline-block bg-[#b71c1c] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
                 Finanzas
             </span>
 
@@ -52,7 +52,7 @@
                                value="{{ old('anio', $presupuesto->anio) }}"
                                min="2020"
                                max="2100"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -62,7 +62,7 @@
                         </label>
 
                         <select name="mes"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione un mes</option>
 
@@ -80,7 +80,7 @@
                         </label>
 
                         <select name="categoria_gasto_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione una categoría</option>
 
@@ -102,7 +102,7 @@
                                name="monto_presupuestado"
                                value="{{ old('monto_presupuestado', $presupuesto->monto_presupuestado) }}"
                                min="0"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -113,7 +113,7 @@
 
                         <textarea name="descripcion"
                                   rows="3"
-                                  class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition">{{ old('descripcion', $presupuesto->descripcion) }}</textarea>
+                                  class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">{{ old('descripcion', $presupuesto->descripcion) }}</textarea>
                     </div>
 
                 </div>
@@ -125,7 +125,7 @@
                     </a>
 
                     <button type="submit"
-                            class="px-8 py-3 rounded-2xl bg-[#c62828] text-white font-bold hover:bg-red-700 transition shadow-md">
+                            class="px-8 py-3 rounded-2xl bg-[#b71c1c] text-white font-bold hover:bg-red-700 transition shadow-md">
                         Actualizar Presupuesto
                     </button>
                 </div>

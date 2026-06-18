@@ -11,7 +11,7 @@
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Módulo</label>
                         <select name="modulo" required
-                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent">
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent">
                             <option value="">Seleccione módulo...</option>
                             <option value="facturas">Facturas</option>
                             <option value="compras">Compras</option>
@@ -25,26 +25,26 @@
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Término de búsqueda</label>
                         <input type="text" name="termino"
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent"
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
                                placeholder="Nombre, número, referencia...">
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Fecha desde</label>
                         <input type="date" name="fecha_desde"
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent">
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent">
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Fecha hasta</label>
                         <input type="date" name="fecha_hasta"
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent">
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent">
                     </div>
                 </div>
 
                 <div class="mt-8 flex justify-end">
                     <button type="submit"
-                            class="bg-[#c62828] hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-md transition">
+                            class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-md transition">
                         Buscar
                     </button>
                 </div>

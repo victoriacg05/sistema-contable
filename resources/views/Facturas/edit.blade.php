@@ -3,7 +3,7 @@
 
         <div class="flex items-center justify-between mb-8">
             <div>
-                <span class="inline-block bg-[#c62828] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
+                <span class="inline-block bg-[#b71c1c] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
                     Facturación
                 </span>
 
@@ -49,7 +49,7 @@
                         </label>
 
                         <select name="cliente_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione un cliente</option>
 
@@ -72,7 +72,7 @@
                         </label>
 
                         <select name="metodo_pago_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione método de pago</option>
 
@@ -95,7 +95,7 @@
                         </label>
 
                         <select name="producto_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione un producto</option>
 
@@ -121,7 +121,7 @@
                                name="cantidad"
                                value="{{ old('cantidad', optional($detalle)->cantidad ?? 1) }}"
                                min="1"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
 
                         @error('cantidad')
@@ -139,7 +139,7 @@
                                name="descuento"
                                value="{{ old('descuento', $factura->descuento) }}"
                                min="0"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition">
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
 
                         @error('descuento')
                             <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
@@ -155,7 +155,7 @@
                     </a>
 
                     <button type="submit"
-                            class="px-8 py-3 rounded-2xl bg-[#c62828] text-white font-bold hover:bg-red-700 transition shadow-md">
+                            class="px-8 py-3 rounded-2xl bg-[#b71c1c] text-white font-bold hover:bg-red-700 transition shadow-md">
                         Actualizar Factura
                     </button>
                 </div>

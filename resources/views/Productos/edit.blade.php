@@ -3,7 +3,7 @@
 
         <div class="flex items-center justify-between mb-8">
             <div>
-                <span class="inline-block bg-[#c62828] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
+                <span class="inline-block bg-[#b71c1c] text-white px-6 py-3 rounded-2xl font-bold shadow-md mb-5">
                     Inventario
                 </span>
 
@@ -36,7 +36,7 @@
                             Código de barras
                         </label>
                         <input type="text" name="codigo_barras" value="{{ old('codigo_barras', $producto->codigo_barras) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -45,7 +45,7 @@
                             Nombre
                         </label>
                         <input type="text" name="nombre" value="{{ old('nombre', $producto->nombre) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -54,7 +54,7 @@
                             Categoría
                         </label>
                         <select name="categoria_producto_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             @foreach($categorias as $categoria)
                                 <option value="{{ $categoria->id }}" {{ old('categoria_producto_id', $producto->categoria_producto_id) == $categoria->id ? 'selected' : '' }}>
@@ -69,7 +69,7 @@
                             Precio
                         </label>
                         <input type="number" step="0.01" name="precio" value="{{ old('precio', $producto->precio) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -78,7 +78,7 @@
                             Stock
                         </label>
                         <input type="number" name="stock" value="{{ old('stock', $producto->stock) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -87,7 +87,7 @@
                             Stock mínimo
                         </label>
                         <input type="number" name="stock_minimo" value="{{ old('stock_minimo', $producto->stock_minimo) }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
                     </div>
 
@@ -96,14 +96,14 @@
                             Descripción
                         </label>
                         <textarea name="descripcion" rows="3"
-                                  class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#c62828] focus:ring-2 focus:ring-[#c62828]/20 outline-none transition"
+                                  class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                   required>{{ old('descripcion', $producto->descripcion) }}</textarea>
                     </div>
 
                     <div>
                         <label class="inline-flex items-center gap-3 mt-2">
                             <input type="checkbox" name="estado" value="1"
-                                   class="rounded border-gray-300 text-[#c62828] focus:ring-[#c62828]"
+                                   class="rounded border-gray-300 text-[#b71c1c] focus:ring-[#b71c1c]"
                                    {{ $producto->estado ? 'checked' : '' }}>
 
                             <span class="font-semibold text-gray-700">
@@ -122,7 +122,7 @@
                     </a>
 
                     <button type="submit"
-                            class="px-8 py-3 rounded-2xl bg-[#c62828] text-white font-bold hover:bg-red-700 transition shadow-md">
+                            class="px-8 py-3 rounded-2xl bg-[#b71c1c] text-white font-bold hover:bg-red-700 transition shadow-md">
                         Actualizar Producto
                     </button>
 

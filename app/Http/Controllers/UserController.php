@@ -28,10 +28,13 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/'],
+            'email' => ['required', 'email', 'unique:users,email', 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
             'password' => 'required|min:6',
             'rol_id' => 'required|exists:roles,id',
+        ], [
+            'name.regex' => 'El nombre solo puede contener letras y espacios.',
+            'email.regex' => 'El formato del correo electrónico no es válido.',
         ]);
 
         User::create([
@@ -57,10 +60,13 @@ class UserController extends Controller
     public function update(Request $request, User $usuario)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $usuario->id,
+            'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/'],
+            'email' => ['required', 'email', 'unique:users,email,' . $usuario->id, 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
             'password' => 'nullable|min:6',
             'rol_id' => 'required|exists:roles,id',
+        ], [
+            'name.regex' => 'El nombre solo puede contener letras y espacios.',
+            'email.regex' => 'El formato del correo electrónico no es válido.',
         ]);
 
         $data = [

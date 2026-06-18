@@ -14,7 +14,7 @@
 
 </head>
 
-<body class="font-sans antialiased bg-[#f4f5f7]">
+<body class="font-sans antialiased bg-gray-100">
 
     {{ $slot }}
 

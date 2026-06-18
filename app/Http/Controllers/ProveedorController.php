@@ -23,10 +23,15 @@ class ProveedorController extends Controller
     {
         $request->validate([
             'identificacion' => 'required|string|max:255|unique:proveedores,identificacion',
-            'nombre' => 'required|string|max:255',
-            'empresa' => 'required|string|max:255',
-            'telefono' => 'required|string|max:255',
-            'correo' => 'required|email|max:255|unique:proveedores,correo',
+            'nombre' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.]+$/'],
+            'empresa' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.&,\-]+$/'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[245678]\d{3}-?\d{4}$/'],
+            'correo' => ['required', 'email', 'max:255', 'unique:proveedores,correo', 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
+        ], [
+            'nombre.regex' => 'El nombre solo puede contener letras y espacios.',
+            'empresa.regex' => 'El nombre de la empresa contiene caracteres no válidos.',
+            'telefono.regex' => 'El teléfono debe tener 8 dígitos y no puede iniciar con 0, 1, 3 o 9. Formato: 2XXX-XXXX o 8XXX-XXXX.',
+            'correo.regex' => 'El formato del correo electrónico no es válido.',
         ]);
 
         Proveedor::create([
@@ -52,10 +57,15 @@ class ProveedorController extends Controller
     {
         $request->validate([
             'identificacion' => 'required|string|max:255|unique:proveedores,identificacion,' . $proveedor->id,
-            'nombre' => 'required|string|max:255',
-            'empresa' => 'required|string|max:255',
-            'telefono' => 'required|string|max:255',
-            'correo' => 'required|email|max:255|unique:proveedores,correo,' . $proveedor->id,
+            'nombre' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.]+$/'],
+            'empresa' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.&,\-]+$/'],
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[245678]\d{3}-?\d{4}$/'],
+            'correo' => ['required', 'email', 'max:255', 'unique:proveedores,correo,' . $proveedor->id, 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
+        ], [
+            'nombre.regex' => 'El nombre solo puede contener letras y espacios.',
+            'empresa.regex' => 'El nombre de la empresa contiene caracteres no válidos.',
+            'telefono.regex' => 'El teléfono debe tener 8 dígitos y no puede iniciar con 0, 1, 3 o 9. Formato: 2XXX-XXXX o 8XXX-XXXX.',
+            'correo.regex' => 'El formato del correo electrónico no es válido.',
         ]);
 
         $proveedor->update([

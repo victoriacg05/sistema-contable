@@ -33,7 +33,7 @@
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 rounded-full text-xs font-bold
                                     @if($reg->accion == 'crear') bg-green-100 text-green-700
-                                    @elseif($reg->accion == 'editar') bg-yellow-100 text-yellow-700
+                                    @elseif($reg->accion == 'editar') bg-amber-100 text-amber-800
                                     @elseif($reg->accion == 'eliminar') bg-red-100 text-red-700
                                     @else bg-gray-100 text-gray-700
                                     @endif">
@@ -45,7 +45,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-gray-400">No hay registros en la bitácora.</td>
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-600">No hay registros en la bitácora.</td>
                         </tr>
                     @endforelse
                 </tbody>

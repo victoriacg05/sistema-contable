@@ -4,7 +4,7 @@
 
     @if(Auth::check() && Auth::user()->rol_id == 1)
 
-    <div class="mb-6 inline-flex items-center bg-[#c62828] text-white px-5 py-3 rounded-2xl font-semibold shadow-md">
+    <div class="mb-6 inline-flex items-center bg-[#b71c1c] text-white px-5 py-3 rounded-2xl font-semibold shadow-md">
 
     Panel Administrativo
 
@@ -35,7 +35,7 @@
                 Ventas Totales
             </p>
 
-            <h2 class="text-3xl font-bold text-[#c62828]">
+            <h2 class="text-3xl font-bold text-[#b71c1c]">
 
                 ₡{{ number_format($ventasTotales, 2) }}
 
@@ -65,7 +65,7 @@
                 Facturas Pendientes
             </p>
 
-            <h2 class="text-3xl font-bold text-yellow-500">
+            <h2 class="text-3xl font-bold text-amber-700">
 
                 {{ $facturasPendientes }}
 
@@ -159,22 +159,22 @@
     @if($cuentasPorVencer->count() > 0)
         <div class="mt-10">
             <h2 class="text-2xl font-bold text-[#2b2b2b] mb-4">Obligaciones Próximas a Vencer</h2>
-            <div class="bg-white rounded-3xl shadow-md border border-yellow-200 overflow-hidden">
+            <div class="bg-white rounded-3xl shadow-md border border-amber-300 overflow-hidden">
                 <table class="w-full">
-                    <thead class="bg-yellow-50">
+                    <thead class="bg-amber-50">
                         <tr>
-                            <th class="px-6 py-4 text-left text-sm font-bold text-yellow-700">Compra</th>
-                            <th class="px-6 py-4 text-left text-sm font-bold text-yellow-700">Proveedor</th>
-                            <th class="px-6 py-4 text-right text-sm font-bold text-yellow-700">Saldo</th>
-                            <th class="px-6 py-4 text-left text-sm font-bold text-yellow-700">Vencimiento</th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-amber-800">Compra</th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-amber-800">Proveedor</th>
+                            <th class="px-6 py-4 text-right text-sm font-bold text-amber-800">Saldo</th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-amber-800">Vencimiento</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($cuentasPorVencer as $cuenta)
-                            <tr class="border-b border-yellow-100">
+                            <tr class="border-b border-amber-200">
                                 <td class="px-6 py-3 font-semibold">{{ $cuenta->numero_compra }}</td>
                                 <td class="px-6 py-3">{{ $cuenta->proveedor_nombre }}</td>
-                                <td class="px-6 py-3 text-right font-mono text-yellow-700">₡{{ number_format($cuenta->saldo_pendiente, 2) }}</td>
+                                <td class="px-6 py-3 text-right font-mono text-amber-800">₡{{ number_format($cuenta->saldo_pendiente, 2) }}</td>
                                 <td class="px-6 py-3 text-sm">{{ \Carbon\Carbon::parse($cuenta->fecha_vencimiento)->format('d/m/Y') }}</td>
                             </tr>
                         @endforeach

@@ -19,13 +19,13 @@
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Fecha</label>
                         <input type="date" name="fecha" value="{{ old('fecha', date('Y-m-d')) }}" required
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent">
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent">
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Estado</label>
                         <select name="estado_id" required
-                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent">
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent">
                             @foreach($estados as $estado)
                                 <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
                             @endforeach
@@ -35,7 +35,7 @@
                     <div class="col-span-2">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Descripción</label>
                         <input type="text" name="descripcion" value="{{ old('descripcion') }}"
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#c62828] focus:border-transparent"
+                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
                                placeholder="Descripción del asiento contable">
                     </div>
                 </div>
@@ -103,7 +103,7 @@
                 </div>
 
                 <button type="button" onclick="agregarLinea()"
-                        class="mt-3 text-[#c62828] hover:text-red-700 font-semibold text-sm">
+                        class="mt-3 text-[#b71c1c] hover:text-red-700 font-semibold text-sm">
                     + Agregar línea
                 </button>
 
@@ -125,7 +125,7 @@
                         Cancelar
                     </a>
                     <button type="submit"
-                            class="bg-[#c62828] hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-md transition">
+                            class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-md transition">
                         Registrar Asiento
                     </button>
                 </div>
