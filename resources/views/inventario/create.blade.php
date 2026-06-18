@@ -11,7 +11,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-10">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
             <form method="POST" action="{{ route('inventario.store') }}">
                 @csrf
 

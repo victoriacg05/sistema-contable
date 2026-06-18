@@ -19,7 +19,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden p-6" x-data="{ expanded: {} }">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden p-6" x-data="{ expanded: {} }">
 
             @php
                 $cuentasAgrupadas = $cuentas->groupBy(function($cuenta) {
@@ -71,7 +71,7 @@
                                     Editar
                                 </a>
                             @endif
-                            <span class="text-xs text-gray-500">({{ $subcuentas->count() }} subcuentas)</span>
+                            <span class="text-xs text-gray-700">({{ $subcuentas->count() }} subcuentas)</span>
                         </div>
                     </button>
 
@@ -114,7 +114,7 @@
                     </div>
                 </div>
             @empty
-                <div class="px-6 py-10 text-center text-gray-500">No hay cuentas registradas.</div>
+                <div class="px-6 py-10 text-center text-gray-700">No hay cuentas registradas.</div>
             @endforelse
 
         </div>

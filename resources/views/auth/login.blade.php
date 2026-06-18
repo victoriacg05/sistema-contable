@@ -15,7 +15,7 @@
                 Distribuidora Ipacaraí
             </h1>
 
-            <p class="text-gray-500 mt-2">
+            <p class="text-gray-700 mt-2">
                 Sistema Contable
             </p>
 

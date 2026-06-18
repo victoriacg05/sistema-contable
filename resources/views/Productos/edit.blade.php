@@ -11,13 +11,13 @@
                     Editar Producto
                 </h1>
 
-                <p class="mt-2 text-gray-500 text-lg">
+                <p class="mt-2 text-gray-700 text-lg">
                     Actualiza la información del producto
                 </p>
             </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
 
             <div class="bg-[#2b2b2b] px-8 py-5">
                 <h2 class="text-white text-xl font-bold">
@@ -114,7 +114,7 @@
 
                 </div>
 
-                <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-100">
+                <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
 
                     <a href="{{ route('productos.index') }}"
                        class="px-7 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">

@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">Intentos de Acceso</h1>
-                <p class="mt-2 text-gray-500 text-lg">Registro de intentos de inicio de sesión</p>
+                <p class="mt-2 text-gray-700 text-lg">Registro de intentos de inicio de sesión</p>
             </div>
 
             <a href="{{ route('bitacora.index') }}"
@@ -13,7 +13,7 @@
             </a>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
             <table class="w-full">
                 <thead class="bg-[#2b2b2b] text-white">
                     <tr>
@@ -27,7 +27,7 @@
 
                 <tbody>
                     @forelse($intentos as $intento)
-                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                        <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
                             <td class="px-6 py-4 text-sm">{{ \Carbon\Carbon::parse($intento->fecha)->format('d/m/Y H:i:s') }}</td>
                             <td class="px-6 py-4">{{ $intento->email }}</td>
                             <td class="px-6 py-4 font-mono text-sm">{{ $intento->ip_address }}</td>

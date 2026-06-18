@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">Resultados de Consulta</h1>
-                <p class="mt-2 text-gray-500 text-lg">
+                <p class="mt-2 text-gray-700 text-lg">
                     Módulo: <span class="font-semibold text-[#b71c1c]">{{ ucfirst($modulo) }}</span>
                     @if($termino)
                         | Término: <span class="font-semibold">{{ $termino }}</span>
@@ -24,7 +24,7 @@
             </a>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
             @if($resultados->count() > 0)
                 <table class="w-full">
                     <thead class="bg-[#2b2b2b] text-white">
@@ -36,7 +36,7 @@
                     </thead>
                     <tbody>
                         @foreach($resultados as $fila)
-                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
                                 @foreach((array)$fila as $valor)
                                     <td class="px-6 py-4">
                                         @if(is_numeric($valor) && $valor > 100)
@@ -57,7 +57,7 @@
             @endif
         </div>
 
-        <p class="mt-4 text-sm text-gray-500">
+        <p class="mt-4 text-sm text-gray-700">
             {{ $resultados->count() }} resultado(s) encontrado(s).
         </p>
     </div>

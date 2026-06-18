@@ -7,14 +7,14 @@
                     Reportes
                 </h1>
 
-                <p class="mt-2 text-gray-500 text-lg">
+                <p class="mt-2 text-gray-700 text-lg">
                     Resumen financiero y análisis del sistema
                 </p>
             </div>
         </div>
 
         <form method="GET" action="{{ route('reportes.index') }}"
-              class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6 mb-8">
+              class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6 mb-8">
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                 <div>
@@ -62,57 +62,57 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Ventas del mes</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Ventas del mes</p>
                 <h2 class="text-3xl font-extrabold text-[#1f2937] mt-2">
                     ₡{{ number_format($ventas, 2) }}
                 </h2>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Compras del mes</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Compras del mes</p>
                 <h2 class="text-3xl font-extrabold text-[#1f2937] mt-2">
                     ₡{{ number_format($compras, 2) }}
                 </h2>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Utilidad estimada</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Utilidad estimada</p>
                 <h2 class="text-3xl font-extrabold {{ $utilidad < 0 ? 'text-red-700' : 'text-green-700' }} mt-2">
                     ₡{{ number_format($utilidad, 2) }}
                 </h2>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Ingresos adicionales</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Ingresos adicionales</p>
                 <h2 class="text-3xl font-extrabold text-[#1f2937] mt-2">
                     ₡{{ number_format($ingresos, 2) }}
                 </h2>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Gastos del mes</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Gastos del mes</p>
                 <h2 class="text-3xl font-extrabold text-[#1f2937] mt-2">
                     ₡{{ number_format($gastos, 2) }}
                 </h2>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Resultado operativo</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Resultado operativo</p>
                 <h2 class="text-3xl font-extrabold {{ ($ingresos - $gastos) < 0 ? 'text-red-700' : 'text-green-700' }} mt-2">
                     ₡{{ number_format($ingresos - $gastos, 2) }}
                 </h2>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Cuentas por cobrar pendientes</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Cuentas por cobrar pendientes</p>
                 <h2 class="text-3xl font-extrabold text-amber-800 mt-2">
                     ₡{{ number_format($cuentasCobrar, 2) }}
                 </h2>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-6">
-                <p class="text-gray-500 font-semibold">Cuentas por pagar pendientes</p>
+            <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-6">
+                <p class="text-gray-700 font-semibold">Cuentas por pagar pendientes</p>
                 <h2 class="text-3xl font-extrabold text-red-700 mt-2">
                     ₡{{ number_format($cuentasPagar, 2) }}
                 </h2>
@@ -120,7 +120,7 @@
 
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
             <div class="bg-[#2b2b2b] px-8 py-5">
                 <h2 class="text-white text-xl font-bold">
                     Presupuesto vs Gasto Real
@@ -140,7 +140,7 @@
 
                 <tbody>
                     @forelse($presupuestoVsGasto as $item)
-                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                        <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
                             <td class="px-6 py-5 font-semibold text-gray-700">
                                 {{ $item->categoria }}
                             </td>
@@ -171,7 +171,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-gray-500 text-lg">
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-700 text-lg">
                                 No hay presupuesto registrado para este periodo
                             </td>
                         </tr>

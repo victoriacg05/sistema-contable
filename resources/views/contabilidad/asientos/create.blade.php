@@ -11,7 +11,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-10">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
             <form method="POST" action="{{ route('contabilidad.asientos.store') }}" id="formAsiento">
                 @csrf
 
@@ -116,7 +116,7 @@
                         <span class="font-bold text-gray-700">Total Haber:</span>
                         <span id="totalHaber" class="font-mono ml-2">₡0.00</span>
                     </div>
-                    <div id="balance-status" class="font-bold text-red-600">Desbalanceado</div>
+                    <div id="balance-status" class="font-bold text-red-800">Desbalanceado</div>
                 </div>
 
                 <div class="mt-8 flex justify-end space-x-4">
@@ -188,10 +188,10 @@
             const status = document.getElementById('balance-status');
             if (Math.abs(totalDebe - totalHaber) < 0.01 && totalDebe > 0) {
                 status.textContent = 'Balanceado ✓';
-                status.className = 'font-bold text-green-600';
+                status.className = 'font-bold text-green-800';
             } else {
                 status.textContent = 'Desbalanceado';
-                status.className = 'font-bold text-red-600';
+                status.className = 'font-bold text-red-800';
             }
         }
 

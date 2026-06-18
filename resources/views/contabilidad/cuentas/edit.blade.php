@@ -3,7 +3,7 @@
 
         <h1 class="text-4xl font-extrabold text-[#1f2937] mb-8">Editar Cuenta Contable</h1>
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-10">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
             <form method="POST" action="{{ route('contabilidad.cuentas.update', $cuenta->codigo_cuenta) }}">
                 @csrf
                 @method('PUT')
@@ -12,7 +12,7 @@
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Código de Cuenta</label>
                         <input type="text" value="{{ $cuenta->codigo_cuenta }}" disabled
-                               class="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-100 text-gray-500">
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-100 text-gray-700">
                     </div>
 
                     <div>

@@ -19,7 +19,7 @@
             Dashboard
         </h1>
 
-        <p class="text-gray-500 mt-2">
+        <p class="text-gray-700 mt-2">
             Resumen general del sistema contable
         </p>
 
@@ -29,9 +29,9 @@
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
         <!-- Ventas -->
-        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-200">
 
-            <p class="text-gray-500 text-sm mb-3">
+            <p class="text-gray-700 text-sm mb-3">
                 Ventas Totales
             </p>
 
@@ -44,13 +44,13 @@
         </div>
 
         <!-- Facturas Pagadas -->
-        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-200">
 
-            <p class="text-gray-500 text-sm mb-3">
+            <p class="text-gray-700 text-sm mb-3">
                 Facturas Pagadas
             </p>
 
-            <h2 class="text-3xl font-bold text-green-600">
+            <h2 class="text-3xl font-bold text-green-800">
 
                 {{ $facturasPagadas }}
 
@@ -59,9 +59,9 @@
         </div>
 
         <!-- Facturas Pendientes -->
-        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-200">
 
-            <p class="text-gray-500 text-sm mb-3">
+            <p class="text-gray-700 text-sm mb-3">
                 Facturas Pendientes
             </p>
 
@@ -74,9 +74,9 @@
         </div>
 
         <!-- Clientes -->
-        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-200">
 
-            <p class="text-gray-500 text-sm mb-3">
+            <p class="text-gray-700 text-sm mb-3">
                 Clientes Registrados
             </p>
 
@@ -89,9 +89,9 @@
         </div>
 
         <!-- Productos -->
-        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-200">
 
-            <p class="text-gray-500 text-sm mb-3">
+            <p class="text-gray-700 text-sm mb-3">
                 Productos Registrados
             </p>
 
@@ -104,13 +104,13 @@
         </div>
 
         <!-- Stock Bajo -->
-        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-100">
+        <div class="bg-white rounded-3xl shadow-md p-6 border border-gray-200">
 
-            <p class="text-gray-500 text-sm mb-3">
+            <p class="text-gray-700 text-sm mb-3">
                 Productos con Stock Bajo
             </p>
 
-            <h2 class="text-3xl font-bold text-red-600">
+            <h2 class="text-3xl font-bold text-red-800">
 
                 {{ $stockBajo }}
 
@@ -140,7 +140,7 @@
                             <tr class="border-b border-red-100">
                                 <td class="px-6 py-3 font-semibold">{{ $cuenta->numero_factura }}</td>
                                 <td class="px-6 py-3">{{ $cuenta->cliente_nombre }}</td>
-                                <td class="px-6 py-3 text-right font-mono text-red-600">₡{{ number_format($cuenta->saldo_pendiente, 2) }}</td>
+                                <td class="px-6 py-3 text-right font-mono text-red-800">₡{{ number_format($cuenta->saldo_pendiente, 2) }}</td>
                                 <td class="px-6 py-3 text-center">
                                     <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
                                         {{ $cuenta->dias_atraso }} días

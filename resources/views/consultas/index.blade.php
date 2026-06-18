@@ -2,9 +2,9 @@
     <div class="max-w-5xl mx-auto">
 
         <h1 class="text-4xl font-extrabold text-[#1f2937] mb-2">Consultas</h1>
-        <p class="text-gray-500 text-lg mb-8">Búsqueda avanzada en los módulos del sistema</p>
+        <p class="text-gray-700 text-lg mb-8">Búsqueda avanzada en los módulos del sistema</p>
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-10">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
             <form method="GET" action="{{ route('consultas.buscar') }}">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

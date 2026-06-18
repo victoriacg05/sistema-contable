@@ -2,7 +2,7 @@
     <div class="max-w-3xl mx-auto">
         <h1 class="text-4xl font-extrabold text-[#1f2937] mb-8">Editar Método de Pago</h1>
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-10">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
             <form method="POST" action="{{ route('metodos-pago.update', $metodo) }}">
                 @csrf @method('PUT')
                 <div class="space-y-6">

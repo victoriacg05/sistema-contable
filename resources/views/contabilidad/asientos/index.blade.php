@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">Asientos Contables</h1>
-                <p class="mt-2 text-gray-500 text-lg">Registro de asientos contables del sistema</p>
+                <p class="mt-2 text-gray-700 text-lg">Registro de asientos contables del sistema</p>
             </div>
 
             <a href="{{ route('contabilidad.asientos.create') }}"
@@ -19,7 +19,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
             <table class="w-full">
                 <thead class="bg-[#2b2b2b] text-white">
                     <tr>
@@ -35,7 +35,7 @@
 
                 <tbody>
                     @forelse($asientos as $asiento)
-                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                        <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
                             <td class="px-6 py-5 font-semibold">{{ $asiento->numero_asiento }}</td>
                             <td class="px-6 py-5">{{ \Carbon\Carbon::parse($asiento->fecha)->format('d/m/Y') }}</td>
                             <td class="px-6 py-5">{{ Str::limit($asiento->descripcion, 40) }}</td>

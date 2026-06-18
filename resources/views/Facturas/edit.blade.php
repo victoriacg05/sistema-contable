@@ -11,7 +11,7 @@
                     Editar Factura
                 </h1>
 
-                <p class="mt-2 text-gray-500 text-lg">
+                <p class="mt-2 text-gray-700 text-lg">
                     Actualiza la información de la factura {{ $factura->numero_factura }}
                 </p>
             </div>
@@ -29,7 +29,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
 
             <div class="bg-[#2b2b2b] px-8 py-5">
                 <h2 class="text-white text-xl font-bold">
@@ -62,7 +62,7 @@
                         </select>
 
                         @error('cliente_id')
-                            <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -85,7 +85,7 @@
                         </select>
 
                         @error('metodo_pago_id')
-                            <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -108,7 +108,7 @@
                         </select>
 
                         @error('producto_id')
-                            <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -125,7 +125,7 @@
                                required>
 
                         @error('cantidad')
-                            <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -142,13 +142,13 @@
                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
 
                         @error('descuento')
-                            <p class="mt-2 text-sm text-red-600 font-semibold">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
                         @enderror
                     </div>
 
                 </div>
 
-                <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-100">
+                <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
                     <a href="{{ route('facturas.index') }}"
                        class="px-7 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
                         Cancelar
