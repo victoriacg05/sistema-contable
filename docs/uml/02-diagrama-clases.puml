@@ -1,0 +1,329 @@
+@startuml DiagramaClases
+' ============================================================
+' DIAGRAMA DE CLASES - Sistema Contable Ipacaraí
+' ============================================================
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor #FFFDE7
+    BorderColor #F57F17
+    ArrowColor #E65100
+}
+skinparam packageStyle rectangle
+
+package "Seguridad" #E3F2FD {
+    class User {
+        - id : bigint <<PK>>
+        - rol_id : bigint <<FK>>
+        - name : string
+        - email : string <<unique>>
+        - password : string
+        - estado : boolean
+        - created_at : datetime
+        - updated_at : datetime
+        --
+        + role() : BelongsTo<Role>
+        + permisos() : Collection<Permiso>
+        + tienePermiso(permiso: string) : bool
+    }
+
+    class Role {
+        - id : bigint <<PK>>
+        - nombre : string <<unique>>
+        - descripcion : string
+        - created_at : datetime
+        - updated_at : datetime
+        --
+        + users() : HasMany<User>
+        + permisos() : BelongsToMany<Permiso>
+    }
+
+    class Permiso {
+        - id : bigint <<PK>>
+        - nombre : string <<unique>>
+        - descripcion : string
+        - created_at : datetime
+        - updated_at : datetime
+        --
+        + users() : BelongsToMany<User>
+    }
+}
+
+package "Datos Maestros" #E8F5E9 {
+    class Cliente {
+        - id : bigint <<PK>>
+        - identificacion : string <<unique>>
+        - nombre : string
+        - email : string <<unique>>
+        - telefono : string
+        - direccion : string
+        - estado : boolean
+        - created_at : datetime
+        - updated_at : datetime
+        --
+        + facturas() : HasMany<Factura>
+    }
+
+    class Proveedor {
+        - id : bigint <<PK>>
+        - identificacion : string <<unique>>
+        - nombre : string
+        - empresa : string
+        - telefono : string
+        - correo : string <<unique>>
+        - estado : boolean
+        - created_at : datetime
+        - updated_at : datetime
+    }
+
+    class Producto {
+        - id : bigint <<PK>>
+        - categoria_producto_id : bigint <<FK>>
+        - codigo_barras : string <<unique>>
+        - nombre : string
+        - descripcion : string
+        - stock : integer
+        - stock_minimo : integer
+        - precio : decimal(10,2)
+        - estado : boolean
+        - created_at : datetime
+        - updated_at : datetime
+        --
+        + categoria() : BelongsTo<CategoriaProducto>
+    }
+}
+
+package "Catálogos" #FFF3E0 {
+    class CategoriaProducto {
+        - id : bigint <<PK>>
+        - nombre : string <<unique>>
+        - descripcion : string
+    }
+
+    class CategoriaGasto {
+        - id : bigint <<PK>>
+        - nombre : string <<unique>>
+        - descripcion : string
+    }
+
+    class TipoGasto {
+        - id : bigint <<PK>>
+        - nombre : string <<unique>>
+        - descripcion : string
+    }
+
+    class MetodoPago {
+        - id : bigint <<PK>>
+        - nombre : string <<unique>>
+        - descripcion : string
+    }
+
+    class Estado {
+        - id : bigint <<PK>>
+        - nombre : string <<unique>>
+        - descripcion : string
+    }
+}
+
+package "Facturación" #FCE4EC {
+    class Factura {
+        - numero_factura : string <<PK>>
+        - cliente_id : bigint <<PK, FK>>
+        - usuario_id : bigint <<FK>>
+        - metodo_pago_id : bigint <<FK>>
+        - estado_id : bigint <<FK>>
+        - tipo_comprobante_id : bigint <<FK>>
+        - fecha : date
+        - subtotal : decimal(10,2)
+        - impuesto : decimal(10,2)
+        - descuento : decimal(10,2)
+        - total : decimal(10,2)
+        --
+        + cliente() : BelongsTo<Cliente>
+        + metodoPago() : BelongsTo<MetodoPago>
+        + estado() : BelongsTo<Estado>
+        + detalles() : HasMany<DetalleFactura>
+    }
+
+    class DetalleFactura {
+        - numero_factura : string <<PK, FK>>
+        - cliente_id : bigint <<PK, FK>>
+        - producto_id : bigint <<PK, FK>>
+        - cantidad : integer
+        - precio_unitario : decimal(10,2)
+        - subtotal : decimal(10,2)
+        --
+        + producto() : BelongsTo<Producto>
+        + factura() : BelongsTo<Factura>
+    }
+}
+
+package "Compras" #E8EAF6 {
+    class Compra {
+        - numero_compra : string <<PK>>
+        - proveedor_id : bigint <<PK, FK>>
+        - usuario_id : bigint <<FK>>
+        - estado_id : bigint <<FK>>
+        - fecha : date
+        - subtotal : decimal(10,2)
+        - impuesto : decimal(10,2)
+        - total : decimal(10,2)
+        --
+        + proveedor() : BelongsTo<Proveedor>
+        + estado() : BelongsTo<Estado>
+        + detalles() : HasMany<DetalleCompra>
+    }
+
+    class DetalleCompra {
+        - numero_compra : string <<PK, FK>>
+        - proveedor_id : bigint <<PK, FK>>
+        - producto_id : bigint <<PK, FK>>
+        - cantidad : integer
+        - precio_unitario : decimal(10,2)
+        - subtotal : decimal(10,2)
+        --
+        + producto() : BelongsTo<Producto>
+        + compra() : BelongsTo<Compra>
+    }
+}
+
+package "Cuentas por Cobrar" #E0F7FA {
+    class CuentaCobrar {
+        - numero_factura : string <<PK, FK>>
+        - cliente_id : bigint <<PK, FK>>
+        - monto_original : decimal(10,2)
+        - saldo_pendiente : decimal(10,2)
+        - fecha_emision : date
+        - fecha_vencimiento : date
+        - estado_id : bigint <<FK>>
+        --
+        + cliente() : BelongsTo<Cliente>
+        + estado() : BelongsTo<Estado>
+        + factura() : BelongsTo<Factura>
+    }
+
+    class PagoCuentaCobrar {
+        - numero_factura : string <<PK, FK>>
+        - cliente_id : bigint <<PK, FK>>
+        - referencia_pago : string <<PK>>
+        - metodo_pago_id : bigint <<FK>>
+        - usuario_id : bigint <<FK>>
+        - monto : decimal(10,2)
+        - fecha_pago : date
+        --
+        + metodoPago() : BelongsTo<MetodoPago>
+        + cliente() : BelongsTo<Cliente>
+    }
+}
+
+package "Cuentas por Pagar" #F3E5F5 {
+    class CuentaPagar {
+        - numero_compra : string <<PK, FK>>
+        - proveedor_id : bigint <<PK, FK>>
+        - monto_original : decimal(10,2)
+        - saldo_pendiente : decimal(10,2)
+        - fecha_emision : date
+        - fecha_vencimiento : date
+        - estado_id : bigint <<FK>>
+        --
+        + proveedor() : BelongsTo<Proveedor>
+        + estado() : BelongsTo<Estado>
+        + compra() : BelongsTo<Compra>
+    }
+
+    class PagoCuentaPagar {
+        - numero_compra : string <<PK, FK>>
+        - proveedor_id : bigint <<PK, FK>>
+        - referencia_pago : string <<PK>>
+        - metodo_pago_id : bigint <<FK>>
+        - usuario_id : bigint <<FK>>
+        - monto : decimal(10,2)
+        - fecha_pago : date
+        --
+        + metodoPago() : BelongsTo<MetodoPago>
+        + proveedor() : BelongsTo<Proveedor>
+    }
+}
+
+package "Ingresos y Gastos" #FBE9E7 {
+    class Ingreso {
+        - referencia_ingreso : string <<PK>>
+        - fecha : date <<PK>>
+        - usuario_id : bigint <<PK, FK>>
+        - metodo_pago_id : bigint <<FK>>
+        - origen : string
+        - descripcion : string
+        - monto : decimal(10,2)
+        --
+        + metodoPago() : BelongsTo<MetodoPago>
+        + usuario() : BelongsTo<User>
+    }
+
+    class Gasto {
+        - numero_comprobante : string <<PK>>
+        - categoria_gasto_id : bigint <<PK, FK>>
+        - fecha : date <<PK>>
+        - tipo_gasto_id : bigint <<FK>>
+        - usuario_id : bigint <<FK>>
+        - metodo_pago_id : bigint <<FK>>
+        - descripcion : string
+        - monto : decimal(10,2)
+        --
+        + categoria() : BelongsTo<CategoriaGasto>
+        + tipoGasto() : BelongsTo<TipoGasto>
+        + metodoPago() : BelongsTo<MetodoPago>
+        + usuario() : BelongsTo<User>
+    }
+
+    class Presupuesto {
+        - anio : integer <<PK>>
+        - mes : integer <<PK>>
+        - categoria_gasto_id : bigint <<PK, FK>>
+        - monto_presupuestado : decimal(10,2)
+        - descripcion : string
+        --
+        + categoria() : BelongsTo<CategoriaGasto>
+    }
+}
+
+' ============ RELACIONES ============
+
+' Seguridad
+Role "1" --> "*" User : tiene
+Role "*" -- "*" Permiso : rol_permiso
+
+' Datos maestros
+CategoriaProducto "1" --> "*" Producto : clasifica
+
+' Facturación
+Cliente "1" --> "*" Factura : genera
+Factura "1" --> "*" DetalleFactura : contiene
+Producto "1" --> "*" DetalleFactura : aparece en
+MetodoPago "1" --> "*" Factura : se usa en
+Estado "1" --> "*" Factura : estado
+
+' Compras
+Proveedor "1" --> "*" Compra : provee
+Compra "1" --> "*" DetalleCompra : contiene
+Producto "1" --> "*" DetalleCompra : aparece en
+Estado "1" --> "*" Compra : estado
+
+' Cuentas por cobrar
+Factura "1" --> "0..1" CuentaCobrar : genera
+CuentaCobrar "1" --> "*" PagoCuentaCobrar : recibe pagos
+Cliente "1" --> "*" CuentaCobrar
+
+' Cuentas por pagar
+Compra "1" --> "0..1" CuentaPagar : genera
+CuentaPagar "1" --> "*" PagoCuentaPagar : recibe pagos
+Proveedor "1" --> "*" CuentaPagar
+
+' Ingresos y gastos
+CategoriaGasto "1" --> "*" Gasto : clasifica
+CategoriaGasto "1" --> "*" Presupuesto : presupuesta
+TipoGasto "1" --> "*" Gasto : tipifica
+MetodoPago "1" --> "*" Gasto : pago
+MetodoPago "1" --> "*" Ingreso : pago
+User "1" --> "*" Gasto : registra
+User "1" --> "*" Ingreso : registra
+
+@enduml

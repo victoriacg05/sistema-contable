@@ -1,0 +1,72 @@
+@startuml DiagramaEstadosFactura
+' ============================================================
+' DIAGRAMA DE ESTADOS - Ciclo de Vida de una Factura
+' ============================================================
+skinparam state {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    ArrowColor #0D47A1
+}
+
+title Diagrama de Estados - Factura
+
+[*] --> Creada : Crear factura
+
+state Creada {
+    Creada : La factura ha sido registrada
+    Creada : Stock decrementado
+}
+
+Creada --> Pagada : Pago contado\ninmediato
+Creada --> Pendiente : Método de pago\nes crédito
+
+state Pendiente {
+    Pendiente : Cuenta por cobrar activa
+    Pendiente : Saldo pendiente > 0
+}
+
+Pendiente --> ParcialmentePagada : Pago parcial\nrecibido
+
+state ParcialmentePagada {
+    ParcialmentePagada : Saldo reducido
+    ParcialmentePagada : pero > 0
+}
+
+ParcialmentePagada --> ParcialmentePagada : Otro pago\nparcial
+ParcialmentePagada --> Pagada : Último pago\nsaldo = 0
+
+state Pagada {
+    Pagada : Saldo = 0
+    Pagada : Cuenta cerrada
+}
+
+Creada --> Anulada : Solicitar\nanulación
+Pendiente --> Anulada : Solicitar\nanulación
+
+state Anulada {
+    Anulada : Stock restaurado
+    Anulada : Motivo registrado
+}
+
+Anulada --> [*]
+Pagada --> [*]
+
+note right of Creada
+    Al crear la factura se
+    genera el detalle y se
+    descuenta el stock
+end note
+
+note right of Pendiente
+    Se pueden generar
+    alertas de morosidad
+    si hay atraso en pagos
+end note
+
+note right of Anulada
+    La anulación restaura
+    el stock y registra
+    motivo y usuario
+end note
+
+@enduml

@@ -1,0 +1,67 @@
+@startuml DiagramaActividadesCompras
+' ============================================================
+' DIAGRAMA DE ACTIVIDADES - Proceso de Compras
+' ============================================================
+skinparam activity {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+    DiamondBackgroundColor #C8E6C9
+    DiamondBorderColor #1B5E20
+    ArrowColor #1B5E20
+}
+
+title Diagrama de Actividades - Ciclo de Vida de una Compra
+
+start
+
+:Seleccionar proveedor;
+
+:Agregar productos al detalle;
+
+:Definir cantidades y precios;
+
+:Calcular subtotal,
+impuesto y total;
+
+if (¿Datos válidos?) then (Sí)
+
+    :Crear registro de compra;
+
+    :Crear detalles de compra;
+
+    :Incrementar stock de productos;
+
+    if (¿Compra a crédito?) then (Sí)
+        :Crear Cuenta por Pagar;
+        :Establecer fecha de vencimiento;
+        :Estado = "Pendiente";
+
+        if (¿Se realiza pago?) then (Sí)
+            :Seleccionar método de pago;
+            :Registrar pago a proveedor;
+            :Actualizar saldo pendiente;
+
+            if (¿Saldo = 0?) then (Sí)
+                :Marcar compra como "Pagada";
+                :Cerrar cuenta por pagar;
+            else (No)
+                :Mantener "Parcialmente pagada";
+            endif
+        else (No)
+            :Mantener pendiente;
+        endif
+
+    else (No - Contado)
+        :Marcar compra como "Pagada";
+    endif
+
+    :Registrar en bitácora;
+
+else (No)
+    :Mostrar errores de validación;
+    :Regresar al formulario;
+endif
+
+stop
+
+@enduml

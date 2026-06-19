@@ -1,0 +1,485 @@
+@startuml DiagramaEntidadRelacion
+' ============================================================
+' DIAGRAMA ENTIDAD-RELACIÓN - Sistema Contable Ipacaraí
+' ============================================================
+skinparam linetype ortho
+skinparam entity {
+    BackgroundColor #FFFDE7
+    BorderColor #F57F17
+}
+
+' =================== CATÁLOGOS ===================
+entity "roles" as roles {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+    created_at : datetime
+    updated_at : datetime
+}
+
+entity "permisos" as permisos {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+    created_at : datetime
+    updated_at : datetime
+}
+
+entity "rol_permiso" as rol_permiso {
+    * rol_id : bigint <<PK, FK>>
+    * permiso_id : bigint <<PK, FK>>
+    --
+    created_at : datetime
+    updated_at : datetime
+}
+
+entity "categorias_productos" as cat_prod {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+entity "categorias_gastos" as cat_gasto {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+entity "tipos_gasto" as tipo_gasto {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+entity "metodos_pago" as met_pago {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+entity "estados" as estados {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+entity "tipos_comprobante" as tipo_comprob {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+entity "tipos_cuenta_contable" as tipo_cta {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+entity "tipos_movimiento_inventario" as tipo_mov {
+    * id : bigint <<PK>>
+    --
+    nombre : varchar <<unique>>
+    descripcion : varchar(500)
+}
+
+' =================== SEGURIDAD ===================
+entity "users" as users {
+    * id : bigint <<PK>>
+    --
+    * rol_id : bigint <<FK>>
+    name : varchar
+    email : varchar <<unique>>
+    password : varchar
+    estado : boolean
+    created_at : datetime
+    updated_at : datetime
+}
+
+' =================== DATOS MAESTROS ===================
+entity "clientes" as clientes {
+    * id : bigint <<PK>>
+    --
+    identificacion : varchar <<unique>>
+    nombre : varchar
+    email : varchar <<unique>>
+    telefono : varchar
+    direccion : varchar(500)
+    estado : boolean
+}
+
+entity "proveedores" as proveedores {
+    * id : bigint <<PK>>
+    --
+    identificacion : varchar <<unique>>
+    nombre : varchar
+    empresa : varchar
+    telefono : varchar
+    correo : varchar <<unique>>
+    estado : boolean
+}
+
+entity "productos" as productos {
+    * id : bigint <<PK>>
+    --
+    * categoria_producto_id : bigint <<FK>>
+    codigo_barras : varchar <<unique>>
+    nombre : varchar
+    descripcion : varchar(500)
+    stock : integer
+    stock_minimo : integer
+    precio : decimal(10,2)
+    estado : boolean
+}
+
+' =================== CONTABILIDAD ===================
+entity "catalogo_cuentas" as catalogo {
+    * codigo_cuenta : varchar <<PK>>
+    --
+    * tipo_cuenta_contable_id : bigint <<FK>>
+    nombre : varchar
+    descripcion : varchar(500)
+    estado : boolean
+}
+
+entity "asientos_contables" as asientos {
+    * numero_asiento : varchar <<PK>>
+    * fecha : date <<PK>>
+    --
+    * usuario_id : bigint <<FK>>
+    * estado_id : bigint <<FK>>
+    descripcion : varchar(500)
+    total_debe : decimal(10,2)
+    total_haber : decimal(10,2)
+}
+
+entity "detalle_asientos_contables" as det_asientos {
+    * numero_asiento : varchar <<PK, FK>>
+    * fecha_asiento : date <<PK, FK>>
+    * codigo_cuenta : varchar <<PK, FK>>
+    --
+    debe : decimal(10,2)
+    haber : decimal(10,2)
+    descripcion : varchar(500)
+}
+
+' =================== FACTURACIÓN ===================
+entity "facturas" as facturas {
+    * numero_factura : varchar <<PK>>
+    * cliente_id : bigint <<PK, FK>>
+    --
+    * usuario_id : bigint <<FK>>
+    * metodo_pago_id : bigint <<FK>>
+    * estado_id : bigint <<FK>>
+    * tipo_comprobante_id : bigint <<FK>>
+    fecha : date
+    subtotal : decimal(10,2)
+    impuesto : decimal(10,2)
+    descuento : decimal(10,2)
+    total : decimal(10,2)
+}
+
+entity "detalle_facturas" as det_fact {
+    * numero_factura : varchar <<PK, FK>>
+    * cliente_id : bigint <<PK, FK>>
+    * producto_id : bigint <<PK, FK>>
+    --
+    cantidad : integer
+    precio_unitario : decimal(10,2)
+    subtotal : decimal(10,2)
+}
+
+entity "facturas_electronicas" as fact_elec {
+    * numero_factura : varchar <<PK, FK>>
+    * cliente_id : bigint <<PK, FK>>
+    * clave_hacienda : varchar <<PK, unique>>
+    --
+    consecutivo_hacienda : varchar <<unique>>
+    estado_hacienda : varchar
+    mensaje_hacienda : varchar(1000)
+    xml_generado : varchar(1000)
+    fecha_envio : datetime
+}
+
+entity "anulaciones_facturas" as anulaciones {
+    * numero_factura : varchar <<PK, FK>>
+    * cliente_id : bigint <<PK, FK>>
+    * fecha_anulacion : date <<PK>>
+    --
+    * usuario_id : bigint <<FK>>
+    * estado_id : bigint <<FK>>
+    motivo : varchar(500)
+}
+
+entity "envios_comprobantes" as envios {
+    * numero_factura : varchar <<PK, FK>>
+    * cliente_id : bigint <<PK, FK>>
+    * fecha_envio : datetime <<PK>>
+    --
+    correo_destino : varchar
+    estado_envio : varchar
+    mensaje : varchar(500)
+}
+
+' =================== COMPRAS ===================
+entity "compras" as compras {
+    * numero_compra : varchar <<PK>>
+    * proveedor_id : bigint <<PK, FK>>
+    --
+    * usuario_id : bigint <<FK>>
+    * estado_id : bigint <<FK>>
+    fecha : date
+    subtotal : decimal(10,2)
+    impuesto : decimal(10,2)
+    total : decimal(10,2)
+}
+
+entity "detalle_compras" as det_comp {
+    * numero_compra : varchar <<PK, FK>>
+    * proveedor_id : bigint <<PK, FK>>
+    * producto_id : bigint <<PK, FK>>
+    --
+    cantidad : integer
+    precio_unitario : decimal(10,2)
+    subtotal : decimal(10,2)
+}
+
+' =================== CUENTAS POR COBRAR ===================
+entity "cuentas_cobrar" as cxc {
+    * numero_factura : varchar <<PK, FK>>
+    * cliente_id : bigint <<PK, FK>>
+    --
+    monto_original : decimal(10,2)
+    saldo_pendiente : decimal(10,2)
+    fecha_emision : date
+    fecha_vencimiento : date
+    * estado_id : bigint <<FK>>
+}
+
+entity "pagos_clientes" as pago_cli {
+    * numero_factura : varchar <<PK, FK>>
+    * cliente_id : bigint <<PK, FK>>
+    * referencia_pago : varchar <<PK>>
+    --
+    * metodo_pago_id : bigint <<FK>>
+    * usuario_id : bigint <<FK>>
+    monto : decimal(10,2)
+    fecha_pago : date
+}
+
+entity "alertas_morosidad" as alertas {
+    * numero_factura : varchar <<PK, FK>>
+    * cliente_id : bigint <<PK, FK>>
+    * fecha_alerta : date <<PK>>
+    --
+    * usuario_id : bigint <<FK>>
+    * estado_id : bigint <<FK>>
+    dias_atraso : integer
+    mensaje : varchar(500)
+}
+
+' =================== CUENTAS POR PAGAR ===================
+entity "cuentas_pagar" as cxp {
+    * numero_compra : varchar <<PK, FK>>
+    * proveedor_id : bigint <<PK, FK>>
+    --
+    monto_original : decimal(10,2)
+    saldo_pendiente : decimal(10,2)
+    fecha_emision : date
+    fecha_vencimiento : date
+    * estado_id : bigint <<FK>>
+}
+
+entity "pagos_proveedores" as pago_prov {
+    * numero_compra : varchar <<PK, FK>>
+    * proveedor_id : bigint <<PK, FK>>
+    * referencia_pago : varchar <<PK>>
+    --
+    * metodo_pago_id : bigint <<FK>>
+    * usuario_id : bigint <<FK>>
+    monto : decimal(10,2)
+    fecha_pago : date
+}
+
+' =================== INGRESOS Y GASTOS ===================
+entity "ingresos" as ingresos {
+    * referencia_ingreso : varchar <<PK>>
+    * fecha : date <<PK>>
+    * usuario_id : bigint <<PK, FK>>
+    --
+    * metodo_pago_id : bigint <<FK>>
+    origen : varchar
+    descripcion : varchar(500)
+    monto : decimal(10,2)
+}
+
+entity "gastos" as gastos {
+    * numero_comprobante : varchar <<PK>>
+    * categoria_gasto_id : bigint <<PK, FK>>
+    * fecha : date <<PK>>
+    --
+    * tipo_gasto_id : bigint <<FK>>
+    * usuario_id : bigint <<FK>>
+    * metodo_pago_id : bigint <<FK>>
+    descripcion : varchar(500)
+    monto : decimal(10,2)
+}
+
+entity "presupuesto" as presupuesto {
+    * anio : integer <<PK>>
+    * mes : integer <<PK>>
+    * categoria_gasto_id : bigint <<PK, FK>>
+    --
+    monto_presupuestado : decimal(10,2)
+    descripcion : varchar(500)
+}
+
+' =================== INVENTARIO ===================
+entity "movimientos_inventario" as mov_inv {
+    * referencia_movimiento : varchar <<PK>>
+    * producto_id : bigint <<PK, FK>>
+    * tipo_movimiento_inventario_id : bigint <<PK, FK>>
+    --
+    * usuario_id : bigint <<FK>>
+    cantidad : integer
+    descripcion : varchar(500)
+    fecha : date
+}
+
+' =================== TRAZABILIDAD ===================
+entity "bitacora" as bitacora {
+    * usuario_id : bigint <<PK, FK>>
+    * accion : varchar <<PK>>
+    * tabla_afectada : varchar <<PK>>
+    * fecha : datetime <<PK>>
+    --
+    descripcion : varchar(500)
+}
+
+entity "intentos_acceso" as intentos {
+    * email : varchar <<PK>>
+    * ip_address : varchar <<PK>>
+    * fecha : datetime <<PK>>
+    --
+    exitoso : boolean
+    mensaje : varchar(500)
+}
+
+entity "reportes_generados" as reportes {
+    * codigo_reporte : varchar <<PK>>
+    * usuario_id : bigint <<PK, FK>>
+    * fecha_generacion : datetime <<PK>>
+    --
+    tipo_reporte : varchar
+    formato : varchar
+    ruta_archivo : varchar(500)
+    parametros : varchar(1000)
+    descripcion : varchar(500)
+    fecha_inicio : date
+    fecha_fin : date
+}
+
+entity "consultas_realizadas" as consultas {
+    * codigo_consulta : varchar <<PK>>
+    * usuario_id : bigint <<PK, FK>>
+    * fecha_consulta : datetime <<PK>>
+    --
+    modulo : varchar
+    criterio_busqueda : varchar(500)
+}
+
+entity "historial_saldos" as hist_saldos {
+    * referencia_documento : varchar <<PK>>
+    * tipo_documento : varchar <<PK>>
+    * fecha : datetime <<PK>>
+    --
+    * usuario_id : bigint <<FK>>
+    saldo_anterior : decimal(10,2)
+    monto_movimiento : decimal(10,2)
+    saldo_nuevo : decimal(10,2)
+}
+
+' =================== RELACIONES ===================
+
+' Seguridad
+roles ||--o{ users : "rol_id"
+roles ||--o{ rol_permiso : "rol_id"
+permisos ||--o{ rol_permiso : "permiso_id"
+
+' Datos maestros
+cat_prod ||--o{ productos : "categoria_producto_id"
+
+' Facturación
+clientes ||--o{ facturas : "cliente_id"
+users ||--o{ facturas : "usuario_id"
+met_pago ||--o{ facturas : "metodo_pago_id"
+estados ||--o{ facturas : "estado_id"
+tipo_comprob ||--o{ facturas : "tipo_comprobante_id"
+facturas ||--o{ det_fact : "(numero_factura, cliente_id)"
+productos ||--o{ det_fact : "producto_id"
+facturas ||--o{ fact_elec : "(numero_factura, cliente_id)"
+facturas ||--o{ anulaciones : "(numero_factura, cliente_id)"
+facturas ||--o{ envios : "(numero_factura, cliente_id)"
+users ||--o{ anulaciones : "usuario_id"
+estados ||--o{ anulaciones : "estado_id"
+
+' Compras
+proveedores ||--o{ compras : "proveedor_id"
+users ||--o{ compras : "usuario_id"
+estados ||--o{ compras : "estado_id"
+compras ||--o{ det_comp : "(numero_compra, proveedor_id)"
+productos ||--o{ det_comp : "producto_id"
+
+' Cuentas por cobrar
+facturas ||--o| cxc : "(numero_factura, cliente_id)"
+estados ||--o{ cxc : "estado_id"
+facturas ||--o{ pago_cli : "(numero_factura, cliente_id)"
+met_pago ||--o{ pago_cli : "metodo_pago_id"
+users ||--o{ pago_cli : "usuario_id"
+facturas ||--o{ alertas : "(numero_factura, cliente_id)"
+users ||--o{ alertas : "usuario_id"
+estados ||--o{ alertas : "estado_id"
+
+' Cuentas por pagar
+compras ||--o| cxp : "(numero_compra, proveedor_id)"
+estados ||--o{ cxp : "estado_id"
+compras ||--o{ pago_prov : "(numero_compra, proveedor_id)"
+met_pago ||--o{ pago_prov : "metodo_pago_id"
+users ||--o{ pago_prov : "usuario_id"
+
+' Contabilidad
+tipo_cta ||--o{ catalogo : "tipo_cuenta_contable_id"
+users ||--o{ asientos : "usuario_id"
+estados ||--o{ asientos : "estado_id"
+asientos ||--o{ det_asientos : "(numero_asiento, fecha)"
+catalogo ||--o{ det_asientos : "codigo_cuenta"
+
+' Ingresos y gastos
+users ||--o{ ingresos : "usuario_id"
+met_pago ||--o{ ingresos : "metodo_pago_id"
+cat_gasto ||--o{ gastos : "categoria_gasto_id"
+tipo_gasto ||--o{ gastos : "tipo_gasto_id"
+users ||--o{ gastos : "usuario_id"
+met_pago ||--o{ gastos : "metodo_pago_id"
+cat_gasto ||--o{ presupuesto : "categoria_gasto_id"
+
+' Inventario
+productos ||--o{ mov_inv : "producto_id"
+users ||--o{ mov_inv : "usuario_id"
+tipo_mov ||--o{ mov_inv : "tipo_movimiento_inventario_id"
+
+' Trazabilidad
+users ||--o{ bitacora : "usuario_id"
+users ||--o{ reportes : "usuario_id"
+users ||--o{ consultas : "usuario_id"
+users ||--o{ hist_saldos : "usuario_id"
+
+@enduml

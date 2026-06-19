@@ -1,0 +1,66 @@
+@startuml DiagramaSecuenciaCompras
+' ============================================================
+' DIAGRAMA DE SECUENCIA - Proceso de Compras
+' ============================================================
+skinparam sequenceArrowThickness 2
+skinparam sequence {
+    ParticipantBackgroundColor #E8F5E9
+    ParticipantBorderColor #2E7D32
+    LifeLineBackgroundColor #C8E6C9
+    ArrowColor #1B5E20
+}
+
+title Proceso de Registro de Compra
+
+actor "Usuario" as user
+participant "Vista\n(Blade)" as vista
+participant "CompraController" as ctrl
+participant "Compra\n(Model)" as compra
+participant "DetalleCompra\n(Model)" as detalle
+participant "Producto\n(Model)" as producto
+participant "CuentaPagar\n(Model)" as cxp
+database "Base de Datos" as db
+
+user -> vista : Llenar formulario\n(proveedor, productos, cantidades)
+vista -> ctrl : POST /compras\n(store)
+activate ctrl
+
+ctrl -> ctrl : Validar datos
+
+ctrl -> db : beginTransaction()
+
+ctrl -> compra : create(datos compra)
+activate compra
+compra -> db : INSERT INTO compras
+compra --> ctrl : compra creada
+deactivate compra
+
+loop Para cada producto
+    ctrl -> detalle : create(detalle)
+    activate detalle
+    detalle -> db : INSERT INTO detalle_compras
+    detalle --> ctrl : detalle creado
+    deactivate detalle
+
+    ctrl -> producto : incrementar stock
+    activate producto
+    producto -> db : UPDATE productos\nSET stock = stock + cantidad
+    producto --> ctrl : stock actualizado
+    deactivate producto
+end
+
+alt Compra a crédito
+    ctrl -> cxp : create(cuenta por pagar)
+    activate cxp
+    cxp -> db : INSERT INTO cuentas_pagar
+    cxp --> ctrl : cuenta creada
+    deactivate cxp
+end
+
+ctrl -> db : commit()
+ctrl --> vista : redirect con mensaje éxito
+deactivate ctrl
+
+vista --> user : Mostrar compra registrada
+
+@enduml

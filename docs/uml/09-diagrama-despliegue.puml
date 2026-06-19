@@ -1,0 +1,63 @@
+@startuml DiagramaDespliegue
+' ============================================================
+' DIAGRAMA DE DESPLIEGUE - Infraestructura del Sistema
+' ============================================================
+skinparam node {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+}
+skinparam artifact {
+    BackgroundColor #FFFDE7
+    BorderColor #F57F17
+}
+
+title Diagrama de Despliegue - Sistema Contable Ipacaraí
+
+node "Cliente (Navegador Web)" as browser {
+    artifact "HTML / CSS\n(Tailwind)" as html
+    artifact "JavaScript\n(Alpine.js)" as js_client
+}
+
+node "Servidor Web" as server {
+    node "PHP 8.x + Laravel 11" as laravel {
+        artifact "Rutas (web.php)" as routes
+        artifact "Middleware\n(Auth + CheckPermiso)" as middleware
+        artifact "Controladores" as controllers
+        artifact "Modelos Eloquent" as models
+        artifact "Vistas Blade" as blade
+    }
+    
+    node "Vite (Build Tool)" as vite {
+        artifact "Tailwind CSS\nCompilado" as tw
+        artifact "JS Bundle" as jsbundle
+    }
+    
+    node "Composer" as composer {
+        artifact "Dependencias PHP\n(vendor/)" as vendor
+    }
+}
+
+node "Servidor de Base de Datos" as db_server {
+    database "MySQL\nipacarai_db" as mysql {
+        artifact "30 tablas\n(migración única)" as tables
+    }
+}
+
+cloud "Servicios Externos" as external {
+    node "Ministerio de Hacienda\n(Costa Rica)" as hacienda {
+        artifact "API Factura\nElectrónica" as api_hacienda
+    }
+    
+    node "Servidor SMTP" as smtp_server {
+        artifact "Envío de correos\n(comprobantes)" as smtp
+    }
+}
+
+' Conexiones
+browser --> server : HTTPS\n(Puerto 443)
+laravel --> mysql : MySQL Driver\n(Puerto 3306)
+laravel --> api_hacienda : HTTP/XML\n(Factura Electrónica)
+laravel --> smtp : SMTP\n(Puerto 587)
+vite --> blade : Assets compilados
+
+@enduml

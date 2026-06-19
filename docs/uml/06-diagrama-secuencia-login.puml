@@ -1,0 +1,67 @@
+@startuml DiagramaSecuenciaLogin
+' ============================================================
+' DIAGRAMA DE SECUENCIA - Proceso de Autenticación
+' ============================================================
+skinparam sequenceArrowThickness 2
+skinparam sequence {
+    ParticipantBackgroundColor #FFF3E0
+    ParticipantBorderColor #E65100
+    LifeLineBackgroundColor #FFE0B2
+    ArrowColor #BF360C
+}
+
+title Proceso de Inicio de Sesión
+
+actor "Usuario" as user
+participant "Vista Login\n(Blade)" as vista
+participant "LoginRequest" as request
+participant "Auth\n(Laravel)" as auth
+participant "CheckPermiso\n(Middleware)" as middleware
+database "Base de Datos" as db
+
+user -> vista : Ingresar email y contraseña
+vista -> request : POST /login
+activate request
+
+request -> request : Validar formato\n(email, password requeridos)
+request -> request : Verificar rate limit\n(max intentos por IP)
+
+alt Límite de intentos excedido
+    request --> vista : Error 429\n"Demasiados intentos"
+    vista --> user : Mostrar error
+else Intentos disponibles
+    request -> auth : attempt(email, password)
+    activate auth
+    auth -> db : SELECT * FROM users\nWHERE email = ?
+    
+    alt Credenciales válidas
+        auth -> db : INSERT INTO intentos_acceso\n(exitoso = true)
+        auth --> request : true
+        deactivate auth
+        request -> request : regenerar sesión
+        request --> vista : redirect /dashboard
+        
+        note over middleware : En cada request posterior
+        vista -> middleware : Request con sesión
+        activate middleware
+        middleware -> db : Verificar permisos\ndel usuario
+        alt Tiene permiso
+            middleware --> vista : Continuar
+        else No tiene permiso
+            middleware --> vista : Error 403\n"Sin autorización"
+        end
+        deactivate middleware
+        
+        vista --> user : Mostrar Dashboard
+        
+    else Credenciales inválidas
+        auth -> db : INSERT INTO intentos_acceso\n(exitoso = false)
+        auth --> request : false
+        request --> vista : Error de validación\n"Credenciales incorrectas"
+        vista --> user : Mostrar error
+    end
+end
+
+deactivate request
+
+@enduml

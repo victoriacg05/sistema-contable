@@ -1,0 +1,71 @@
+@startuml DiagramaSecuenciaPagoCxC
+' ============================================================
+' DIAGRAMA DE SECUENCIA - Pago de Cuenta por Cobrar
+' ============================================================
+skinparam sequenceArrowThickness 2
+skinparam sequence {
+    ParticipantBackgroundColor #E0F7FA
+    ParticipantBorderColor #00695C
+    LifeLineBackgroundColor #B2DFDB
+    ArrowColor #004D40
+}
+
+title Proceso de Pago de Cuenta por Cobrar
+
+actor "Usuario" as user
+participant "Vista CxC\n(Blade)" as vista
+participant "CuentaCobrarController" as ctrl
+participant "CuentaCobrar\n(Model)" as cxc
+participant "PagoCuentaCobrar\n(Model)" as pago
+participant "Factura\n(Model)" as factura
+database "Base de Datos" as db
+
+user -> vista : Seleccionar cuenta\npor cobrar pendiente
+vista -> ctrl : GET /cuentas-cobrar/{nf}/{ci}/pago\n(createPago)
+activate ctrl
+ctrl -> cxc : Buscar cuenta por cobrar
+cxc -> db : SELECT FROM cuentas_cobrar
+cxc --> ctrl : datos de la cuenta
+ctrl --> vista : Mostrar formulario de pago\n(saldo pendiente, datos cliente)
+deactivate ctrl
+
+user -> vista : Ingresar monto,\nmétodo de pago, referencia
+vista -> ctrl : POST /cuentas-cobrar/{nf}/{ci}/pago\n(storePago)
+activate ctrl
+
+ctrl -> ctrl : Validar monto\n(no mayor al saldo)
+
+ctrl -> db : beginTransaction()
+
+ctrl -> pago : create(datos pago)
+activate pago
+pago -> db : INSERT INTO pagos_clientes
+pago --> ctrl : pago registrado
+deactivate pago
+
+ctrl -> cxc : Actualizar saldo
+activate cxc
+cxc -> db : UPDATE cuentas_cobrar\nSET saldo_pendiente =\nsaldo_pendiente - monto
+cxc --> ctrl : saldo actualizado
+deactivate cxc
+
+alt Saldo pendiente = 0
+    ctrl -> cxc : Cambiar estado a "Pagada"
+    cxc -> db : UPDATE cuentas_cobrar\nSET estado_id = 'Pagada'
+    
+    ctrl -> factura : Cambiar estado a "Pagada"
+    activate factura
+    factura -> db : UPDATE facturas\nSET estado_id = 'Pagada'
+    factura --> ctrl : factura actualizada
+    deactivate factura
+else Saldo pendiente > 0
+    ctrl -> ctrl : Mantener estado "Pendiente"
+end
+
+ctrl -> db : commit()
+ctrl --> vista : redirect con mensaje éxito
+deactivate ctrl
+
+vista --> user : Mostrar confirmación de pago
+
+@enduml

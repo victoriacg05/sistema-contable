@@ -1,0 +1,137 @@
+@startuml DiagramaComponentes
+' ============================================================
+' DIAGRAMA DE COMPONENTES - Arquitectura del Sistema
+' ============================================================
+skinparam component {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+    ArrowColor #1B5E20
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #616161
+}
+
+title Diagrama de Componentes - Sistema Contable Ipacaraí
+
+package "Capa de Presentación" #E3F2FD {
+    [Vistas Blade\n(resources/views)] as vistas
+    [Tailwind CSS\n+ Vite] as css
+    [JavaScript\n(Alpine.js)] as js
+}
+
+package "Capa de Enrutamiento" #FFF3E0 {
+    [web.php\n(Rutas Web)] as rutas
+    [auth.php\n(Rutas Auth)] as rutas_auth
+}
+
+package "Capa de Middleware" #FCE4EC {
+    [Autenticación\n(Laravel Auth)] as mw_auth
+    [CheckPermiso\n(Middleware)] as mw_permiso
+}
+
+package "Capa de Controladores" #FFFDE7 {
+    [DashboardController] as ctrl_dash
+    [FacturaController] as ctrl_fact
+    [CompraController] as ctrl_comp
+    [ClienteController] as ctrl_cli
+    [ProveedorController] as ctrl_prov
+    [ProductoController] as ctrl_prod
+    [ContabilidadController] as ctrl_cont
+    [UserController] as ctrl_user
+    [CuentaCobrarController] as ctrl_cxc
+    [CuentaPagarController] as ctrl_cxp
+    [IngresoController] as ctrl_ing
+    [GastoController] as ctrl_gas
+    [PresupuestoController] as ctrl_pres
+    [InventarioController] as ctrl_inv
+    [ReporteController] as ctrl_rep
+    [ConsultaController] as ctrl_cons
+    [BitacoraController] as ctrl_bit
+    [ProfileController] as ctrl_prof
+}
+
+package "Capa de Modelos (Eloquent ORM)" #E8EAF6 {
+    [Modelos de Seguridad\n(User, Role, Permiso)] as mod_seg
+    [Modelos de Facturación\n(Factura, DetalleFactura)] as mod_fact
+    [Modelos de Compras\n(Compra, DetalleCompra)] as mod_comp
+    [Modelos Maestros\n(Cliente, Proveedor, Producto)] as mod_maes
+    [Modelos Contables\n(CatalogoCuenta, Asiento)] as mod_cont
+    [Modelos Financieros\n(Ingreso, Gasto, Presupuesto)] as mod_fin
+    [Modelos CxC/CxP\n(CuentaCobrar, CuentaPagar)] as mod_cxcp
+    [Modelos Catálogo\n(Estado, MetodoPago, etc.)] as mod_cat
+}
+
+package "Capa de Validación" #F3E5F5 {
+    [Form Requests\n(LoginRequest,\nProfileUpdateRequest)] as validation
+}
+
+package "Capa de Datos" #EFEBE9 {
+    database "MySQL\n(ipacarai_db)" as db
+}
+
+package "Servicios Externos" #E0F7FA {
+    cloud "Hacienda\n(Factura Electrónica)" as hacienda
+    cloud "Servidor SMTP\n(Correos)" as smtp
+}
+
+' Conexiones
+vistas --> rutas
+css --> vistas
+js --> vistas
+
+rutas --> mw_auth
+rutas_auth --> mw_auth
+mw_auth --> mw_permiso
+
+mw_permiso --> ctrl_dash
+mw_permiso --> ctrl_fact
+mw_permiso --> ctrl_comp
+mw_permiso --> ctrl_cli
+mw_permiso --> ctrl_prov
+mw_permiso --> ctrl_prod
+mw_permiso --> ctrl_cont
+mw_permiso --> ctrl_user
+mw_permiso --> ctrl_cxc
+mw_permiso --> ctrl_cxp
+mw_permiso --> ctrl_ing
+mw_permiso --> ctrl_gas
+mw_permiso --> ctrl_pres
+mw_permiso --> ctrl_inv
+mw_permiso --> ctrl_rep
+mw_permiso --> ctrl_cons
+mw_permiso --> ctrl_bit
+mw_permiso --> ctrl_prof
+
+ctrl_user --> mod_seg
+ctrl_fact --> mod_fact
+ctrl_comp --> mod_comp
+ctrl_cli --> mod_maes
+ctrl_prov --> mod_maes
+ctrl_prod --> mod_maes
+ctrl_cont --> mod_cont
+ctrl_ing --> mod_fin
+ctrl_gas --> mod_fin
+ctrl_pres --> mod_fin
+ctrl_cxc --> mod_cxcp
+ctrl_cxp --> mod_cxcp
+ctrl_inv --> mod_maes
+ctrl_rep --> mod_fact
+ctrl_cons --> mod_maes
+
+validation --> ctrl_prof
+validation --> mw_auth
+
+mod_seg --> db
+mod_fact --> db
+mod_comp --> db
+mod_maes --> db
+mod_cont --> db
+mod_fin --> db
+mod_cxcp --> db
+mod_cat --> db
+
+ctrl_fact --> hacienda : Factura\nElectrónica
+ctrl_fact --> smtp : Envío de\ncomprobantes
+
+@enduml

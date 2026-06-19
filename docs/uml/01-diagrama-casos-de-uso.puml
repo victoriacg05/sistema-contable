@@ -1,0 +1,132 @@
+@startuml DiagramaCasosDeUso
+' ============================================================
+' DIAGRAMA DE CASOS DE USO - Sistema Contable Ipacaraí
+' ============================================================
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+    ArrowColor #1B5E20
+}
+
+actor "Administrador" as admin
+actor "Contador" as contador
+actor "Usuario" as usuario
+
+admin --|> contador
+contador --|> usuario
+
+rectangle "Sistema Contable Ipacaraí" {
+
+    package "Módulo de Seguridad" {
+        usecase "Iniciar Sesión" as UC_LOGIN
+        usecase "Gestionar Usuarios" as UC_USERS
+        usecase "Gestionar Roles y Permisos" as UC_ROLES
+        usecase "Consultar Bitácora" as UC_BITACORA
+        usecase "Ver Intentos de Acceso" as UC_INTENTOS
+        usecase "Editar Perfil" as UC_PERFIL
+    }
+
+    package "Módulo de Facturación" {
+        usecase "Gestionar Clientes" as UC_CLIENTES
+        usecase "Gestionar Proveedores" as UC_PROVEEDORES
+        usecase "Gestionar Productos" as UC_PRODUCTOS
+        usecase "Crear Factura" as UC_CREAR_FACT
+        usecase "Pagar Factura" as UC_PAGAR_FACT
+        usecase "Anular Factura" as UC_ANULAR_FACT
+        usecase "Registrar Compra" as UC_COMPRA
+        usecase "Pagar Compra" as UC_PAGAR_COMPRA
+    }
+
+    package "Módulo de Contabilidad" {
+        usecase "Gestionar Catálogo\nde Cuentas" as UC_CATALOGO
+        usecase "Crear Asiento Contable" as UC_ASIENTO
+        usecase "Consultar Asientos" as UC_VER_ASIENTO
+    }
+
+    package "Módulo de Cuentas por Cobrar" {
+        usecase "Consultar Cuentas\npor Cobrar" as UC_CXC
+        usecase "Registrar Pago\nde Cliente" as UC_PAGO_CXC
+    }
+
+    package "Módulo de Cuentas por Pagar" {
+        usecase "Consultar Cuentas\npor Pagar" as UC_CXP
+        usecase "Registrar Pago\na Proveedor" as UC_PAGO_CXP
+    }
+
+    package "Módulo de Ingresos y Gastos" {
+        usecase "Registrar Ingreso" as UC_INGRESO
+        usecase "Registrar Gasto" as UC_GASTO
+        usecase "Gestionar Presupuesto" as UC_PRESUPUESTO
+    }
+
+    package "Módulo de Inventario" {
+        usecase "Consultar Inventario" as UC_INVENTARIO
+        usecase "Registrar Movimiento\nde Inventario" as UC_MOV_INV
+    }
+
+    package "Módulo de Reportes y Consultas" {
+        usecase "Generar Reportes PDF" as UC_REPORTES
+        usecase "Realizar Consultas\nAvanzadas" as UC_CONSULTAS
+        usecase "Ver Dashboard" as UC_DASHBOARD
+    }
+
+    package "Módulo de Catálogos" {
+        usecase "Gestionar Categorías\nde Productos" as UC_CAT_PROD
+        usecase "Gestionar Categorías\nde Gastos" as UC_CAT_GASTO
+        usecase "Gestionar Métodos\nde Pago" as UC_MET_PAGO
+        usecase "Gestionar Estados" as UC_ESTADOS
+    }
+}
+
+' --- Relaciones del Administrador ---
+admin --> UC_USERS
+admin --> UC_ROLES
+admin --> UC_BITACORA
+admin --> UC_INTENTOS
+admin --> UC_CAT_PROD
+admin --> UC_CAT_GASTO
+admin --> UC_MET_PAGO
+admin --> UC_ESTADOS
+
+' --- Relaciones del Contador ---
+contador --> UC_CATALOGO
+contador --> UC_ASIENTO
+contador --> UC_VER_ASIENTO
+contador --> UC_REPORTES
+contador --> UC_PRESUPUESTO
+
+' --- Relaciones del Usuario ---
+usuario --> UC_LOGIN
+usuario --> UC_PERFIL
+usuario --> UC_DASHBOARD
+usuario --> UC_CLIENTES
+usuario --> UC_PROVEEDORES
+usuario --> UC_PRODUCTOS
+usuario --> UC_CREAR_FACT
+usuario --> UC_PAGAR_FACT
+usuario --> UC_ANULAR_FACT
+usuario --> UC_COMPRA
+usuario --> UC_PAGAR_COMPRA
+usuario --> UC_CXC
+usuario --> UC_PAGO_CXC
+usuario --> UC_CXP
+usuario --> UC_PAGO_CXP
+usuario --> UC_INGRESO
+usuario --> UC_GASTO
+usuario --> UC_INVENTARIO
+usuario --> UC_MOV_INV
+usuario --> UC_CONSULTAS
+
+' --- Relaciones Include/Extend ---
+UC_CREAR_FACT ..> UC_CXC : <<include>>
+UC_CREAR_FACT ..> UC_MOV_INV : <<include>>
+UC_COMPRA ..> UC_CXP : <<include>>
+UC_COMPRA ..> UC_MOV_INV : <<include>>
+UC_ANULAR_FACT ..> UC_MOV_INV : <<extend>>
+UC_PAGAR_FACT ..> UC_PAGO_CXC : <<include>>
+UC_PAGAR_COMPRA ..> UC_PAGO_CXP : <<include>>
+
+@enduml

@@ -1,0 +1,94 @@
+@startuml DiagramaActividadesFacturacion
+' ============================================================
+' DIAGRAMA DE ACTIVIDADES - Proceso Completo de Facturación
+' ============================================================
+skinparam activity {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    DiamondBackgroundColor #BBDEFB
+    DiamondBorderColor #0D47A1
+    ArrowColor #0D47A1
+}
+
+title Diagrama de Actividades - Ciclo de Vida de una Factura
+
+start
+
+:Seleccionar cliente;
+
+:Agregar productos al detalle;
+
+:Definir cantidades y precios;
+
+:Seleccionar método de pago;
+
+:Calcular subtotal, impuesto,
+descuento y total;
+
+if (¿Datos válidos?) then (Sí)
+
+    :Crear registro de factura;
+
+    :Crear detalles de factura;
+
+    :Decrementar stock de productos;
+
+    if (¿Método de pago es Crédito?) then (Sí)
+        :Crear Cuenta por Cobrar;
+        :Establecer fecha de vencimiento;
+        :Estado = "Pendiente";
+        
+        fork
+            :Monitorear vencimiento;
+            if (¿Venció el plazo?) then (Sí)
+                :Generar alerta de morosidad;
+            else (No)
+                :Esperar;
+            endif
+        fork again
+            :Esperar pago del cliente;
+        end fork
+
+        if (¿Cliente realiza pago?) then (Sí)
+            :Registrar pago;
+            :Actualizar saldo pendiente;
+            
+            if (¿Saldo pendiente = 0?) then (Sí)
+                :Marcar factura como "Pagada";
+                :Cerrar cuenta por cobrar;
+            else (No)
+                :Mantener como "Parcialmente pagada";
+            endif
+        else (No)
+            :Mantener como pendiente;
+        endif
+        
+    else (No - Contado)
+        :Marcar factura como "Pagada";
+    endif
+
+    if (¿Se requiere factura electrónica?) then (Sí)
+        :Generar XML para Hacienda;
+        :Enviar a Hacienda;
+        :Registrar respuesta;
+        :Enviar comprobante por correo;
+    else (No)
+    endif
+
+    if (¿Se solicita anulación?) then (Sí)
+        :Registrar motivo de anulación;
+        :Restaurar stock de productos;
+        :Marcar factura como "Anulada";
+    else (No)
+    endif
+
+    :Registrar en bitácora;
+
+else (No)
+    :Mostrar errores de validación;
+    :Regresar al formulario;
+endif
+
+stop
+
+@enduml

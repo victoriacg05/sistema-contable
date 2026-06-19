@@ -1,0 +1,67 @@
+@startuml DiagramaSecuenciaFacturacion
+' ============================================================
+' DIAGRAMA DE SECUENCIA - Proceso de Facturación
+' ============================================================
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipant underline
+skinparam sequence {
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantBorderColor #1565C0
+    LifeLineBackgroundColor #BBDEFB
+    ArrowColor #0D47A1
+}
+
+title Proceso de Creación de Factura
+
+actor "Usuario" as user
+participant "Vista\n(Blade)" as vista
+participant "FacturaController" as ctrl
+participant "Factura\n(Model)" as factura
+participant "DetalleFactura\n(Model)" as detalle
+participant "Producto\n(Model)" as producto
+participant "CuentaCobrar\n(Model)" as cxc
+database "Base de Datos" as db
+
+user -> vista : Llenar formulario\n(cliente, productos, cantidades)
+vista -> ctrl : POST /facturas\n(store)
+activate ctrl
+
+ctrl -> ctrl : Validar datos\n(cliente, productos, montos)
+
+ctrl -> db : beginTransaction()
+
+ctrl -> factura : create(datos factura)
+activate factura
+factura -> db : INSERT INTO facturas
+factura --> ctrl : factura creada
+deactivate factura
+
+loop Para cada producto en el detalle
+    ctrl -> detalle : create(detalle)
+    activate detalle
+    detalle -> db : INSERT INTO detalle_facturas
+    detalle --> ctrl : detalle creado
+    deactivate detalle
+
+    ctrl -> producto : decrementar stock
+    activate producto
+    producto -> db : UPDATE productos\nSET stock = stock - cantidad
+    producto --> ctrl : stock actualizado
+    deactivate producto
+end
+
+alt Método de pago es Crédito
+    ctrl -> cxc : create(cuenta por cobrar)
+    activate cxc
+    cxc -> db : INSERT INTO cuentas_cobrar
+    cxc --> ctrl : cuenta creada
+    deactivate cxc
+end
+
+ctrl -> db : commit()
+ctrl --> vista : redirect con mensaje éxito
+deactivate ctrl
+
+vista --> user : Mostrar factura creada
+
+@enduml
