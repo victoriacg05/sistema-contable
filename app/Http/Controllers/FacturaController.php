@@ -76,7 +76,7 @@ class FacturaController extends Controller
 
             $numeroFactura = 'FAC-' . now()->format('YmdHis');
 
-            $esCredito = (int) $request->metodo_pago_id === 6;
+            $esCredito = (int) $request->tipo_comprobante_id === 3;
 
             $factura = Factura::create([
                 'numero_factura' => $numeroFactura,
@@ -216,7 +216,7 @@ class FacturaController extends Controller
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
-            $esCredito = (int) $request->metodo_pago_id === 6;
+            $esCredito = (int) $request->tipo_comprobante_id === 3;
 
             $factura->update([
                 'cliente_id' => $request->cliente_id,
