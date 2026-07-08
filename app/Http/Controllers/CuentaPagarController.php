@@ -97,6 +97,6 @@ class CuentaPagarController extends Controller
 
         return redirect()
             ->route('cuentas-pagar.index')
-            ->with('success', "Pago de ₡{$montoFormateado} registrado correctamente.");
+            ->with('success', "Pago de ₡{$montoFormateado} registrado correctamente para la compra {$numero_compra}.");
     }
 }
