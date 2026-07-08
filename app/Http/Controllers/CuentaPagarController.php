@@ -93,8 +93,10 @@ class CuentaPagarController extends Controller
             BitacoraService::registrar('pago', 'cuentas_pagar', "Pago de ₡{$request->monto_pagado} a compra $numero_compra");
         });
 
+        $montoFormateado = number_format($request->monto_pagado, 2);
+
         return redirect()
             ->route('cuentas-pagar.index')
-            ->with('success', 'Pago registrado correctamente.');
+            ->with('success', "Pago de ₡{$montoFormateado} registrado correctamente.");
     }
 }
