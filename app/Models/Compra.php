@@ -17,6 +17,7 @@ class Compra extends Model
         'proveedor_id',
         'usuario_id',
         'estado_id',
+        'tipo_compra',
         'fecha',
         'subtotal',
         'impuesto',
@@ -36,5 +37,11 @@ class Compra extends Model
     public function detalles()
     {
         return $this->hasMany(DetalleCompra::class, 'numero_compra', 'numero_compra');
+    }
+
+    public function plazos()
+    {
+        return $this->hasMany(PlazoCompra::class, 'numero_compra', 'numero_compra')
+            ->orderBy('numero_cuota');
     }
 }

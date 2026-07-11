@@ -8,15 +8,17 @@ use App\Models\Proveedor;
 use App\Models\Producto;
 use App\Models\Estado;
 use App\Models\CuentaPagar;
+use App\Models\PlazoCompra;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CompraController extends Controller
 {
     public function index()
     {
-        $compras = Compra::with(['proveedor', 'estado', 'detalles.producto'])
+        $compras = Compra::with(['proveedor', 'estado', 'detalles.producto', 'plazos'])
             ->orderByDesc('fecha')
             ->get();
 
@@ -39,14 +41,43 @@ class CompraController extends Controller
             'producto_id' => 'required|exists:productos,id',
             'cantidad' => 'required|integer|min:1',
             'precio_unitario' => 'required|numeric|min:0',
+            'tipo_compra' => 'required|in:contado,credito',
         ]);
 
-        DB::transaction(function () use ($request) {
-            $producto = Producto::findOrFail($request->producto_id);
+        $subtotal = $request->precio_unitario * $request->cantidad;
+        $impuesto = $subtotal * 0.13;
+        $total = round($subtotal + $impuesto, 2);
 
-            $subtotal = $request->precio_unitario * $request->cantidad;
-            $impuesto = $subtotal * 0.13;
-            $total = $subtotal + $impuesto;
+        $esCredito = $request->tipo_compra === 'credito';
+        $cuotas = [];
+
+        if ($esCredito) {
+            $request->validate([
+                'cuotas' => 'required|array|min:1',
+                'cuotas.*.fecha_vencimiento' => 'required|date',
+                'cuotas.*.monto' => 'required|numeric|min:0.01',
+            ], [
+                'cuotas.required' => 'Debe registrar al menos un plazo de pago para una compra a crédito.',
+                'cuotas.min' => 'Debe registrar al menos un plazo de pago para una compra a crédito.',
+                'cuotas.*.fecha_vencimiento.required' => 'Cada cuota debe tener una fecha de vencimiento.',
+                'cuotas.*.monto.required' => 'Cada cuota debe tener un monto.',
+                'cuotas.*.monto.min' => 'El monto de cada cuota debe ser mayor a cero.',
+            ]);
+
+            $cuotas = array_values($request->cuotas);
+
+            $sumaCuotas = round(array_sum(array_column($cuotas, 'monto')), 2);
+
+            if (abs($sumaCuotas - $total) > 0.01) {
+                throw ValidationException::withMessages([
+                    'cuotas' => 'La suma de las cuotas (₡' . number_format($sumaCuotas, 2)
+                        . ') debe ser igual al total de la compra (₡' . number_format($total, 2) . ').',
+                ]);
+            }
+        }
+
+        DB::transaction(function () use ($request, $subtotal, $impuesto, $total, $esCredito, $cuotas) {
+            $producto = Producto::findOrFail($request->producto_id);
 
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
 
@@ -57,6 +88,7 @@ class CompraController extends Controller
                 'proveedor_id' => $request->proveedor_id,
                 'usuario_id' => Auth::id(),
                 'estado_id' => $estadoPendiente?->id ?? 1,
+                'tipo_compra' => $request->tipo_compra,
                 'fecha' => now(),
                 'subtotal' => $subtotal,
                 'impuesto' => $impuesto,
@@ -72,15 +104,38 @@ class CompraController extends Controller
                 'subtotal' => $subtotal,
             ]);
 
+            // Vencimiento de la cuenta por pagar:
+            //  - Crédito: fecha de la primera cuota.
+            //  - Contado: 30 días (comportamiento original).
+            if ($esCredito) {
+                $fechaVencimiento = collect($cuotas)
+                    ->min('fecha_vencimiento');
+            } else {
+                $fechaVencimiento = now()->addDays(30);
+            }
+
             CuentaPagar::create([
-            'numero_compra' => $numeroCompra,
-            'proveedor_id' => $request->proveedor_id,
-            'monto_original' => $total,
-            'saldo_pendiente' => $total,
-            'fecha_emision' => now(),
-            'fecha_vencimiento' => now()->addDays(30),
-            'estado_id' => $estadoPendiente?->id ?? 1,
-        ]);
+                'numero_compra' => $numeroCompra,
+                'proveedor_id' => $request->proveedor_id,
+                'monto_original' => $total,
+                'saldo_pendiente' => $total,
+                'fecha_emision' => now(),
+                'fecha_vencimiento' => $fechaVencimiento,
+                'estado_id' => $estadoPendiente?->id ?? 1,
+            ]);
+
+            if ($esCredito) {
+                foreach ($cuotas as $indice => $cuota) {
+                    PlazoCompra::create([
+                        'numero_compra' => $numeroCompra,
+                        'proveedor_id' => $request->proveedor_id,
+                        'numero_cuota' => $indice + 1,
+                        'fecha_vencimiento' => $cuota['fecha_vencimiento'],
+                        'monto' => $cuota['monto'],
+                        'saldo_pendiente' => $cuota['monto'],
+                    ]);
+                }
+            }
 
             $producto->stock += $request->cantidad;
             $producto->save();

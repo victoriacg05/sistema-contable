@@ -32,6 +32,7 @@
                         <th class="px-6 py-5 text-left">Proveedor</th>
                         <th class="px-6 py-5 text-left">Fecha</th>
                         <th class="px-6 py-5 text-left">Total</th>
+                        <th class="px-6 py-5 text-center">Tipo</th>
                         <th class="px-6 py-5 text-center">Estado</th>
                         <th class="px-6 py-5 text-center">Acciones</th>
                     </tr>
@@ -54,6 +55,18 @@
 
                             <td class="px-6 py-5 text-gray-700 font-bold">
                                 ₡{{ number_format($compra->total, 2) }}
+                            </td>
+
+                            <td class="px-6 py-5 text-center">
+                                @if(($compra->tipo_compra ?? 'contado') === 'credito')
+                                    <span class="px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">
+                                        Crédito
+                                    </span>
+                                @else
+                                    <span class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-bold">
+                                        Contado
+                                    </span>
+                                @endif
                             </td>
 
                             <td class="px-6 py-5 text-center">
@@ -103,9 +116,56 @@
                                 </form>
                             </td>
                         </tr>
+
+                        @if($compra->plazos->isNotEmpty())
+                            <tr class="border-b border-gray-200 bg-gray-50">
+                                <td colspan="7" class="px-6 py-4">
+                                    <details>
+                                        <summary class="cursor-pointer font-bold text-[#b71c1c]">
+                                            Ver plazos de pago ({{ $compra->plazos->count() }} cuotas)
+                                        </summary>
+
+                                        <div class="mt-3 overflow-x-auto">
+                                            <table class="w-full text-sm">
+                                                <thead>
+                                                    <tr class="text-gray-600 text-left">
+                                                        <th class="px-4 py-2">Cuota</th>
+                                                        <th class="px-4 py-2">Vencimiento</th>
+                                                        <th class="px-4 py-2">Monto</th>
+                                                        <th class="px-4 py-2">Saldo pendiente</th>
+                                                        <th class="px-4 py-2 text-center">Estado</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($compra->plazos as $plazo)
+                                                        <tr class="border-t border-gray-200">
+                                                            <td class="px-4 py-2 font-semibold text-gray-700">{{ $plazo->numero_cuota }}</td>
+                                                            <td class="px-4 py-2 text-gray-600">
+                                                                {{ \Carbon\Carbon::parse($plazo->fecha_vencimiento)->format('d/m/Y') }}
+                                                            </td>
+                                                            <td class="px-4 py-2 text-gray-700 font-bold">₡{{ number_format($plazo->monto, 2) }}</td>
+                                                            <td class="px-4 py-2 text-gray-700 font-bold">₡{{ number_format($plazo->saldo_pendiente, 2) }}</td>
+                                                            <td class="px-4 py-2 text-center">
+                                                                @if($plazo->saldo_pendiente <= 0)
+                                                                    <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">Pagada</span>
+                                                                @elseif(\Carbon\Carbon::parse($plazo->fecha_vencimiento)->isPast())
+                                                                    <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">Vencida</span>
+                                                                @else
+                                                                    <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">Pendiente</span>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-gray-700 text-lg">
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-700 text-lg">
                                 No hay compras registradas
                             </td>
                         </tr>
