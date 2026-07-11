@@ -22,7 +22,7 @@
 
     @include('layouts.navigation')
 
-    <div id="main-content" class="ml-[320px] min-h-screen bg-gray-100">
+    <div id="main-content" class="ml-[320px] min-h-screen bg-gray-100 flex flex-col">
 
         <div class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-200 px-6 py-3 flex items-center">
             <button id="sidebar-toggle" type="button" aria-label="Mostrar u ocultar el menú"
@@ -40,9 +40,13 @@
             </header>
         @endisset
 
-        <main class="p-10">
+        <main class="p-10 flex-1">
             {{ $slot }}
         </main>
+
+        <footer class="border-t border-gray-200 bg-white px-6 py-4 text-center text-sm text-gray-500">
+            &copy; {{ date('Y') }} Distribuidora Ipacarai S.A.
+        </footer>
 
     </div>
 

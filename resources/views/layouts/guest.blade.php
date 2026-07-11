@@ -14,9 +14,15 @@
 
 </head>
 
-<body class="font-sans antialiased bg-gray-100">
+<body class="font-sans antialiased bg-gray-100 min-h-screen flex flex-col">
 
-    {{ $slot }}
+    <div class="flex-1">
+        {{ $slot }}
+    </div>
+
+    <footer class="border-t border-gray-200 bg-white px-6 py-4 text-center text-sm text-gray-500">
+        &copy; {{ date('Y') }} Distribuidora Ipacarai S.A.
+    </footer>
 
 </body>
 
