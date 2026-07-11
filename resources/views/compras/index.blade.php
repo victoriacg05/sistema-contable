@@ -8,7 +8,7 @@
                 </h1>
 
                 <p class="mt-2 text-gray-700 text-lg">
-                    Gestión de compras y obligaciones con proveedores
+                    Compras a proveedores y ventas a clientes externos
                 </p>
             </div>
 
@@ -28,37 +28,52 @@
             <table class="w-full">
                 <thead class="bg-[#2b2b2b] text-white">
                     <tr>
-                        <th class="px-6 py-5 text-left">Compra</th>
-                        <th class="px-6 py-5 text-left">Proveedor</th>
+                        <th class="px-6 py-5 text-left">Documento</th>
+                        <th class="px-6 py-5 text-left">Proveedor / Cliente</th>
                         <th class="px-6 py-5 text-left">Fecha</th>
                         <th class="px-6 py-5 text-left">Total</th>
                         <th class="px-6 py-5 text-center">Tipo</th>
+                        <th class="px-6 py-5 text-center">Condición</th>
                         <th class="px-6 py-5 text-center">Estado</th>
                         <th class="px-6 py-5 text-center">Acciones</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @forelse($compras as $compra)
+                    @forelse($movimientos as $movimiento)
                         <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
                             <td class="px-6 py-5 font-semibold text-gray-700">
-                                {{ $compra->numero_compra }}
+                                {{ $movimiento->documento }}
                             </td>
 
                             <td class="px-6 py-5 text-gray-700">
-                                {{ $compra->proveedor->nombre ?? 'Sin proveedor' }}
+                                {{ $movimiento->contraparte }}
                             </td>
 
                             <td class="px-6 py-5 text-gray-600">
-                                {{ \Carbon\Carbon::parse($compra->fecha)->format('d/m/Y') }}
+                                {{ \Carbon\Carbon::parse($movimiento->fecha)->format('d/m/Y') }}
                             </td>
 
                             <td class="px-6 py-5 text-gray-700 font-bold">
-                                ₡{{ number_format($compra->total, 2) }}
+                                ₡{{ number_format($movimiento->total, 2) }}
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(($compra->tipo_compra ?? 'contado') === 'credito')
+                                @if($movimiento->tipo === 'cliente')
+                                    <span class="px-4 py-2 rounded-full bg-teal-100 text-teal-700 text-sm font-bold">
+                                        Cliente externo
+                                    </span>
+                                @else
+                                    <span class="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold">
+                                        Proveedor
+                                    </span>
+                                @endif
+                            </td>
+
+                            <td class="px-6 py-5 text-center">
+                                @if($movimiento->tipo === 'cliente')
+                                    <span class="text-gray-400">—</span>
+                                @elseif(($movimiento->condicion ?? 'contado') === 'credito')
                                     <span class="px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">
                                         Crédito
                                     </span>
@@ -70,9 +85,13 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(optional($compra->estado)->nombre === 'pagado')
+                                @if($movimiento->estado === 'pagado')
                                     <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
                                         Pagado
+                                    </span>
+                                @elseif($movimiento->estado === 'Anulado')
+                                    <span class="px-4 py-2 rounded-full bg-gray-200 text-gray-600 text-sm font-bold">
+                                        Anulado
                                     </span>
                                 @else
                                     <span class="px-4 py-2 rounded-full bg-amber-100 text-amber-800 text-sm font-bold">
@@ -82,46 +101,53 @@
                             </td>
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
-                                @if(optional($compra->estado)->nombre !== 'pagado')
-                                    <form action="{{ route('compras.pagar', $compra) }}"
+                                @if($movimiento->tipo === 'proveedor')
+                                    @if($movimiento->estado !== 'pagado')
+                                        <form action="{{ route('compras.pagar', $movimiento->modelo) }}"
+                                              method="POST"
+                                              class="inline-block"
+                                              onsubmit="return confirm('¿Deseas marcar esta compra como pagada?');">
+                                            @csrf
+                                            @method('PUT')
+
+                                            <button type="submit"
+                                                    class="bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
+                                                Pagar
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <a href="{{ route('compras.edit', $movimiento->modelo) }}"
+                                       class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition ml-2">
+                                        Editar
+                                    </a>
+
+                                    <form action="{{ route('compras.destroy', $movimiento->modelo) }}"
                                           method="POST"
                                           class="inline-block"
-                                          onsubmit="return confirm('¿Deseas marcar esta compra como pagada?');">
+                                          onsubmit="return confirm('¿Está segura de eliminar esta compra? Se revertirá el stock agregado.');">
                                         @csrf
-                                        @method('PUT')
+                                        @method('DELETE')
 
                                         <button type="submit"
-                                                class="bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
-                                            Pagar
+                                                class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
+                                            Eliminar
                                         </button>
                                     </form>
+                                @else
+                                    <a href="{{ route('facturas.edit', $movimiento->modelo) }}"
+                                       class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition">
+                                        Ver factura
+                                    </a>
                                 @endif
-
-                                <a href="{{ route('compras.edit', $compra) }}"
-                                   class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition ml-2">
-                                    Editar
-                                </a>
-
-                                <form action="{{ route('compras.destroy', $compra) }}"
-                                      method="POST"
-                                      class="inline-block"
-                                      onsubmit="return confirm('¿Está segura de eliminar esta compra? Se revertirá el stock agregado.');">
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button type="submit"
-                                            class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
-                                        Eliminar
-                                    </button>
-                                </form>
                             </td>
                         </tr>
 
                         <tr class="border-b border-gray-200 bg-gray-50">
-                            <td colspan="7" class="px-6 py-4">
+                            <td colspan="8" class="px-6 py-4">
                                 <details>
                                     <summary class="cursor-pointer font-bold text-[#b71c1c]">
-                                        Ver productos ({{ $compra->detalles->count() }})
+                                        Ver productos ({{ $movimiento->detalles->count() }})
                                     </summary>
 
                                     <div class="mt-3 overflow-x-auto">
@@ -135,7 +161,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($compra->detalles as $detalle)
+                                                @foreach($movimiento->detalles as $detalle)
                                                     <tr class="border-t border-gray-200">
                                                         <td class="px-4 py-2 text-gray-700 font-semibold">
                                                             {{ optional($detalle->producto)->nombre ?? 'Producto eliminado' }}
@@ -152,12 +178,12 @@
                             </td>
                         </tr>
 
-                        @if($compra->plazos->isNotEmpty())
+                        @if($movimiento->plazos->isNotEmpty())
                             <tr class="border-b border-gray-200 bg-gray-50">
-                                <td colspan="7" class="px-6 py-4">
+                                <td colspan="8" class="px-6 py-4">
                                     <details>
                                         <summary class="cursor-pointer font-bold text-[#b71c1c]">
-                                            Ver plazos de pago ({{ $compra->plazos->count() }} cuotas)
+                                            Ver plazos de pago ({{ $movimiento->plazos->count() }} cuotas)
                                         </summary>
 
                                         <div class="mt-3 overflow-x-auto">
@@ -172,7 +198,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($compra->plazos as $plazo)
+                                                    @foreach($movimiento->plazos as $plazo)
                                                         <tr class="border-t border-gray-200">
                                                             <td class="px-4 py-2 font-semibold text-gray-700">{{ $plazo->numero_cuota }}</td>
                                                             <td class="px-4 py-2 text-gray-600">
@@ -200,8 +226,8 @@
                         @endif
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-gray-700 text-lg">
-                                No hay compras registradas
+                            <td colspan="8" class="px-6 py-10 text-center text-gray-700 text-lg">
+                                No hay movimientos registrados
                             </td>
                         </tr>
                     @endforelse

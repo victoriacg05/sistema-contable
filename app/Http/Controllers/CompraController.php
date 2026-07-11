@@ -25,11 +25,45 @@ class CompraController extends Controller
 {
     public function index()
     {
-        $compras = Compra::with(['proveedor', 'estado', 'detalles.producto', 'plazos'])
-            ->orderByDesc('fecha')
-            ->get();
+        $compras = Compra::with(['proveedor', 'estado', 'detalles.producto', 'plazos'])->get();
 
-        return view('compras.index', compact('compras'));
+        $facturas = Factura::with(['cliente', 'estado', 'detalles.producto'])->get();
+
+        $movimientos = collect();
+
+        foreach ($compras as $compra) {
+            $movimientos->push((object) [
+                'tipo' => 'proveedor',
+                'modelo' => $compra,
+                'documento' => $compra->numero_compra,
+                'contraparte' => $compra->proveedor->nombre ?? 'Sin proveedor',
+                'fecha' => $compra->fecha,
+                'total' => $compra->total,
+                'estado' => optional($compra->estado)->nombre,
+                'condicion' => $compra->tipo_compra ?? 'contado',
+                'detalles' => $compra->detalles,
+                'plazos' => $compra->plazos,
+            ]);
+        }
+
+        foreach ($facturas as $factura) {
+            $movimientos->push((object) [
+                'tipo' => 'cliente',
+                'modelo' => $factura,
+                'documento' => $factura->numero_factura,
+                'contraparte' => optional($factura->cliente)->nombre ?? 'Sin cliente',
+                'fecha' => $factura->fecha,
+                'total' => $factura->total,
+                'estado' => optional($factura->estado)->nombre,
+                'condicion' => null,
+                'detalles' => $factura->detalles,
+                'plazos' => collect(),
+            ]);
+        }
+
+        $movimientos = $movimientos->sortByDesc('fecha')->values();
+
+        return view('compras.index', compact('movimientos'));
     }
 
     public function create()
