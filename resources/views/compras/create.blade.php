@@ -42,12 +42,31 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    <div>
+                    <div class="md:col-span-2">
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Tipo de compra
+                        </label>
+
+                        <select name="tipo_operacion"
+                                id="tipo_operacion"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
+                                required>
+                            <option value="proveedor" {{ old('tipo_operacion', 'proveedor') === 'proveedor' ? 'selected' : '' }}>
+                                Compra a proveedor (abastecimiento — aumenta inventario)
+                            </option>
+                            <option value="cliente" {{ old('tipo_operacion') === 'cliente' ? 'selected' : '' }}>
+                                Compra de cliente externo (venta — descuenta inventario)
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 grupo-proveedor">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
                             Proveedor
                         </label>
 
                         <select name="proveedor_id"
+                                id="proveedor_id"
                                 class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione un proveedor</option>
@@ -58,6 +77,74 @@
                                 </option>
                             @endforeach
                         </select>
+                    </div>
+
+                    <div class="grupo-cliente">
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Cliente
+                        </label>
+
+                        <select name="cliente_id"
+                                id="cliente_id"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
+                            <option value="">Seleccione un cliente</option>
+
+                            @foreach($clientes as $cliente)
+                                <option value="{{ $cliente->id }}" {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
+                                    {{ $cliente->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grupo-cliente">
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Método de pago
+                        </label>
+
+                        <select name="metodo_pago_id"
+                                id="metodo_pago_id"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
+                            <option value="">Seleccione un método de pago</option>
+
+                            @foreach($metodosPago as $metodo)
+                                <option value="{{ $metodo->id }}" {{ old('metodo_pago_id') == $metodo->id ? 'selected' : '' }}>
+                                    {{ $metodo->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grupo-cliente">
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Tipo de comprobante
+                        </label>
+
+                        <select name="tipo_comprobante_id"
+                                id="tipo_comprobante_id"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
+                            <option value="">Seleccione un comprobante</option>
+
+                            @foreach($tiposComprobante as $tipo)
+                                <option value="{{ $tipo->id }}" {{ old('tipo_comprobante_id') == $tipo->id ? 'selected' : '' }}>
+                                    {{ $tipo->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grupo-cliente">
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Descuento
+                        </label>
+
+                        <input type="number"
+                               step="0.01"
+                               min="0"
+                               name="descuento"
+                               id="descuento"
+                               value="{{ old('descuento', 0) }}"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
                     </div>
 
                     <div class="md:col-span-2">
@@ -113,15 +200,14 @@
                         </div>
                     </template>
 
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-2 grupo-proveedor">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Tipo de compra
+                            Condición de pago
                         </label>
 
                         <select name="tipo_compra"
                                 id="tipo_compra"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
-                                required>
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
                             <option value="contado" {{ old('tipo_compra', 'contado') === 'contado' ? 'selected' : '' }}>Contado</option>
                             <option value="credito" {{ old('tipo_compra') === 'credito' ? 'selected' : '' }}>Crédito</option>
                         </select>
@@ -203,6 +289,16 @@
             const mensajeEl = document.getElementById('mensaje-cuotas');
             const form = document.getElementById('form-compra');
 
+            // --- Tipo de operación (proveedor / cliente externo) ---
+            const tipoOperacion = document.getElementById('tipo_operacion');
+            const gruposProveedor = document.querySelectorAll('.grupo-proveedor');
+            const gruposCliente = document.querySelectorAll('.grupo-cliente');
+            const proveedorSel = document.getElementById('proveedor_id');
+            const clienteSel = document.getElementById('cliente_id');
+            const metodoPagoSel = document.getElementById('metodo_pago_id');
+            const tipoComprobanteSel = document.getElementById('tipo_comprobante_id');
+            const descuentoInput = document.getElementById('descuento');
+
             // --- Productos ---
             const plantilla = document.getElementById('plantilla-producto');
             const listaProductos = document.getElementById('lista-productos');
@@ -245,10 +341,54 @@
             function recalcular() {
                 const subtotal = calcularSubtotal();
                 const impuesto = Math.round(subtotal * IMPUESTO * 100) / 100;
+                let total = subtotal + impuesto;
+
+                // En modo cliente externo (venta) se aplica el descuento.
+                if (esCliente()) {
+                    const desc = parseFloat(descuentoInput.value) || 0;
+                    total = Math.max(0, total - desc);
+                }
+
                 subtotalEl.textContent = formatear(subtotal);
                 impuestoEl.textContent = formatear(impuesto);
-                totalProductosEl.textContent = formatear(subtotal + impuesto);
-                if (esCredito()) actualizarSuma();
+                totalProductosEl.textContent = formatear(total);
+                if (!esCliente() && esCredito()) actualizarSuma();
+            }
+
+            function esCliente() {
+                return tipoOperacion.value === 'cliente';
+            }
+
+            function toggleOperacion() {
+                const cliente = esCliente();
+
+                gruposProveedor.forEach(function (el) { el.classList.toggle('hidden', cliente); });
+                gruposCliente.forEach(function (el) { el.classList.toggle('hidden', !cliente); });
+
+                // Habilitar/deshabilitar campos según el modo (los deshabilitados
+                // no se envían ni disparan validación del navegador).
+                proveedorSel.disabled = cliente;
+                proveedorSel.required = !cliente;
+                tipoCompra.disabled = cliente;
+
+                clienteSel.disabled = !cliente;
+                clienteSel.required = cliente;
+                metodoPagoSel.disabled = !cliente;
+                metodoPagoSel.required = cliente;
+                tipoComprobanteSel.disabled = !cliente;
+                tipoComprobanteSel.required = cliente;
+                descuentoInput.disabled = !cliente;
+
+                if (cliente) {
+                    // La venta no usa plazos de proveedor.
+                    seccionCredito.classList.add('hidden');
+                    listaCuotas.innerHTML = '';
+                    mensajeEl.textContent = '';
+                } else {
+                    toggleSeccion();
+                }
+
+                recalcular();
             }
 
             function formatear(valor) {
@@ -366,13 +506,17 @@
                 if (e.target.classList.contains('cuota-monto')) actualizarSuma();
             });
 
+            // Eventos de tipo de operación
+            tipoOperacion.addEventListener('change', toggleOperacion);
+            descuentoInput.addEventListener('input', recalcular);
+
             form.addEventListener('submit', function (e) {
                 if (listaProductos.querySelectorAll('.linea-producto').length === 0) {
                     e.preventDefault();
                     alert('Debe agregar al menos un producto a la compra.');
                     return;
                 }
-                if (esCredito()) {
+                if (!esCliente() && esCredito()) {
                     if (listaCuotas.children.length === 0) {
                         e.preventDefault();
                         alert('Debe registrar al menos un plazo de pago para una compra a crédito.');
@@ -385,9 +529,9 @@
                 }
             });
 
-            // Estado inicial: una línea de producto y el estado de crédito.
+            // Estado inicial: una línea de producto y el modo de operación.
             agregarProducto();
-            toggleSeccion();
+            toggleOperacion();
         })();
     </script>
 </x-app-layout>
