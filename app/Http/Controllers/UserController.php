@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -32,17 +33,27 @@ class UserController extends Controller
             'email' => ['required', 'email', 'unique:users,email', 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
             'password' => 'required|min:6',
             'rol_id' => 'required|exists:roles,id',
+            'fecha_activacion' => 'nullable|date',
         ], [
             'name.regex' => 'El nombre solo puede contener letras y espacios.',
             'email.regex' => 'El formato del correo electrónico no es válido.',
         ]);
+
+        $fechaActivacion = $request->filled('fecha_activacion')
+            ? Carbon::parse($request->fecha_activacion)->startOfDay()
+            : null;
+
+        // Si la fecha de activación es futura, el usuario queda deshabilitado
+        // hasta esa fecha. Sin fecha (o fecha ya alcanzada), acceso inmediato.
+        $estado = ($fechaActivacion && $fechaActivacion->isFuture()) ? 0 : 1;
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'rol_id' => $request->rol_id,
-            'estado' => 1,
+            'estado' => $estado,
+            'fecha_activacion' => $fechaActivacion,
         ]);
 
         return redirect()

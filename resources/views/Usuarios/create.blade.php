@@ -103,9 +103,25 @@
                         </select>
                     </div>
 
-                </div>
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Fecha de activación
+                        </label>
 
-                <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
+                        <input type="date"
+                               name="fecha_activacion"
+                               value="{{ old('fecha_activacion') }}"
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
+
+                        <p class="mt-2 text-sm text-gray-500">
+                            Opcional. Si se indica una fecha futura, el usuario no podrá iniciar sesión hasta esa fecha. Si se deja vacío, el acceso es inmediato.
+                        </p>
+                        @error('fecha_activacion')
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                </div>
                     <a href="{{ route('usuarios.index') }}"
                        class="px-7 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
                         Cancelar

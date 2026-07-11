@@ -49,6 +49,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'estado',
+        'fecha_activacion',
     ];
 
     /**
@@ -70,6 +72,7 @@ class User extends Authenticatable
     {
     return [
         'estado' => 'boolean',
+        'fecha_activacion' => 'date',
     ];
     }
 }

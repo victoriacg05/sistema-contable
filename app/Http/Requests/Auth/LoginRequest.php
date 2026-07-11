@@ -66,6 +66,20 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        // Control de fecha de activación: si el usuario tiene una fecha de
+        // activación futura, no puede iniciar sesión hasta que se alcance.
+        $user = Auth::user();
+
+        if ($user->fecha_activacion && $user->fecha_activacion->isFuture()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu cuenta estará disponible a partir del '
+                    . $user->fecha_activacion->format('d/m/Y')
+                    . '. No podrás iniciar sesión antes de esa fecha.',
+            ]);
+        }
     }
 
     /**
