@@ -30,7 +30,7 @@
                     <tr>
                         <th class="px-6 py-5 text-left">Identificación</th>
                         <th class="px-6 py-5 text-left">Nombre</th>
-                        <th class="px-6 py-5 text-left">Email</th>
+                        <th class="px-6 py-5 text-left">Correo electrónico</th>
                         <th class="px-6 py-5 text-left">Teléfono</th>
                         <th class="px-6 py-5 text-left">Dirección</th>
                         <th class="px-6 py-5 text-center">Acciones</th>

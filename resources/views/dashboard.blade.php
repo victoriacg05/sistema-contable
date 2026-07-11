@@ -16,7 +16,7 @@
     <div class="mb-10">
 
         <h1 class="text-4xl font-bold text-[#2b2b2b]">
-            Dashboard
+            Panel Principal
         </h1>
 
         <p class="text-gray-700 mt-2">
