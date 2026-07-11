@@ -94,7 +94,7 @@
             <details {{ request()->routeIs('contabilidad.*') ? 'open' : '' }}>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                     {{ request()->routeIs('contabilidad.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
-                    <span>Contabilidad</span>
+                    <span>Gestión Contable</span>
                     <svg class="w-4 h-4 menu-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
