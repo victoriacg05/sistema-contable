@@ -32,7 +32,30 @@
         #main-content main .max-w-7xl {
             max-width: 100%;
         }
+
+        /* Barra de carga global para dar respuesta inmediata al usuario */
+        #barra-carga {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0;
+            background: #b71c1c;
+            z-index: 9999;
+            opacity: 0;
+            transition: width 0.2s ease, opacity 0.3s ease;
+            pointer-events: none;
+        }
+        #barra-carga.activa { opacity: 1; }
+
+        /* Evita que un boton en proceso se vuelva a presionar */
+        [data-procesando] {
+            opacity: 0.7;
+            cursor: progress;
+        }
     </style>
+
+    <div id="barra-carga"></div>
 
     @include('layouts.navigation')
 
@@ -88,6 +111,83 @@
                 if (!esMovil()) {
                     body.classList.remove('sidebar-open');
                 }
+            });
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const barra = document.getElementById('barra-carga');
+            let progreso = 0;
+            let temporizador = null;
+
+            function iniciarCarga() {
+                if (!barra) return;
+                progreso = 15;
+                barra.classList.add('activa');
+                barra.style.width = progreso + '%';
+                clearInterval(temporizador);
+                temporizador = setInterval(function () {
+                    progreso = Math.min(progreso + Math.random() * 12, 90);
+                    barra.style.width = progreso + '%';
+                }, 300);
+            }
+
+            function terminarCarga() {
+                if (!barra) return;
+                clearInterval(temporizador);
+                barra.style.width = '100%';
+                setTimeout(function () {
+                    barra.classList.remove('activa');
+                    barra.style.width = '0';
+                }, 300);
+            }
+
+            // Navegacion por enlaces: feedback inmediato con un solo clic
+            document.addEventListener('click', function (e) {
+                const enlace = e.target.closest('a[href]');
+                if (!enlace) return;
+                const href = enlace.getAttribute('href') || '';
+                if (
+                    e.defaultPrevented ||
+                    e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
+                    enlace.target === '_blank' ||
+                    enlace.hasAttribute('download') ||
+                    href.startsWith('#') ||
+                    href.startsWith('javascript:') ||
+                    href.startsWith('mailto:') ||
+                    href.startsWith('tel:')
+                ) {
+                    return;
+                }
+                iniciarCarga();
+            });
+
+            // Envio de formularios: barra de carga + prevencion de doble envio
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                if (form.hasAttribute('data-sin-bloqueo')) {
+                    iniciarCarga();
+                    return;
+                }
+                iniciarCarga();
+                const botones = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                botones.forEach(function (btn) {
+                    // Se difiere para no interferir con el envio nativo del formulario
+                    setTimeout(function () {
+                        btn.setAttribute('data-procesando', '1');
+                        btn.disabled = true;
+                    }, 0);
+                });
+            });
+
+            // Restaura el estado al volver con el boton "atras" (cache del navegador)
+            window.addEventListener('pageshow', function () {
+                terminarCarga();
+                document.querySelectorAll('[data-procesando]').forEach(function (btn) {
+                    btn.removeAttribute('data-procesando');
+                    btn.disabled = false;
+                });
             });
         })();
     </script>
