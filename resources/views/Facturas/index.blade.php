@@ -62,7 +62,7 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(optional($factura->estado)->nombre === 'pagado')
+                                @if(strtolower(optional($factura->estado)->nombre ?? '') === 'pagado')
                                     <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
                                         Pagado
                                     </span>
@@ -75,7 +75,7 @@
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
 
-                                @if(optional($factura->estado)->nombre !== 'pagado')
+                                @if(strtolower(optional($factura->estado)->nombre ?? '') !== 'pagado')
                                     <form action="{{ route('facturas.pagar', $factura) }}"
                                           method="POST"
                                           class="inline-block"

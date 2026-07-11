@@ -74,11 +74,11 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(optional($factura->estado)->nombre === 'pagado')
+                                @if(strtolower(optional($factura->estado)->nombre ?? '') === 'pagado')
                                     <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
                                         Pagado
                                     </span>
-                                @elseif(optional($factura->estado)->nombre === 'Anulado')
+                                @elseif(strtolower(optional($factura->estado)->nombre ?? '') === 'anulado')
                                     <span class="px-4 py-2 rounded-full bg-gray-200 text-gray-600 text-sm font-bold">
                                         Anulado
                                     </span>

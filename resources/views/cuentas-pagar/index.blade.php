@@ -57,7 +57,7 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(optional($cuenta->estado)->nombre === 'pagado')
+                                @if(strtolower(optional($cuenta->estado)->nombre ?? '') === 'pagado')
                                     <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
                                         Pagada
                                     </span>
@@ -73,7 +73,7 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(optional($cuenta->estado)->nombre !== 'pagado')
+                                @if(strtolower(optional($cuenta->estado)->nombre ?? '') !== 'pagado')
                                     <a href="{{ route('cuentas-pagar.pago.create', [$cuenta->numero_compra, $cuenta->proveedor_id]) }}"
                                        class="inline-block bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition">
                                         Registrar Pago

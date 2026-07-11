@@ -82,7 +82,7 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(optional($compra->estado)->nombre === 'pagado')
+                                @if(strtolower(optional($compra->estado)->nombre ?? '') === 'pagado')
                                     <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
                                         Pagado
                                     </span>
@@ -94,7 +94,7 @@
                             </td>
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
-                                @if(optional($compra->estado)->nombre !== 'pagado')
+                                @if(strtolower(optional($compra->estado)->nombre ?? '') !== 'pagado')
                                     <form action="{{ route('compras.pagar', $compra) }}"
                                           method="POST"
                                           class="inline-block"
