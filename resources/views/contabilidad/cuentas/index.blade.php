@@ -3,8 +3,8 @@
 
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h1 class="text-4xl font-extrabold text-[#1f2937]">Catalogo de Cuentas</h1>
-                <p class="mt-2 text-gray-600 text-lg">Gestion del catalogo de cuentas contables</p>
+                <h1 class="text-4xl font-extrabold text-[#1f2937]">Catálogo de Cuentas</h1>
+                <p class="mt-2 text-gray-600 text-lg">Gestión del catálogo de cuentas contables</p>
             </div>
 
             <a href="{{ route('contabilidad.cuentas.create') }}"

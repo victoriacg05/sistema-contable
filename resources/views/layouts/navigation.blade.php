@@ -32,12 +32,12 @@
                 Inicio
             </a>
 
-            <!-- Modulo 7: Facturacion Electronica -->
+            <!-- Módulo 7: Facturación Electrónica -->
             @if(Auth::user()->tienePermiso('ver_facturas') || Auth::user()->tienePermiso('ver_clientes') || Auth::user()->tienePermiso('ver_proveedores') || Auth::user()->tienePermiso('ver_productos') || Auth::user()->tienePermiso('ver_compras') || Auth::user()->tienePermiso('ver_inventario'))
             <details {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'open' : '' }}>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                     {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
-                    <span>Facturacion</span>
+                    <span>Facturación</span>
                     <svg class="w-4 h-4 menu-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
@@ -89,7 +89,7 @@
             </details>
             @endif
 
-            <!-- Modulo 2: Gestion Contable -->
+            <!-- Módulo 2: Gestión Contable -->
             @if(Auth::user()->tienePermiso('ver_contabilidad'))
             <details {{ request()->routeIs('contabilidad.*') ? 'open' : '' }}>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -103,7 +103,7 @@
                     <a href="{{ route('contabilidad.cuentas.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
                        {{ request()->routeIs('contabilidad.cuentas.*') ? 'bg-red-100 text-[#b71c1c] font-bold' : 'text-gray-700 hover:bg-red-50 hover:text-[#b71c1c]' }}">
-                        Catalogo de Cuentas
+                        Catálogo de Cuentas
                     </a>
                     <a href="{{ route('contabilidad.asientos.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
@@ -114,7 +114,7 @@
             </details>
             @endif
 
-            <!-- Modulo 3: Cuentas por Cobrar -->
+            <!-- Módulo 3: Cuentas por Cobrar -->
             @if(Auth::user()->tienePermiso('ver_cuentas_cobrar'))
                 <a href="{{ route('cuentas-cobrar.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -123,7 +123,7 @@
                 </a>
             @endif
 
-            <!-- Modulo 4: Cuentas por Pagar -->
+            <!-- Módulo 4: Cuentas por Pagar -->
             @if(Auth::user()->tienePermiso('ver_cuentas_pagar'))
                 <a href="{{ route('cuentas-pagar.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -132,7 +132,7 @@
                 </a>
             @endif
 
-            <!-- Modulo 5: Ingresos -->
+            <!-- Módulo 5: Ingresos -->
             @if(Auth::user()->tienePermiso('ver_ingresos'))
                 <a href="{{ route('ingresos.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -141,7 +141,7 @@
                 </a>
             @endif
 
-            <!-- Modulo 6: Gastos -->
+            <!-- Módulo 6: Gastos -->
             @if(Auth::user()->tienePermiso('ver_gastos'))
                 <a href="{{ route('gastos.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -150,7 +150,7 @@
                 </a>
             @endif
 
-            <!-- Modulo 8: Gestion Presupuestaria -->
+            <!-- Módulo 8: Gestión Presupuestaria -->
             @if(Auth::user()->tienePermiso('ver_presupuesto'))
                 <a href="{{ route('presupuesto.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -159,7 +159,7 @@
                 </a>
             @endif
 
-            <!-- Modulo 9: Reportes -->
+            <!-- Módulo 9: Reportes -->
             @if(Auth::user()->tienePermiso('ver_reportes'))
                 <a href="{{ route('reportes.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -168,7 +168,7 @@
                 </a>
             @endif
 
-            <!-- Modulo 10: Consultas -->
+            <!-- Módulo 10: Consultas -->
             @if(Auth::user()->tienePermiso('ver_consultas'))
                 <a href="{{ route('consultas.index') }}"
                    class="block px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -177,7 +177,7 @@
                 </a>
             @endif
 
-            <!-- Modulo 1: Gestion de Usuarios + Modulo 11: Seguridad -->
+            <!-- Módulo 1: Gestión de Usuarios + Módulo 11: Seguridad -->
             @if(Auth::user()->tienePermiso('ver_usuarios') || Auth::user()->tienePermiso('ver_bitacora'))
             <details {{ request()->routeIs('usuarios.*', 'bitacora.*') ? 'open' : '' }}>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
@@ -199,7 +199,7 @@
                     <a href="{{ route('bitacora.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
                        {{ request()->routeIs('bitacora.*') ? 'bg-red-100 text-[#b71c1c] font-bold' : 'text-gray-700 hover:bg-red-50 hover:text-[#b71c1c]' }}">
-                        Bitacora
+                        Bitácora
                     </a>
                     @endif
                 </div>
@@ -223,7 +223,7 @@
                 @csrf
                 <button type="submit"
                     class="w-full bg-[#b71c1c] hover:bg-red-800 text-white py-2.5 rounded-2xl font-semibold transition duration-300 shadow-md">
-                    Cerrar Sesion
+                    Cerrar Sesión
                 </button>
             </form>
         @endauth
