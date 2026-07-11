@@ -178,7 +178,7 @@
                                         class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
                                     <option value="">Seleccione un producto</option>
                                     @foreach($productos as $producto)
-                                        <option value="{{ $producto->id }}">{{ $producto->nombre }} | Stock actual: {{ $producto->stock }}</option>
+                                        <option value="{{ $producto->id }}" data-precio="{{ $producto->precio }}">{{ $producto->nombre }} | Stock actual: {{ $producto->stock }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -320,6 +320,7 @@
                 const nodo = plantilla.content.firstElementChild.cloneNode(true);
                 listaProductos.appendChild(nodo);
                 reindexarProductos();
+                aplicarPrecioLinea(nodo);
                 recalcular();
             }
 
@@ -359,6 +360,28 @@
                 return tipoOperacion.value === 'cliente';
             }
 
+            // En venta a cliente el precio se toma del producto y no se edita.
+            // En compra a proveedor el precio lo ingresa el usuario.
+            function aplicarPrecioLinea(linea) {
+                const select = linea.querySelector('[data-campo="producto"]');
+                const precioInput = linea.querySelector('[data-campo="precio"]');
+                const opcion = select.options[select.selectedIndex];
+
+                if (esCliente()) {
+                    const precio = opcion ? parseFloat(opcion.dataset.precio) || 0 : 0;
+                    precioInput.value = opcion && opcion.value ? precio : '';
+                    precioInput.readOnly = true;
+                    precioInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                } else {
+                    precioInput.readOnly = false;
+                    precioInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                }
+            }
+
+            function aplicarModoPrecios() {
+                listaProductos.querySelectorAll('.linea-producto').forEach(aplicarPrecioLinea);
+            }
+
             function toggleOperacion() {
                 const cliente = esCliente();
 
@@ -388,6 +411,7 @@
                     toggleSeccion();
                 }
 
+                aplicarModoPrecios();
                 recalcular();
             }
 
@@ -498,6 +522,12 @@
                 }
             });
             listaProductos.addEventListener('input', recalcular);
+            listaProductos.addEventListener('change', function (e) {
+                if (e.target.dataset.campo === 'producto') {
+                    aplicarPrecioLinea(e.target.closest('.linea-producto'));
+                    recalcular();
+                }
+            });
 
             // Eventos de crédito
             tipoCompra.addEventListener('change', toggleSeccion);
