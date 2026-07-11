@@ -49,6 +49,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/facturas/{factura}/anular', [FacturaController::class, 'anular'])
         ->name('facturas.anular');
 
+    Route::get('/compras/clientes', [CompraController::class, 'clientes'])
+        ->name('compras.clientes');
     Route::resource('compras', CompraController::class);
     Route::put('/compras/{compra}/pagar', [CompraController::class, 'pagar'])
         ->name('compras.pagar');

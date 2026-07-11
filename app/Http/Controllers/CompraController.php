@@ -25,45 +25,24 @@ class CompraController extends Controller
 {
     public function index()
     {
-        $compras = Compra::with(['proveedor', 'estado', 'detalles.producto', 'plazos'])->get();
+        $compras = Compra::with(['proveedor', 'estado', 'detalles.producto', 'plazos'])
+            ->orderByDesc('fecha')
+            ->get();
 
-        $facturas = Factura::with(['cliente', 'estado', 'detalles.producto'])->get();
+        return view('compras.index', compact('compras'));
+    }
 
-        $movimientos = collect();
+    /**
+     * Sección de compras de clientes externos (ventas): muestra únicamente
+     * las facturas de venta, separadas de las compras a proveedores.
+     */
+    public function clientes()
+    {
+        $facturas = Factura::with(['cliente', 'estado', 'metodoPago', 'detalles.producto'])
+            ->orderByDesc('fecha')
+            ->get();
 
-        foreach ($compras as $compra) {
-            $movimientos->push((object) [
-                'tipo' => 'proveedor',
-                'modelo' => $compra,
-                'documento' => $compra->numero_compra,
-                'contraparte' => $compra->proveedor->nombre ?? 'Sin proveedor',
-                'fecha' => $compra->fecha,
-                'total' => $compra->total,
-                'estado' => optional($compra->estado)->nombre,
-                'condicion' => $compra->tipo_compra ?? 'contado',
-                'detalles' => $compra->detalles,
-                'plazos' => $compra->plazos,
-            ]);
-        }
-
-        foreach ($facturas as $factura) {
-            $movimientos->push((object) [
-                'tipo' => 'cliente',
-                'modelo' => $factura,
-                'documento' => $factura->numero_factura,
-                'contraparte' => optional($factura->cliente)->nombre ?? 'Sin cliente',
-                'fecha' => $factura->fecha,
-                'total' => $factura->total,
-                'estado' => optional($factura->estado)->nombre,
-                'condicion' => null,
-                'detalles' => $factura->detalles,
-                'plazos' => collect(),
-            ]);
-        }
-
-        $movimientos = $movimientos->sortByDesc('fecha')->values();
-
-        return view('compras.index', compact('movimientos'));
+        return view('compras.clientes', compact('facturas'));
     }
 
     public function create()
@@ -367,7 +346,7 @@ class CompraController extends Controller
         BitacoraService::registrar('crear', 'facturas', "Factura {$factura->numero_factura} generada desde compras por ₡" . number_format($factura->total, 2));
 
         return redirect()
-            ->route('facturas.index')
+            ->route('compras.clientes')
             ->with('success', "Venta registrada. Se generó automáticamente la factura {$factura->numero_factura} y se actualizó el inventario.");
     }
 

@@ -1,20 +1,32 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto">
 
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">
                     Compras
                 </h1>
 
                 <p class="mt-2 text-gray-700 text-lg">
-                    Compras a proveedores y ventas a clientes externos
+                    Compras a proveedores para abastecimiento de inventario
                 </p>
             </div>
 
             <a href="{{ route('compras.create') }}"
                class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
                 Nueva Compra
+            </a>
+        </div>
+
+        {{-- Secciones separadas: proveedores vs clientes --}}
+        <div class="flex gap-3 mb-8">
+            <a href="{{ route('compras.index') }}"
+               class="px-6 py-3 rounded-2xl font-bold transition bg-[#b71c1c] text-white shadow-md">
+                Compras a Proveedores
+            </a>
+            <a href="{{ route('compras.clientes') }}"
+               class="px-6 py-3 rounded-2xl font-bold transition bg-gray-100 text-gray-700 hover:bg-gray-200">
+                Compras de Clientes
             </a>
         </div>
 
@@ -28,11 +40,10 @@
             <table class="w-full">
                 <thead class="bg-[#2b2b2b] text-white">
                     <tr>
-                        <th class="px-6 py-5 text-left">Documento</th>
-                        <th class="px-6 py-5 text-left">Proveedor / Cliente</th>
+                        <th class="px-6 py-5 text-left">Compra</th>
+                        <th class="px-6 py-5 text-left">Proveedor</th>
                         <th class="px-6 py-5 text-left">Fecha</th>
                         <th class="px-6 py-5 text-left">Total</th>
-                        <th class="px-6 py-5 text-center">Tipo</th>
                         <th class="px-6 py-5 text-center">Condición</th>
                         <th class="px-6 py-5 text-center">Estado</th>
                         <th class="px-6 py-5 text-center">Acciones</th>
@@ -40,40 +51,26 @@
                 </thead>
 
                 <tbody>
-                    @forelse($movimientos as $movimiento)
+                    @forelse($compras as $compra)
                         <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
                             <td class="px-6 py-5 font-semibold text-gray-700">
-                                {{ $movimiento->documento }}
+                                {{ $compra->numero_compra }}
                             </td>
 
                             <td class="px-6 py-5 text-gray-700">
-                                {{ $movimiento->contraparte }}
+                                {{ $compra->proveedor->nombre ?? 'Sin proveedor' }}
                             </td>
 
                             <td class="px-6 py-5 text-gray-600">
-                                {{ \Carbon\Carbon::parse($movimiento->fecha)->format('d/m/Y') }}
+                                {{ \Carbon\Carbon::parse($compra->fecha)->format('d/m/Y') }}
                             </td>
 
                             <td class="px-6 py-5 text-gray-700 font-bold">
-                                ₡{{ number_format($movimiento->total, 2) }}
+                                ₡{{ number_format($compra->total, 2) }}
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if($movimiento->tipo === 'cliente')
-                                    <span class="px-4 py-2 rounded-full bg-teal-100 text-teal-700 text-sm font-bold">
-                                        Cliente externo
-                                    </span>
-                                @else
-                                    <span class="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold">
-                                        Proveedor
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td class="px-6 py-5 text-center">
-                                @if($movimiento->tipo === 'cliente')
-                                    <span class="text-gray-400">—</span>
-                                @elseif(($movimiento->condicion ?? 'contado') === 'credito')
+                                @if(($compra->tipo_compra ?? 'contado') === 'credito')
                                     <span class="px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">
                                         Crédito
                                     </span>
@@ -85,13 +82,9 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if($movimiento->estado === 'pagado')
+                                @if(optional($compra->estado)->nombre === 'pagado')
                                     <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
                                         Pagado
-                                    </span>
-                                @elseif($movimiento->estado === 'Anulado')
-                                    <span class="px-4 py-2 rounded-full bg-gray-200 text-gray-600 text-sm font-bold">
-                                        Anulado
                                     </span>
                                 @else
                                     <span class="px-4 py-2 rounded-full bg-amber-100 text-amber-800 text-sm font-bold">
@@ -101,53 +94,46 @@
                             </td>
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
-                                @if($movimiento->tipo === 'proveedor')
-                                    @if($movimiento->estado !== 'pagado')
-                                        <form action="{{ route('compras.pagar', $movimiento->modelo) }}"
-                                              method="POST"
-                                              class="inline-block"
-                                              onsubmit="return confirm('¿Deseas marcar esta compra como pagada?');">
-                                            @csrf
-                                            @method('PUT')
-
-                                            <button type="submit"
-                                                    class="bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
-                                                Pagar
-                                            </button>
-                                        </form>
-                                    @endif
-
-                                    <a href="{{ route('compras.edit', $movimiento->modelo) }}"
-                                       class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition ml-2">
-                                        Editar
-                                    </a>
-
-                                    <form action="{{ route('compras.destroy', $movimiento->modelo) }}"
+                                @if(optional($compra->estado)->nombre !== 'pagado')
+                                    <form action="{{ route('compras.pagar', $compra) }}"
                                           method="POST"
                                           class="inline-block"
-                                          onsubmit="return confirm('¿Está segura de eliminar esta compra? Se revertirá el stock agregado.');">
+                                          onsubmit="return confirm('¿Deseas marcar esta compra como pagada?');">
                                         @csrf
-                                        @method('DELETE')
+                                        @method('PUT')
 
                                         <button type="submit"
-                                                class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
-                                            Eliminar
+                                                class="bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
+                                            Pagar
                                         </button>
                                     </form>
-                                @else
-                                    <a href="{{ route('facturas.edit', $movimiento->modelo) }}"
-                                       class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition">
-                                        Ver factura
-                                    </a>
                                 @endif
+
+                                <a href="{{ route('compras.edit', $compra) }}"
+                                   class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition ml-2">
+                                    Editar
+                                </a>
+
+                                <form action="{{ route('compras.destroy', $compra) }}"
+                                      method="POST"
+                                      class="inline-block"
+                                      onsubmit="return confirm('¿Está segura de eliminar esta compra? Se revertirá el stock agregado.');">
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button type="submit"
+                                            class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
+                                        Eliminar
+                                    </button>
+                                </form>
                             </td>
                         </tr>
 
                         <tr class="border-b border-gray-200 bg-gray-50">
-                            <td colspan="8" class="px-6 py-4">
+                            <td colspan="7" class="px-6 py-4">
                                 <details>
                                     <summary class="cursor-pointer font-bold text-[#b71c1c]">
-                                        Ver productos ({{ $movimiento->detalles->count() }})
+                                        Ver productos ({{ $compra->detalles->count() }})
                                     </summary>
 
                                     <div class="mt-3 overflow-x-auto">
@@ -161,7 +147,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($movimiento->detalles as $detalle)
+                                                @foreach($compra->detalles as $detalle)
                                                     <tr class="border-t border-gray-200">
                                                         <td class="px-4 py-2 text-gray-700 font-semibold">
                                                             {{ optional($detalle->producto)->nombre ?? 'Producto eliminado' }}
@@ -178,12 +164,12 @@
                             </td>
                         </tr>
 
-                        @if($movimiento->plazos->isNotEmpty())
+                        @if($compra->plazos->isNotEmpty())
                             <tr class="border-b border-gray-200 bg-gray-50">
-                                <td colspan="8" class="px-6 py-4">
+                                <td colspan="7" class="px-6 py-4">
                                     <details>
                                         <summary class="cursor-pointer font-bold text-[#b71c1c]">
-                                            Ver plazos de pago ({{ $movimiento->plazos->count() }} cuotas)
+                                            Ver plazos de pago ({{ $compra->plazos->count() }} cuotas)
                                         </summary>
 
                                         <div class="mt-3 overflow-x-auto">
@@ -198,7 +184,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($movimiento->plazos as $plazo)
+                                                    @foreach($compra->plazos as $plazo)
                                                         <tr class="border-t border-gray-200">
                                                             <td class="px-4 py-2 font-semibold text-gray-700">{{ $plazo->numero_cuota }}</td>
                                                             <td class="px-4 py-2 text-gray-600">
@@ -226,8 +212,8 @@
                         @endif
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-10 text-center text-gray-700 text-lg">
-                                No hay movimientos registrados
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-700 text-lg">
+                                No hay compras a proveedores registradas
                             </td>
                         </tr>
                     @endforelse
