@@ -45,12 +45,12 @@
                 ];
 
                 $bancosCR = [
-                    ['nombre' => 'BAC San Jose', 'monedas' => ['Colones', 'Dolares']],
-                    ['nombre' => 'Banco de Costa Rica (BCR)', 'monedas' => ['Colones', 'Dolares']],
-                    ['nombre' => 'Banco Nacional (BN)', 'monedas' => ['Colones', 'Dolares']],
-                    ['nombre' => 'Scotiabank', 'monedas' => ['Colones', 'Dolares']],
-                    ['nombre' => 'Davivienda', 'monedas' => ['Colones', 'Dolares']],
-                    ['nombre' => 'Banco Promerica', 'monedas' => ['Colones', 'Dolares']],
+                    ['nombre' => 'BAC San Jose', 'monedas' => ['Colones']],
+                    ['nombre' => 'Banco de Costa Rica (BCR)', 'monedas' => ['Colones']],
+                    ['nombre' => 'Banco Nacional (BN)', 'monedas' => ['Colones']],
+                    ['nombre' => 'Scotiabank', 'monedas' => ['Colones']],
+                    ['nombre' => 'Davivienda', 'monedas' => ['Colones']],
+                    ['nombre' => 'Banco Promerica', 'monedas' => ['Colones']],
                 ];
             @endphp
 
@@ -129,7 +129,6 @@
                                                 <p class="font-semibold text-gray-800 text-sm">{{ $banco['nombre'] }}</p>
                                                 <div class="flex gap-3 mt-1">
                                                     <span class="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-medium">Colones (&#8353;)</span>
-                                                    <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-xs font-medium">Dolares ($)</span>
                                                 </div>
                                             </div>
                                         @endforeach
