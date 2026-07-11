@@ -110,6 +110,23 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Condición de pago
+                        </label>
+
+                        <select name="tipo_compra"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
+                                required>
+                            <option value="contado" {{ old('tipo_compra', 'contado') === 'contado' ? 'selected' : '' }}>Contado (queda pagada)</option>
+                            <option value="credito" {{ old('tipo_compra') === 'credito' ? 'selected' : '' }}>Crédito (genera cuenta por cobrar)</option>
+                        </select>
+
+                        @error('tipo_compra')
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
                             Producto
                         </label>
 

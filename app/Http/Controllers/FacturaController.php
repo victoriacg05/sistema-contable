@@ -57,6 +57,7 @@ class FacturaController extends Controller
             'cantidad' => 'required|integer|min:1',
             'descuento' => 'nullable|numeric|min:0',
             'tipo_comprobante_id' => 'required|exists:tipos_comprobante,id',
+            'tipo_compra' => 'required|in:contado,credito',
         ]);
 
         $factura = DB::transaction(function () use ($request) {
@@ -76,7 +77,9 @@ class FacturaController extends Controller
 
             $numeroFactura = 'FAC-' . now()->format('YmdHis');
 
-            $esCredito = (int) $request->tipo_comprobante_id === 3;
+            // La condición de pago determina si la venta queda pagada
+            // (contado) o pendiente con cuenta por cobrar (crédito).
+            $esCredito = $request->tipo_compra === 'credito';
 
             $factura = Factura::create([
                 'numero_factura' => $numeroFactura,
@@ -186,6 +189,7 @@ class FacturaController extends Controller
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
             'cantidad' => 'required|integer|min:1',
             'descuento' => 'nullable|numeric|min:0',
+            'tipo_compra' => 'required|in:contado,credito',
         ]);
 
         DB::transaction(function () use ($request, $factura) {
@@ -216,7 +220,7 @@ class FacturaController extends Controller
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
-            $esCredito = (int) $request->tipo_comprobante_id === 3;
+            $esCredito = $request->tipo_compra === 'credito';
 
             $factura->update([
                 'cliente_id' => $request->cliente_id,
