@@ -150,6 +150,7 @@ class CompraController extends Controller
 
         DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $total, $esCredito, $cuotas) {
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
+            $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
             $numeroCompra = 'COM-' . now()->format('YmdHis');
 
@@ -157,7 +158,11 @@ class CompraController extends Controller
                 'numero_compra' => $numeroCompra,
                 'proveedor_id' => $request->proveedor_id,
                 'usuario_id' => Auth::id(),
-                'estado_id' => $estadoPendiente?->id ?? 1,
+                // Contado: la compra queda pagada de inmediato.
+                // Crédito: queda pendiente hasta liquidar la cuenta por pagar.
+                'estado_id' => $esCredito
+                    ? ($estadoPendiente?->id ?? 1)
+                    : ($estadoPagado?->id ?? 2),
                 'tipo_compra' => $request->tipo_compra,
                 'fecha' => now(),
                 'subtotal' => $subtotal,
@@ -181,27 +186,21 @@ class CompraController extends Controller
                 $producto->save();
             }
 
-            // Vencimiento de la cuenta por pagar:
-            //  - Crédito: fecha de la primera cuota.
-            //  - Contado: 30 días (comportamiento original).
+            // Solo las compras a crédito generan una cuenta por pagar
+            // pendiente con sus plazos. Las de contado no dejan saldo.
             if ($esCredito) {
-                $fechaVencimiento = collect($cuotas)
-                    ->min('fecha_vencimiento');
-            } else {
-                $fechaVencimiento = now()->addDays(30);
-            }
+                $fechaVencimiento = collect($cuotas)->min('fecha_vencimiento');
 
-            CuentaPagar::create([
-                'numero_compra' => $numeroCompra,
-                'proveedor_id' => $request->proveedor_id,
-                'monto_original' => $total,
-                'saldo_pendiente' => $total,
-                'fecha_emision' => now(),
-                'fecha_vencimiento' => $fechaVencimiento,
-                'estado_id' => $estadoPendiente?->id ?? 1,
-            ]);
+                CuentaPagar::create([
+                    'numero_compra' => $numeroCompra,
+                    'proveedor_id' => $request->proveedor_id,
+                    'monto_original' => $total,
+                    'saldo_pendiente' => $total,
+                    'fecha_emision' => now(),
+                    'fecha_vencimiento' => $fechaVencimiento,
+                    'estado_id' => $estadoPendiente?->id ?? 1,
+                ]);
 
-            if ($esCredito) {
                 foreach ($cuotas as $indice => $cuota) {
                     PlazoCompra::create([
                         'numero_compra' => $numeroCompra,
@@ -215,9 +214,13 @@ class CompraController extends Controller
             }
         });
 
+        $mensaje = $esCredito
+            ? 'Compra a crédito registrada. Se generó la cuenta por pagar y se actualizó el inventario.'
+            : 'Compra al contado registrada y pagada. Se actualizó el inventario.';
+
         return redirect()
             ->route('compras.index')
-            ->with('success', 'Compra a proveedor registrada correctamente. El inventario fue actualizado.');
+            ->with('success', $mensaje);
     }
 
     /**
@@ -230,8 +233,11 @@ class CompraController extends Controller
             'cliente_id' => 'required|exists:clientes,id',
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
             'tipo_comprobante_id' => 'required|exists:tipos_comprobante,id',
+            'tipo_compra' => 'required|in:contado,credito',
             'descuento' => 'nullable|numeric|min:0',
         ]);
+
+        $esCredito = $request->tipo_compra === 'credito';
 
         $subtotal = 0;
         foreach ($lineas as $linea) {
@@ -258,13 +264,11 @@ class CompraController extends Controller
             }
         }
 
-        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total) {
+        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito) {
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
             $numeroFactura = 'FAC-' . now()->format('YmdHis');
-
-            $esCredito = (int) $request->tipo_comprobante_id === 3;
 
             $factura = Factura::create([
                 'numero_factura' => $numeroFactura,
@@ -345,9 +349,13 @@ class CompraController extends Controller
 
         BitacoraService::registrar('crear', 'facturas', "Factura {$factura->numero_factura} generada desde compras por ₡" . number_format($factura->total, 2));
 
+        $mensaje = $esCredito
+            ? "Venta a crédito registrada. Se generó la factura {$factura->numero_factura} y su cuenta por cobrar, y se actualizó el inventario."
+            : "Venta al contado registrada y pagada. Se generó la factura {$factura->numero_factura} y se actualizó el inventario.";
+
         return redirect()
             ->route('compras.clientes')
-            ->with('success', "Venta registrada. Se generó automáticamente la factura {$factura->numero_factura} y se actualizó el inventario.");
+            ->with('success', $mensaje);
     }
 
     public function edit(Compra $compra)
@@ -442,13 +450,28 @@ class CompraController extends Controller
     {
         $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
-        $compra->update([
-            'estado_id' => $estadoPagado?->id ?? $compra->estado_id,
-        ]);
+        DB::transaction(function () use ($compra, $estadoPagado) {
+            $compra->update([
+                'estado_id' => $estadoPagado?->id ?? $compra->estado_id,
+            ]);
+
+            // Liquidar la cuenta por pagar y sus plazos asociados para
+            // mantener sincronizada la información financiera.
+            CuentaPagar::where('numero_compra', $compra->numero_compra)
+                ->where('proveedor_id', $compra->proveedor_id)
+                ->update([
+                    'saldo_pendiente' => 0,
+                    'estado_id' => $estadoPagado?->id ?? 2,
+                ]);
+
+            PlazoCompra::where('numero_compra', $compra->numero_compra)
+                ->where('proveedor_id', $compra->proveedor_id)
+                ->update(['saldo_pendiente' => 0]);
+        });
 
         return redirect()
             ->route('compras.index')
-            ->with('success', 'Compra marcada como pagada.');
+            ->with('success', 'Compra marcada como pagada. Se actualizó la cuenta por pagar.');
     }
 
     public function destroy(Compra $compra)

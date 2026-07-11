@@ -200,7 +200,7 @@
                         </div>
                     </template>
 
-                    <div class="md:col-span-2 grupo-proveedor">
+                    <div class="md:col-span-2">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
                             Condición de pago
                         </label>
@@ -211,6 +211,10 @@
                             <option value="contado" {{ old('tipo_compra', 'contado') === 'contado' ? 'selected' : '' }}>Contado</option>
                             <option value="credito" {{ old('tipo_compra') === 'credito' ? 'selected' : '' }}>Crédito</option>
                         </select>
+
+                        <p class="mt-2 text-sm text-gray-500 grupo-cliente">
+                            En crédito se genera automáticamente una cuenta por cobrar; en contado la factura queda pagada.
+                        </p>
                     </div>
 
                 </div>
@@ -392,7 +396,6 @@
                 // no se envían ni disparan validación del navegador).
                 proveedorSel.disabled = cliente;
                 proveedorSel.required = !cliente;
-                tipoCompra.disabled = cliente;
 
                 clienteSel.disabled = !cliente;
                 clienteSel.required = cliente;
@@ -492,7 +495,8 @@
             }
 
             function toggleSeccion() {
-                if (esCredito()) {
+                // Los plazos de pago solo aplican a compras a proveedor a crédito.
+                if (!esCliente() && esCredito()) {
                     seccionCredito.classList.remove('hidden');
                     if (listaCuotas.children.length === 0) {
                         generarCuotas();
