@@ -27,6 +27,11 @@
             #sidebar { transform: translateX(-320px); }
             body.sidebar-open #sidebar { transform: translateX(0); }
         }
+
+        /* El contenido aprovecha todo el ancho disponible */
+        #main-content main .max-w-7xl {
+            max-width: 100%;
+        }
     </style>
 
     @include('layouts.navigation')
