@@ -241,6 +241,7 @@ class DatosInicialesSeeder extends Seeder
             ['codigo_cuenta' => '1.1.2', 'tipo' => 'Activo', 'nombre' => 'Bancos'],
             ['codigo_cuenta' => '1.1.3', 'tipo' => 'Activo', 'nombre' => 'Cuentas por Cobrar'],
             ['codigo_cuenta' => '1.1.4', 'tipo' => 'Activo', 'nombre' => 'Inventario de Mercaderías'],
+            ['codigo_cuenta' => '1.1.4.1', 'tipo' => 'Activo', 'nombre' => 'Inventario en Bodega'],
             ['codigo_cuenta' => '1.2', 'tipo' => 'Activo', 'nombre' => 'Activo No Circulante'],
             ['codigo_cuenta' => '1.2.1', 'tipo' => 'Activo', 'nombre' => 'Mobiliario y Equipo'],
             ['codigo_cuenta' => '1.2.2', 'tipo' => 'Activo', 'nombre' => 'Vehículos'],
