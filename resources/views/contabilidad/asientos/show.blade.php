@@ -50,7 +50,10 @@
                     @foreach($detalles as $detalle)
                         <tr class="border-b border-gray-200">
                             <td class="px-6 py-4 font-mono">{{ $detalle->codigo_cuenta }}</td>
-                            <td class="px-6 py-4">{{ $detalle->cuenta_nombre }}</td>
+                            <td class="px-6 py-4">
+                                <span class="font-semibold">{{ $detalle->cuenta_nombre }}</span>
+                                <span class="block text-xs text-gray-500 mt-1">{{ $detalle->cuenta_ruta }}</span>
+                            </td>
                             <td class="px-6 py-4 text-right font-mono">₡{{ number_format($detalle->debe, 2) }}</td>
                             <td class="px-6 py-4 text-right font-mono">₡{{ number_format($detalle->haber, 2) }}</td>
                         </tr>

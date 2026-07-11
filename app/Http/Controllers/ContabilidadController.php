@@ -96,6 +96,56 @@ class ContabilidadController extends Controller
             ->with('success', 'Cuenta contable actualizada correctamente.');
     }
 
+    /**
+     * Devuelve el catálogo de cuentas enriquecido con dos atributos:
+     * - es_hoja: true si la cuenta no tiene subcuentas (nodo hoja).
+     * - ruta: ruta completa dentro del árbol (p. ej. "Activos → Activo
+     *   Circulante → Caja").
+     *
+     * La jerarquía se deriva del código de cuenta con notación de puntos
+     * (1, 1.1, 1.1.1), ya que el catálogo no tiene columna de cuenta padre.
+     */
+    private function catalogoConJerarquia()
+    {
+        $cuentas = DB::table('catalogo_cuentas')
+            ->join('tipos_cuenta_contable', 'catalogo_cuentas.tipo_cuenta_contable_id', '=', 'tipos_cuenta_contable.id')
+            ->select('catalogo_cuentas.*', 'tipos_cuenta_contable.nombre as tipo_nombre')
+            ->orderBy('catalogo_cuentas.codigo_cuenta')
+            ->get();
+
+        $codigos = $cuentas->pluck('codigo_cuenta')->all();
+        $porCodigo = $cuentas->keyBy('codigo_cuenta');
+
+        foreach ($cuentas as $cuenta) {
+            $prefijo = $cuenta->codigo_cuenta . '.';
+
+            $cuenta->es_hoja = ! collect($codigos)->contains(
+                fn ($cod) => str_starts_with($cod, $prefijo)
+            );
+
+            $acumulado = '';
+            $ruta = [];
+            foreach (explode('.', $cuenta->codigo_cuenta) as $parte) {
+                $acumulado = $acumulado === '' ? $parte : $acumulado . '.' . $parte;
+                $ancestro = $porCodigo->get($acumulado);
+                $ruta[] = $ancestro ? $ancestro->nombre : $acumulado;
+            }
+            $cuenta->ruta = implode(' → ', $ruta);
+        }
+
+        return $cuentas;
+    }
+
+    /**
+     * Determina si una cuenta es de detalle (nodo hoja) a partir de su código.
+     */
+    private function esCuentaHoja(string $codigoCuenta): bool
+    {
+        return ! DB::table('catalogo_cuentas')
+            ->where('codigo_cuenta', 'like', $codigoCuenta . '.%')
+            ->exists();
+    }
+
     public function indexAsientos()
     {
         $asientos = DB::table('asientos_contables')
@@ -110,10 +160,11 @@ class ContabilidadController extends Controller
 
     public function createAsiento()
     {
-        $cuentas = DB::table('catalogo_cuentas')
+        // Solo las cuentas de detalle (nodos hoja) permiten registrar asientos.
+        $cuentas = $this->catalogoConJerarquia()
             ->where('estado', true)
-            ->orderBy('codigo_cuenta')
-            ->get();
+            ->where('es_hoja', true)
+            ->values();
 
         $estados = DB::table('estados')->orderBy('nombre')->get();
 
@@ -137,6 +188,20 @@ class ContabilidadController extends Controller
 
         if (abs($totalDebe - $totalHaber) > 0.01) {
             return back()->withErrors(['lineas' => 'El total del debe debe ser igual al total del haber.'])->withInput();
+        }
+
+        // Solo se permiten movimientos en cuentas de detalle (nodos hoja).
+        foreach ($request->lineas as $linea) {
+            if (! $this->esCuentaHoja($linea['codigo_cuenta'])) {
+                $cuenta = DB::table('catalogo_cuentas')
+                    ->where('codigo_cuenta', $linea['codigo_cuenta'])
+                    ->first();
+                $nombre = $cuenta ? "{$cuenta->codigo_cuenta} - {$cuenta->nombre}" : $linea['codigo_cuenta'];
+
+                return back()->withErrors([
+                    'lineas' => "La cuenta «{$nombre}» es una cuenta agrupadora y no admite movimientos. Seleccione una cuenta de detalle (último nivel).",
+                ])->withInput();
+            }
         }
 
         $numeroAsiento = 'ASI-' . now()->format('YmdHis');
@@ -190,6 +255,13 @@ class ContabilidadController extends Controller
             ->where('detalle_asientos_contables.fecha_asiento', $fecha)
             ->select('detalle_asientos_contables.*', 'catalogo_cuentas.nombre as cuenta_nombre')
             ->get();
+
+        // Añadir la ruta completa de cada cuenta dentro del catálogo.
+        $rutas = $this->catalogoConJerarquia()->keyBy('codigo_cuenta');
+        foreach ($detalles as $detalle) {
+            $detalle->cuenta_ruta = optional($rutas->get($detalle->codigo_cuenta))->ruta
+                ?? $detalle->cuenta_nombre;
+        }
 
         return view('contabilidad.asientos.show', compact('asiento', 'detalles'));
     }

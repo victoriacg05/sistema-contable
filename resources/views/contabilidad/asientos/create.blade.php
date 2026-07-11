@@ -42,6 +42,11 @@
 
                 <h2 class="text-xl font-bold text-[#1f2937] mb-4">Líneas del Asiento</h2>
 
+                <p class="text-sm text-gray-500 mb-4">
+                    Solo se muestran cuentas de detalle (último nivel del catálogo). Las cuentas
+                    agrupadoras no admiten movimientos contables.
+                </p>
+
                 <div id="lineas-container">
                     <div class="grid grid-cols-12 gap-3 mb-2 text-sm font-bold text-gray-600">
                         <div class="col-span-5">Cuenta</div>
@@ -57,7 +62,7 @@
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                 <option value="">Seleccione cuenta...</option>
                                 @foreach($cuentas as $cuenta)
-                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->nombre }}</option>
+                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->ruta }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -82,7 +87,7 @@
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                 <option value="">Seleccione cuenta...</option>
                                 @foreach($cuentas as $cuenta)
-                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->nombre }}</option>
+                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->ruta }}</option>
                                 @endforeach
                             </select>
                         </div>
