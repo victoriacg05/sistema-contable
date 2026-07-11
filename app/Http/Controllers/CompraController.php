@@ -25,7 +25,7 @@ class CompraController extends Controller
 {
     public function index()
     {
-        $compras = Compra::with(['proveedor', 'estado', 'detalles.producto', 'plazos'])
+        $compras = Compra::with(['proveedor', 'estado', 'metodoPago', 'detalles.producto', 'plazos'])
             ->orderByDesc('fecha')
             ->get();
 
@@ -109,6 +109,7 @@ class CompraController extends Controller
     {
         $request->validate([
             'proveedor_id' => 'required|exists:proveedores,id',
+            'metodo_pago_id' => 'required|exists:metodos_pago,id',
             'tipo_compra' => 'required|in:contado,credito',
         ]);
 
@@ -163,6 +164,7 @@ class CompraController extends Controller
                 'estado_id' => $esCredito
                     ? ($estadoPendiente?->id ?? 1)
                     : ($estadoPagado?->id ?? 2),
+                'metodo_pago_id' => $request->metodo_pago_id,
                 'tipo_compra' => $request->tipo_compra,
                 'fecha' => now(),
                 'subtotal' => $subtotal,

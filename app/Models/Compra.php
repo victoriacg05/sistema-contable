@@ -17,6 +17,7 @@ class Compra extends Model
         'proveedor_id',
         'usuario_id',
         'estado_id',
+        'metodo_pago_id',
         'tipo_compra',
         'fecha',
         'subtotal',
@@ -32,6 +33,11 @@ class Compra extends Model
     public function estado()
     {
         return $this->belongsTo(Estado::class, 'estado_id');
+    }
+
+    public function metodoPago()
+    {
+        return $this->belongsTo(MetodoPago::class, 'metodo_pago_id');
     }
 
     public function detalles()

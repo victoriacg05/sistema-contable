@@ -97,7 +97,7 @@
                         </select>
                     </div>
 
-                    <div class="grupo-cliente">
+                    <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
                             Método de pago
                         </label>
@@ -399,8 +399,9 @@
 
                 clienteSel.disabled = !cliente;
                 clienteSel.required = cliente;
-                metodoPagoSel.disabled = !cliente;
-                metodoPagoSel.required = cliente;
+                // El método de pago aplica a ambos tipos de operación.
+                metodoPagoSel.disabled = false;
+                metodoPagoSel.required = true;
                 tipoComprobanteSel.disabled = !cliente;
                 tipoComprobanteSel.required = cliente;
                 descuentoInput.disabled = !cliente;

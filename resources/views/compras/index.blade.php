@@ -45,6 +45,7 @@
                         <th class="px-6 py-5 text-left">Fecha</th>
                         <th class="px-6 py-5 text-left">Total</th>
                         <th class="px-6 py-5 text-center">Condición</th>
+                        <th class="px-6 py-5 text-center">Método de pago</th>
                         <th class="px-6 py-5 text-center">Estado</th>
                         <th class="px-6 py-5 text-center">Acciones</th>
                     </tr>
@@ -79,6 +80,10 @@
                                         Contado
                                     </span>
                                 @endif
+                            </td>
+
+                            <td class="px-6 py-5 text-center text-gray-700">
+                                {{ optional($compra->metodoPago)->nombre ?? '—' }}
                             </td>
 
                             <td class="px-6 py-5 text-center">
@@ -130,7 +135,7 @@
                         </tr>
 
                         <tr class="border-b border-gray-200 bg-gray-50">
-                            <td colspan="7" class="px-6 py-4">
+                            <td colspan="8" class="px-6 py-4">
                                 <details>
                                     <summary class="cursor-pointer font-bold text-[#b71c1c]">
                                         Ver productos ({{ $compra->detalles->count() }})
@@ -166,7 +171,7 @@
 
                         @if($compra->plazos->isNotEmpty())
                             <tr class="border-b border-gray-200 bg-gray-50">
-                                <td colspan="7" class="px-6 py-4">
+                                <td colspan="8" class="px-6 py-4">
                                     <details>
                                         <summary class="cursor-pointer font-bold text-[#b71c1c]">
                                             Ver plazos de pago ({{ $compra->plazos->count() }} cuotas)
@@ -212,7 +217,7 @@
                         @endif
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-gray-700 text-lg">
+                            <td colspan="8" class="px-6 py-10 text-center text-gray-700 text-lg">
                                 No hay compras a proveedores registradas
                             </td>
                         </tr>
