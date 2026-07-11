@@ -90,7 +90,7 @@
                             </td>
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
-                                <a href="{{ route('facturas.edit', $factura) }}"
+                                <a href="{{ route('facturas.show', $factura) }}"
                                    class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition">
                                     Ver factura
                                 </a>

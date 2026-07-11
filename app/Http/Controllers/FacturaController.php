@@ -170,6 +170,21 @@ class FacturaController extends Controller
             ->with('success', 'Factura creada correctamente.');
     }
 
+    public function show(Factura $factura)
+    {
+        $factura->load(['cliente', 'metodoPago', 'estado', 'detalles.producto']);
+
+        $tipoComprobante = DB::table('tipos_comprobante')
+            ->where('id', $factura->tipo_comprobante_id)
+            ->value('nombre');
+
+        $usuario = DB::table('users')
+            ->where('id', $factura->usuario_id)
+            ->value('name');
+
+        return view('facturas.show', compact('factura', 'tipoComprobante', 'usuario'));
+    }
+
     public function edit(Factura $factura)
     {
         $clientes = Cliente::orderBy('nombre')->get();
