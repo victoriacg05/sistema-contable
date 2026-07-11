@@ -34,7 +34,7 @@
 
             <!-- Módulo 7: Facturación Electrónica -->
             @if(Auth::user()->tienePermiso('ver_facturas') || Auth::user()->tienePermiso('ver_clientes') || Auth::user()->tienePermiso('ver_proveedores') || Auth::user()->tienePermiso('ver_productos') || Auth::user()->tienePermiso('ver_compras') || Auth::user()->tienePermiso('ver_inventario'))
-            <details {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'open' : '' }}>
+            <details open>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                     {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
                     <span>Facturación</span>
@@ -91,7 +91,7 @@
 
             <!-- Módulo 2: Gestión Contable -->
             @if(Auth::user()->tienePermiso('ver_contabilidad'))
-            <details {{ request()->routeIs('contabilidad.*') ? 'open' : '' }}>
+            <details open>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                     {{ request()->routeIs('contabilidad.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
                     <span>Gestión Contable</span>
@@ -179,7 +179,7 @@
 
             <!-- Módulo 1: Gestión de Usuarios + Módulo 11: Seguridad -->
             @if(Auth::user()->tienePermiso('ver_usuarios') || Auth::user()->tienePermiso('ver_bitacora'))
-            <details {{ request()->routeIs('usuarios.*', 'bitacora.*') ? 'open' : '' }}>
+            <details open>
                 <summary class="flex items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
                     {{ request()->routeIs('usuarios.*', 'bitacora.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
                     <span>Seguridad</span>
