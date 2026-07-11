@@ -1,4 +1,4 @@
-<nav style="width: 320px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 50;"
+<nav id="sidebar" style="width: 320px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 50;"
      class="bg-white border-r border-gray-300 flex flex-col shadow-lg">
 
     <style>
