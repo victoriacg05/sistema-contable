@@ -6,11 +6,6 @@
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">Movimientos de Inventario</h1>
                 <p class="mt-2 text-gray-700 text-lg">Control de entradas y salidas del inventario</p>
             </div>
-
-            <a href="{{ route('inventario.create') }}"
-               class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
-                Nuevo Movimiento
-            </a>
         </div>
 
         @if(session('success'))
