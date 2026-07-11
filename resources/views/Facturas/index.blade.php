@@ -85,7 +85,7 @@
                                     </form>
                                 @endif
 
-                                <a href="{{ route('facturas.show', $factura) }}"
+                                <a href="{{ route('facturas.show', ['factura' => $factura, 'imprimible' => 1]) }}"
                                    class="inline-block bg-blue-100 hover:bg-blue-200 text-blue-700 px-5 py-2 rounded-xl font-bold transition">
                                     Ver
                                 </a>

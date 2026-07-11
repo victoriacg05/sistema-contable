@@ -8,21 +8,23 @@
             </div>
 
             <a href="{{ url()->previous() }}"
-               class="no-print bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-4 rounded-2xl font-bold shadow-md transition">
+               class="no-print bg-gray-100 hover:bg-gray-200 text-gray-700 px-8 py-4 rounded-2xl font-bold shadow-md transition">
                 Volver
             </a>
         </div>
 
-        <div class="no-print flex flex-wrap gap-3 mb-6">
-            <button type="button" onclick="window.print()"
-                    class="bg-[#1f2937] hover:bg-black text-white px-6 py-3 rounded-2xl font-bold shadow-md transition">
-                Imprimir
-            </button>
-            <a href="{{ route('facturas.pdf', $factura) }}"
-               class="bg-[#b71c1c] hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold shadow-md transition">
-                Exportar a PDF
-            </a>
-        </div>
+        @if(request('imprimible'))
+            <div class="no-print flex flex-wrap gap-3 mb-6">
+                <button type="button" onclick="window.print()"
+                        class="bg-[#1f2937] hover:bg-black text-white px-6 py-3 rounded-2xl font-bold shadow-md transition">
+                    Imprimir
+                </button>
+                <a href="{{ route('facturas.pdf', $factura) }}"
+                   class="bg-[#b71c1c] hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold shadow-md transition">
+                    Exportar a PDF
+                </a>
+            </div>
+        @endif
 
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
 
@@ -122,11 +124,13 @@
         </div>
     </div>
 
-    <style>
-        @media print {
-            .no-print { display: none !important; }
-            nav, header, footer { display: none !important; }
-            body { background: #ffffff !important; }
-        }
-    </style>
+    @if(request('imprimible'))
+        <style>
+            @media print {
+                .no-print { display: none !important; }
+                nav, header, footer { display: none !important; }
+                body { background: #ffffff !important; }
+            }
+        </style>
+    @endif
 </x-app-layout>
