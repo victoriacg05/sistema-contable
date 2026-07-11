@@ -15,14 +15,23 @@
 
     <style>
         #sidebar { transition: transform 0.3s ease; }
-        #main-content { transition: margin-left 0.3s ease; }
+        #main-content {
+            margin-left: 320px;
+            transition: margin-left 0.3s ease;
+        }
         body.sidebar-collapsed #sidebar { transform: translateX(-320px); }
-        body.sidebar-collapsed #main-content { margin-left: 0 !important; }
+        body.sidebar-collapsed #main-content { margin-left: 0; }
+
+        @media (max-width: 768px) {
+            #main-content { margin-left: 0; }
+            #sidebar { transform: translateX(-320px); }
+            body.sidebar-open #sidebar { transform: translateX(0); }
+        }
     </style>
 
     @include('layouts.navigation')
 
-    <div id="main-content" class="ml-[320px] min-h-screen bg-gray-100 flex flex-col">
+    <div id="main-content" class="min-h-screen bg-gray-100 flex flex-col">
 
         <div class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-200 px-6 py-3 flex items-center">
             <button id="sidebar-toggle" type="button" aria-label="Mostrar u ocultar el menú"
@@ -55,14 +64,25 @@
             const boton = document.getElementById('sidebar-toggle');
             const body = document.body;
             const CLAVE = 'sidebar-collapsed';
+            const esMovil = () => window.matchMedia('(max-width: 768px)').matches;
 
             if (localStorage.getItem(CLAVE) === '1') {
                 body.classList.add('sidebar-collapsed');
             }
 
             boton.addEventListener('click', function () {
+                if (esMovil()) {
+                    body.classList.toggle('sidebar-open');
+                    return;
+                }
                 body.classList.toggle('sidebar-collapsed');
                 localStorage.setItem(CLAVE, body.classList.contains('sidebar-collapsed') ? '1' : '0');
+            });
+
+            window.addEventListener('resize', function () {
+                if (!esMovil()) {
+                    body.classList.remove('sidebar-open');
+                }
             });
         })();
     </script>
