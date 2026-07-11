@@ -14,6 +14,36 @@
             </div>
         @endif
 
+        @php
+            $totalEntradas = 0;
+            $totalSalidas = 0;
+            foreach ($movimientos as $m) {
+                if (in_array(strtolower($m->tipo_nombre), ['entrada', 'ajuste positivo', 'devolución'])) {
+                    $totalEntradas += $m->cantidad;
+                } else {
+                    $totalSalidas += $m->cantidad;
+                }
+            }
+        @endphp
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                <p class="text-sm font-bold text-gray-500 uppercase">Total entradas</p>
+                <p class="mt-2 text-3xl font-extrabold text-green-700">{{ number_format($totalEntradas) }}</p>
+                <p class="text-sm text-gray-500">unidades ingresadas</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                <p class="text-sm font-bold text-gray-500 uppercase">Total salidas</p>
+                <p class="mt-2 text-3xl font-extrabold text-red-700">{{ number_format($totalSalidas) }}</p>
+                <p class="text-sm text-gray-500">unidades retiradas</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                <p class="text-sm font-bold text-gray-500 uppercase">Existencia neta</p>
+                <p class="mt-2 text-3xl font-extrabold text-[#1f2937]">{{ number_format($totalEntradas - $totalSalidas) }}</p>
+                <p class="text-sm text-gray-500">entradas − salidas</p>
+            </div>
+        </div>
+
         <div class="flex gap-2 mb-6">
             <button type="button" data-tab="entrada"
                     class="tab-inventario px-6 py-3 rounded-2xl font-bold transition bg-[#b71c1c] text-white shadow-md">
