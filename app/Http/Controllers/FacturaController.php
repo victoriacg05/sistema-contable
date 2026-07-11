@@ -10,6 +10,7 @@ use App\Models\MetodoPago;
 use App\Models\Estado;
 use App\Models\CuentaCobrar;
 use App\Services\BitacoraService;
+use App\Services\InventarioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -121,6 +122,15 @@ class FacturaController extends Controller
             $producto->stock -= $request->cantidad;
             $producto->save();
 
+            // Salida automática del inventario por la venta facturada.
+            InventarioService::registrarMovimiento(
+                $producto->id,
+                'Salida',
+                $request->cantidad,
+                "Venta a cliente {$numeroFactura}",
+                $numeroFactura
+            );
+
             return $factura;
         });
 
@@ -193,6 +203,8 @@ class FacturaController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $factura) {
+            $referenciaAjuste = 'AJU-' . now()->format('YmdHis');
+
             $detalleAnterior = $factura->detalles()->first();
 
             if ($detalleAnterior) {
@@ -201,6 +213,15 @@ class FacturaController extends Controller
                 if ($productoAnterior) {
                     $productoAnterior->stock += $detalleAnterior->cantidad;
                     $productoAnterior->save();
+
+                    // Reingreso al inventario por reversión de la factura editada.
+                    InventarioService::registrarMovimiento(
+                        $productoAnterior->id,
+                        'Ajuste positivo',
+                        $detalleAnterior->cantidad,
+                        "Reversión por edición de factura {$factura->numero_factura}",
+                        $referenciaAjuste
+                    );
                 }
 
                 $detalleAnterior->delete();
@@ -261,6 +282,15 @@ class FacturaController extends Controller
 
             $producto->stock -= $request->cantidad;
             $producto->save();
+
+            // Salida al inventario por los productos de la factura editada.
+            InventarioService::registrarMovimiento(
+                $producto->id,
+                'Ajuste negativo',
+                $request->cantidad,
+                "Actualización de factura {$factura->numero_factura}",
+                $referenciaAjuste
+            );
         });
 
         return redirect()

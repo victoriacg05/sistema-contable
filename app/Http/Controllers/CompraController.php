@@ -15,6 +15,7 @@ use App\Models\Cliente;
 use App\Models\MetodoPago;
 use App\Models\CuentaCobrar;
 use App\Services\BitacoraService;
+use App\Services\InventarioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -186,6 +187,15 @@ class CompraController extends Controller
 
                 $producto->stock += $linea['cantidad'];
                 $producto->save();
+
+                // Entrada automática al inventario por la compra a proveedor.
+                InventarioService::registrarMovimiento(
+                    $producto->id,
+                    'Entrada',
+                    $linea['cantidad'],
+                    "Compra a proveedor {$numeroCompra}",
+                    $numeroCompra
+                );
             }
 
             // Solo las compras a crédito generan una cuenta por pagar
@@ -302,6 +312,15 @@ class CompraController extends Controller
 
                 $producto->stock -= $linea['cantidad'];
                 $producto->save();
+
+                // Salida automática del inventario por la venta a cliente.
+                InventarioService::registrarMovimiento(
+                    $producto->id,
+                    'Salida',
+                    $linea['cantidad'],
+                    "Venta a cliente {$numeroFactura}",
+                    $numeroFactura
+                );
             }
 
             if ($esCredito) {
@@ -399,6 +418,8 @@ class CompraController extends Controller
         }
 
         DB::transaction(function () use ($request, $compra, $lineas) {
+            $referenciaAjuste = 'AJU-' . now()->format('YmdHis');
+
             // Revertir el stock de los productos actuales y eliminarlos.
             foreach ($compra->detalles()->get() as $detalleAnterior) {
                 $productoAnterior = Producto::find($detalleAnterior->producto_id);
@@ -406,6 +427,15 @@ class CompraController extends Controller
                 if ($productoAnterior) {
                     $productoAnterior->stock -= $detalleAnterior->cantidad;
                     $productoAnterior->save();
+
+                    // Salida por reversión de la compra editada.
+                    InventarioService::registrarMovimiento(
+                        $productoAnterior->id,
+                        'Ajuste negativo',
+                        $detalleAnterior->cantidad,
+                        "Reversión por edición de compra {$compra->numero_compra}",
+                        $referenciaAjuste
+                    );
                 }
 
                 $detalleAnterior->delete();
@@ -440,6 +470,15 @@ class CompraController extends Controller
 
                 $producto->stock += $linea['cantidad'];
                 $producto->save();
+
+                // Entrada por los productos de la compra editada.
+                InventarioService::registrarMovimiento(
+                    $producto->id,
+                    'Ajuste positivo',
+                    $linea['cantidad'],
+                    "Actualización de compra {$compra->numero_compra}",
+                    $referenciaAjuste
+                );
             }
         });
 
