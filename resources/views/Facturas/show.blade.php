@@ -7,7 +7,7 @@
                 <p class="mt-2 text-gray-700 text-lg">Vista previa de la factura de venta</p>
             </div>
 
-            <a href="{{ route('compras.clientes') }}"
+            <a href="{{ url()->previous() }}"
                class="no-print bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-4 rounded-2xl font-bold shadow-md transition">
                 Volver
             </a>

@@ -85,6 +85,16 @@
                                     </form>
                                 @endif
 
+                                <a href="{{ route('facturas.show', $factura) }}"
+                                   class="inline-block bg-blue-100 hover:bg-blue-200 text-blue-700 px-5 py-2 rounded-xl font-bold transition">
+                                    Ver
+                                </a>
+
+                                <a href="{{ route('facturas.pdf', $factura) }}"
+                                   class="inline-block bg-gray-800 hover:bg-black text-white px-5 py-2 rounded-xl font-bold transition ml-2">
+                                    PDF
+                                </a>
+
                                 <a href="{{ route('facturas.edit', $factura) }}"
                                    class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition ml-2">
                                     Editar
