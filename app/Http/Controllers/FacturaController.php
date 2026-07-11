@@ -11,6 +11,7 @@ use App\Models\Estado;
 use App\Models\CuentaCobrar;
 use App\Services\BitacoraService;
 use App\Services\InventarioService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -183,6 +184,24 @@ class FacturaController extends Controller
             ->value('name');
 
         return view('facturas.show', compact('factura', 'tipoComprobante', 'usuario'));
+    }
+
+    public function pdf(Factura $factura)
+    {
+        $factura->load(['cliente', 'metodoPago', 'estado', 'detalles.producto']);
+
+        $tipoComprobante = DB::table('tipos_comprobante')
+            ->where('id', $factura->tipo_comprobante_id)
+            ->value('nombre');
+
+        $usuario = DB::table('users')
+            ->where('id', $factura->usuario_id)
+            ->value('name');
+
+        $pdf = Pdf::loadView('facturas.pdf', compact('factura', 'tipoComprobante', 'usuario'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->download('factura-' . $factura->numero_factura . '.pdf');
     }
 
     public function edit(Factura $factura)
