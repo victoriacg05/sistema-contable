@@ -117,6 +117,41 @@
                             </td>
                         </tr>
 
+                        <tr class="border-b border-gray-200 bg-gray-50">
+                            <td colspan="7" class="px-6 py-4">
+                                <details>
+                                    <summary class="cursor-pointer font-bold text-[#b71c1c]">
+                                        Ver productos ({{ $compra->detalles->count() }})
+                                    </summary>
+
+                                    <div class="mt-3 overflow-x-auto">
+                                        <table class="w-full text-sm">
+                                            <thead>
+                                                <tr class="text-gray-600 text-left">
+                                                    <th class="px-4 py-2">Producto</th>
+                                                    <th class="px-4 py-2">Cantidad</th>
+                                                    <th class="px-4 py-2">Precio unitario</th>
+                                                    <th class="px-4 py-2">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($compra->detalles as $detalle)
+                                                    <tr class="border-t border-gray-200">
+                                                        <td class="px-4 py-2 text-gray-700 font-semibold">
+                                                            {{ optional($detalle->producto)->nombre ?? 'Producto eliminado' }}
+                                                        </td>
+                                                        <td class="px-4 py-2 text-gray-600">{{ $detalle->cantidad }}</td>
+                                                        <td class="px-4 py-2 text-gray-700">₡{{ number_format($detalle->precio_unitario, 2) }}</td>
+                                                        <td class="px-4 py-2 text-gray-700 font-bold">₡{{ number_format($detalle->subtotal, 2) }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </details>
+                            </td>
+                        </tr>
+
                         @if($compra->plazos->isNotEmpty())
                             <tr class="border-b border-gray-200 bg-gray-50">
                                 <td colspan="7" class="px-6 py-4">

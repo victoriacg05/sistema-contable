@@ -38,13 +38,35 @@ class CompraController extends Controller
     {
         $request->validate([
             'proveedor_id' => 'required|exists:proveedores,id',
-            'producto_id' => 'required|exists:productos,id',
-            'cantidad' => 'required|integer|min:1',
-            'precio_unitario' => 'required|numeric|min:0',
+            'productos' => 'required|array|min:1',
+            'productos.*.producto_id' => 'required|exists:productos,id',
+            'productos.*.cantidad' => 'required|integer|min:1',
+            'productos.*.precio_unitario' => 'required|numeric|min:0',
             'tipo_compra' => 'required|in:contado,credito',
+        ], [
+            'productos.required' => 'Debe agregar al menos un producto a la compra.',
+            'productos.min' => 'Debe agregar al menos un producto a la compra.',
+            'productos.*.producto_id.required' => 'Seleccione un producto en cada línea.',
+            'productos.*.cantidad.required' => 'Indique la cantidad de cada producto.',
+            'productos.*.precio_unitario.required' => 'Indique el precio unitario de cada producto.',
         ]);
 
-        $subtotal = $request->precio_unitario * $request->cantidad;
+        $lineas = array_values($request->productos);
+
+        // No se permite el mismo producto repetido en la misma compra
+        // (la clave primaria del detalle es numero_compra + proveedor + producto).
+        $idsProductos = array_column($lineas, 'producto_id');
+        if (count($idsProductos) !== count(array_unique($idsProductos))) {
+            throw ValidationException::withMessages([
+                'productos' => 'No repita el mismo producto en la compra; ajuste la cantidad en una sola línea.',
+            ]);
+        }
+
+        $subtotal = 0;
+        foreach ($lineas as $linea) {
+            $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
+        }
+
         $impuesto = $subtotal * 0.13;
         $total = round($subtotal + $impuesto, 2);
 
@@ -76,9 +98,7 @@ class CompraController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $subtotal, $impuesto, $total, $esCredito, $cuotas) {
-            $producto = Producto::findOrFail($request->producto_id);
-
+        DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $total, $esCredito, $cuotas) {
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
 
             $numeroCompra = 'COM-' . now()->format('YmdHis');
@@ -95,14 +115,21 @@ class CompraController extends Controller
                 'total' => $total,
             ]);
 
-            DetalleCompra::create([
-                'numero_compra' => $numeroCompra,
-                'proveedor_id' => $request->proveedor_id,
-                'producto_id' => $producto->id,
-                'cantidad' => $request->cantidad,
-                'precio_unitario' => $request->precio_unitario,
-                'subtotal' => $subtotal,
-            ]);
+            foreach ($lineas as $linea) {
+                $producto = Producto::findOrFail($linea['producto_id']);
+
+                DetalleCompra::create([
+                    'numero_compra' => $numeroCompra,
+                    'proveedor_id' => $request->proveedor_id,
+                    'producto_id' => $producto->id,
+                    'cantidad' => $linea['cantidad'],
+                    'precio_unitario' => $linea['precio_unitario'],
+                    'subtotal' => $linea['precio_unitario'] * $linea['cantidad'],
+                ]);
+
+                $producto->stock += $linea['cantidad'];
+                $producto->save();
+            }
 
             // Vencimiento de la cuenta por pagar:
             //  - Crédito: fecha de la primera cuota.
@@ -136,9 +163,6 @@ class CompraController extends Controller
                     ]);
                 }
             }
-
-            $producto->stock += $request->cantidad;
-            $producto->save();
         });
 
         return redirect()
@@ -152,13 +176,13 @@ class CompraController extends Controller
 
         $productos = Producto::orderBy('nombre')->get();
 
-        $detalle = $compra->detalles()->first();
+        $detalles = $compra->detalles()->get();
 
         return view('compras.edit', compact(
             'compra',
             'proveedores',
             'productos',
-            'detalle'
+            'detalles'
         ));
     }
 
@@ -166,15 +190,27 @@ class CompraController extends Controller
     {
         $request->validate([
             'proveedor_id' => 'required|exists:proveedores,id',
-            'producto_id' => 'required|exists:productos,id',
-            'cantidad' => 'required|integer|min:1',
-            'precio_unitario' => 'required|numeric|min:0',
+            'productos' => 'required|array|min:1',
+            'productos.*.producto_id' => 'required|exists:productos,id',
+            'productos.*.cantidad' => 'required|integer|min:1',
+            'productos.*.precio_unitario' => 'required|numeric|min:0',
+        ], [
+            'productos.required' => 'Debe agregar al menos un producto a la compra.',
+            'productos.min' => 'Debe agregar al menos un producto a la compra.',
         ]);
 
-        DB::transaction(function () use ($request, $compra) {
-            $detalleAnterior = $compra->detalles()->first();
+        $lineas = array_values($request->productos);
 
-            if ($detalleAnterior) {
+        $idsProductos = array_column($lineas, 'producto_id');
+        if (count($idsProductos) !== count(array_unique($idsProductos))) {
+            throw ValidationException::withMessages([
+                'productos' => 'No repita el mismo producto en la compra; ajuste la cantidad en una sola línea.',
+            ]);
+        }
+
+        DB::transaction(function () use ($request, $compra, $lineas) {
+            // Revertir el stock de los productos actuales y eliminarlos.
+            foreach ($compra->detalles()->get() as $detalleAnterior) {
                 $productoAnterior = Producto::find($detalleAnterior->producto_id);
 
                 if ($productoAnterior) {
@@ -185,11 +221,13 @@ class CompraController extends Controller
                 $detalleAnterior->delete();
             }
 
-            $producto = Producto::findOrFail($request->producto_id);
+            $subtotal = 0;
+            foreach ($lineas as $linea) {
+                $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
+            }
 
-            $subtotal = $request->precio_unitario * $request->cantidad;
             $impuesto = $subtotal * 0.13;
-            $total = $subtotal + $impuesto;
+            $total = round($subtotal + $impuesto, 2);
 
             $compra->update([
                 'proveedor_id' => $request->proveedor_id,
@@ -198,17 +236,21 @@ class CompraController extends Controller
                 'total' => $total,
             ]);
 
-            DetalleCompra::create([
-                'numero_compra' => $compra->numero_compra,
-                'proveedor_id' => $request->proveedor_id,
-                'producto_id' => $producto->id,
-                'cantidad' => $request->cantidad,
-                'precio_unitario' => $request->precio_unitario,
-                'subtotal' => $subtotal,
-            ]);
+            foreach ($lineas as $linea) {
+                $producto = Producto::findOrFail($linea['producto_id']);
 
-            $producto->stock += $request->cantidad;
-            $producto->save();
+                DetalleCompra::create([
+                    'numero_compra' => $compra->numero_compra,
+                    'proveedor_id' => $request->proveedor_id,
+                    'producto_id' => $producto->id,
+                    'cantidad' => $linea['cantidad'],
+                    'precio_unitario' => $linea['precio_unitario'],
+                    'subtotal' => $linea['precio_unitario'] * $linea['cantidad'],
+                ]);
+
+                $producto->stock += $linea['cantidad'];
+                $producto->save();
+            }
         });
 
         return redirect()
@@ -232,9 +274,7 @@ class CompraController extends Controller
     public function destroy(Compra $compra)
     {
         DB::transaction(function () use ($compra) {
-            $detalle = $compra->detalles()->first();
-
-            if ($detalle) {
+            foreach ($compra->detalles()->get() as $detalle) {
                 $producto = Producto::find($detalle->producto_id);
 
                 if ($producto) {
