@@ -155,6 +155,8 @@ class ContabilidadController extends Controller
 
         return $totales;
     }
+
+    private function documentosPorPagar(): array
     {
         $items = DB::table('cuentas_pagar')
             ->join('proveedores', 'cuentas_pagar.proveedor_id', '=', 'proveedores.id')
