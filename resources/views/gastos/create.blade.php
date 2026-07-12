@@ -97,6 +97,30 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Cuenta bancaria
+                        </label>
+
+                        <select name="cuenta_bancaria_id"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
+                                required>
+                            <option value="">Seleccione la cuenta bancaria</option>
+
+                            @foreach($cuentasBancarias as $cuenta)
+                                <option value="{{ $cuenta->id }}"
+                                        data-saldo="{{ $cuenta->saldo }}"
+                                        {{ old('cuenta_bancaria_id') == $cuenta->id ? 'selected' : '' }}>
+                                    {{ $cuenta->banco_nombre }} — {{ $cuenta->numero_cuenta }} — Saldo: ₡{{ number_format($cuenta->saldo, 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <p class="mt-1 text-xs text-gray-500">
+                            El monto se descontará del saldo de esta cuenta.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
                             Monto
                         </label>
 
@@ -107,6 +131,10 @@
                                min="1"
                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
+
+                        <p id="monto-alerta" class="hidden mt-2 text-sm font-bold text-red-700">
+                            El monto ingresado supera el presupuesto disponible para esta categoría. No es posible registrar el gasto.
+                        </p>
                     </div>
 
                     <div>
@@ -214,6 +242,8 @@
             const ppConsumido = document.getElementById('pp-consumido');
             const ppDisponible = document.getElementById('pp-disponible');
             const ppAlerta = document.getElementById('pp-alerta');
+            const montoAlerta = document.getElementById('monto-alerta');
+            const submitBtn = document.querySelector('button[type="submit"]');
             const disponibleUrl = "{{ route('presupuesto.disponible') }}";
 
             const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -224,17 +254,25 @@
             }
 
             function evaluarMonto() {
-                if (dispActual === null) return;
+                if (dispActual === null) {
+                    montoAlerta.classList.add('hidden');
+                    if (submitBtn) submitBtn.disabled = false;
+                    return;
+                }
                 const monto = parseFloat(montoInput.value) || 0;
                 if (monto > dispActual) {
                     ppAlerta.textContent = 'El monto ingresado supera el presupuesto disponible para esta categoría.';
                     ppAlerta.classList.remove('hidden');
+                    montoAlerta.classList.remove('hidden');
                     panel.classList.remove('bg-gray-50', 'border-gray-200');
                     panel.classList.add('bg-red-50', 'border-red-300');
+                    if (submitBtn) submitBtn.disabled = true;
                 } else {
                     ppAlerta.classList.add('hidden');
+                    montoAlerta.classList.add('hidden');
                     panel.classList.remove('bg-red-50', 'border-red-300');
                     panel.classList.add('bg-gray-50', 'border-gray-200');
+                    if (submitBtn) submitBtn.disabled = false;
                 }
             }
 
