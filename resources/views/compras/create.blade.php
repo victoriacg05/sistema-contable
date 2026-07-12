@@ -217,10 +217,10 @@
                         </p>
                     </div>
 
-                    {{-- Cuenta bancaria de origen (solo compras de contado a proveedor) --}}
+                    {{-- Cuenta bancaria (compras a proveedor) --}}
                     <div class="md:col-span-2 grupo-proveedor" id="grupo-banco">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Cuenta bancaria (pago de contado)
+                            Cuenta bancaria
                         </label>
 
                         <select name="cuenta_bancaria_id"
@@ -236,8 +236,11 @@
                             @endforeach
                         </select>
 
-                        <p class="mt-2 text-sm text-gray-500">
+                        <p class="mt-2 text-sm text-gray-500" id="banco-nota-contado">
                             Se descontará el total de la compra del saldo de esta cuenta y se generará el asiento contable automáticamente.
+                        </p>
+                        <p class="mt-2 text-sm text-gray-500 hidden" id="banco-nota-credito">
+                            En crédito el saldo bancario no se ve afectado ahora; el banco se descontará cuando se registre el pago de la cuenta por pagar.
                         </p>
                     </div>
 
@@ -320,6 +323,8 @@
             // --- Cuenta bancaria (pago de contado a proveedor) ---
             const cuentaBancariaSel = document.getElementById('cuenta_bancaria_id');
             const grupoBanco = document.getElementById('grupo-banco');
+            const bancoNotaContado = document.getElementById('banco-nota-contado');
+            const bancoNotaCredito = document.getElementById('banco-nota-credito');
 
             // --- Tipo de operación (proveedor / cliente externo) ---
             const tipoOperacion = document.getElementById('tipo_operacion');
@@ -450,18 +455,27 @@
             }
 
             function toggleBanco() {
-                // La cuenta bancaria solo aplica a compras de contado a proveedor.
-                const aplica = !esCliente() && !esCredito();
+                // La cuenta bancaria se muestra para compras a proveedor
+                // (contado y crédito). Solo es obligatoria y afecta el saldo
+                // en compras de contado; en crédito es informativa.
+                const esProveedor = !esCliente();
+                const contado = !esCredito();
 
                 if (grupoBanco) {
-                    grupoBanco.classList.toggle('hidden', !aplica);
+                    grupoBanco.classList.toggle('hidden', !esProveedor);
                 }
                 if (cuentaBancariaSel) {
-                    cuentaBancariaSel.disabled = !aplica;
-                    cuentaBancariaSel.required = aplica;
-                    if (!aplica) {
+                    cuentaBancariaSel.disabled = !esProveedor;
+                    cuentaBancariaSel.required = esProveedor && contado;
+                    if (!esProveedor) {
                         cuentaBancariaSel.value = '';
                     }
+                }
+                if (bancoNotaContado) {
+                    bancoNotaContado.classList.toggle('hidden', !contado);
+                }
+                if (bancoNotaCredito) {
+                    bancoNotaCredito.classList.toggle('hidden', contado);
                 }
             }
 
