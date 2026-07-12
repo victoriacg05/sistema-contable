@@ -71,6 +71,9 @@
                             </svg>
                             <span class="font-mono text-[#b71c1c]">{{ $grupo }}</span>
                             <span>{{ $nombreGrupo }}</span>
+                            <span class="ml-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-sm font-bold">
+                                Total: ₡{{ number_format($saldos[$grupo] ?? 0, 2) }}
+                            </span>
                         </div>
                         <div class="flex items-center gap-3">
                             @if($cuentaPrincipal)
@@ -111,6 +114,9 @@
                                         </svg>
                                         <span class="font-mono text-sm text-[#b71c1c] font-semibold">{{ $subcuenta->codigo_cuenta }}</span>
                                         <span class="text-gray-800 {{ $esBanco ? 'font-semibold' : '' }}">{{ $subcuenta->nombre }}</span>
+                                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                                            Total: ₡{{ number_format($saldos[$subcuenta->codigo_cuenta] ?? 0, 2) }}
+                                        </span>
                                         @if($totalItems > 0)
                                             <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
                                                 {{ $totalItems }} {{ $totalItems === 1 ? 'movimiento' : 'movimientos' }}

@@ -55,7 +55,12 @@ class ContabilidadController extends Controller
         // cuenta "Bancos" (1.1.2) del catálogo.
         $cuentasBancarias = \App\Models\CuentaBancaria::orderBy('banco_nombre')->get();
 
-        return view('contabilidad.cuentas.index', compact('cuentas', 'movimientos', 'modulos', 'operativos', 'cuentasBancarias'));
+        // Saldo/total acumulado por cada cuenta (hoja y agrupadora) para
+        // mostrarlo junto al nombre en el catálogo.
+        $bancosTotal = (float) $cuentasBancarias->where('estado', true)->sum('saldo');
+        $saldos = $this->saldosPorCuenta($cuentas, $operativos, $movimientos, $bancosTotal);
+
+        return view('contabilidad.cuentas.index', compact('cuentas', 'movimientos', 'modulos', 'operativos', 'cuentasBancarias', 'saldos'));
     }
 
     /**
@@ -91,7 +96,65 @@ class ContabilidadController extends Controller
         return $mapa;
     }
 
-    private function documentosPorPagar(): array
+    /**
+     * Calcula el saldo/total acumulado de cada cuenta del catálogo (tanto
+     * nodos hoja como agrupadores) para mostrarlo junto al nombre.
+     *
+     * - Bancos (1.1.2): suma de los saldos de las cuentas bancarias.
+     * - Cuentas por pagar/cobrar e inventario: saldo real del módulo operativo.
+     * - Resto de cuentas hoja: saldo según naturaleza a partir de los asientos
+     *   (deudora = debe - haber para grupos 1/5/6; acreedora = haber - debe
+     *   para grupos 2/3/4).
+     * - Cuentas agrupadoras: suma de los saldos de todas sus subcuentas.
+     *
+     * @return array<string, float>
+     */
+    private function saldosPorCuenta($cuentas, array $operativos, $movimientos, float $bancosTotal): array
+    {
+        $debe = [];
+        $haber = [];
+        foreach ($movimientos as $m) {
+            $debe[$m->codigo_cuenta] = ($debe[$m->codigo_cuenta] ?? 0) + (float) $m->debe;
+            $haber[$m->codigo_cuenta] = ($haber[$m->codigo_cuenta] ?? 0) + (float) $m->haber;
+        }
+
+        // Saldo base de cada cuenta hoja.
+        $base = [];
+        foreach ($cuentas as $cuenta) {
+            if (! $cuenta->es_hoja) {
+                continue;
+            }
+
+            $codigo = $cuenta->codigo_cuenta;
+            $grupo = explode('.', $codigo)[0];
+
+            if ($codigo === '1.1.2') {
+                $base[$codigo] = $bancosTotal;
+            } elseif (isset($operativos[$codigo])) {
+                $base[$codigo] = (float) ($operativos[$codigo]['total_saldo'] ?? 0);
+            } else {
+                $d = $debe[$codigo] ?? 0;
+                $h = $haber[$codigo] ?? 0;
+                $base[$codigo] = in_array($grupo, ['2', '3', '4'], true) ? ($h - $d) : ($d - $h);
+            }
+        }
+
+        // Total acumulado de cada nodo = suma de su subárbol (incluida sí misma).
+        $totales = [];
+        foreach ($cuentas as $cuenta) {
+            $codigo = $cuenta->codigo_cuenta;
+            $prefijo = $codigo . '.';
+            $suma = 0;
+            foreach ($base as $codHoja => $valor) {
+                if ($codHoja === $codigo || str_starts_with($codHoja, $prefijo)) {
+                    $suma += $valor;
+                }
+            }
+            $totales[$codigo] = $suma;
+        }
+
+        return $totales;
+    }
     {
         $items = DB::table('cuentas_pagar')
             ->join('proveedores', 'cuentas_pagar.proveedor_id', '=', 'proveedores.id')
