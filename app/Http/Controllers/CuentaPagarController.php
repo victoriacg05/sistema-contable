@@ -20,7 +20,8 @@ class CuentaPagarController extends Controller
     public function index()
     {
         $cuentas = CuentaPagar::with(['proveedor', 'estado'])
-            ->orderBy('fecha_vencimiento')
+            ->orderByDesc('fecha_emision')
+            ->orderByDesc('numero_compra')
             ->get();
 
         return view('cuentas-pagar.index', compact('cuentas'));
