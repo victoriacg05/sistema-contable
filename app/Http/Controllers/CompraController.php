@@ -14,6 +14,7 @@ use App\Models\DetalleFactura;
 use App\Models\Cliente;
 use App\Models\MetodoPago;
 use App\Models\CuentaCobrar;
+use App\Models\PlazoVenta;
 use App\Models\CuentaBancaria;
 use App\Services\BitacoraService;
 use App\Services\InventarioService;
@@ -314,6 +315,33 @@ class CompraController extends Controller
             ]);
         }
 
+        // Las ventas a crédito también registran plazos (cuotas) de cobro.
+        $cuotas = [];
+        if ($esCredito) {
+            $request->validate([
+                'cuotas' => 'required|array|min:1',
+                'cuotas.*.fecha_vencimiento' => 'required|date',
+                'cuotas.*.monto' => 'required|numeric|min:0.01',
+            ], [
+                'cuotas.required' => 'Debe registrar al menos un plazo de pago para una venta a crédito.',
+                'cuotas.min' => 'Debe registrar al menos un plazo de pago para una venta a crédito.',
+                'cuotas.*.fecha_vencimiento.required' => 'Cada cuota debe tener una fecha de vencimiento.',
+                'cuotas.*.monto.required' => 'Cada cuota debe tener un monto.',
+                'cuotas.*.monto.min' => 'El monto de cada cuota debe ser mayor a cero.',
+            ]);
+
+            $cuotas = array_values($request->cuotas);
+
+            $sumaCuotas = round(array_sum(array_column($cuotas, 'monto')), 2);
+
+            if (abs($sumaCuotas - $total) > 0.01) {
+                throw ValidationException::withMessages([
+                    'cuotas' => 'La suma de las cuotas (₡' . number_format($sumaCuotas, 2)
+                        . ') debe ser igual al total de la venta (₡' . number_format($total, 2) . ').',
+                ]);
+            }
+        }
+
         // Validar stock disponible antes de crear la factura.
         foreach ($lineas as $linea) {
             $producto = Producto::findOrFail($linea['producto_id']);
@@ -324,7 +352,7 @@ class CompraController extends Controller
             }
         }
 
-        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito) {
+        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito, $cuotas) {
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
@@ -372,15 +400,28 @@ class CompraController extends Controller
             }
 
             if ($esCredito) {
+                $fechaVencimiento = collect($cuotas)->min('fecha_vencimiento');
+
                 CuentaCobrar::create([
                     'numero_factura' => $numeroFactura,
                     'cliente_id' => $request->cliente_id,
                     'monto_original' => $total,
                     'saldo_pendiente' => $total,
                     'fecha_emision' => now(),
-                    'fecha_vencimiento' => now()->addDays(30),
+                    'fecha_vencimiento' => $fechaVencimiento,
                     'estado_id' => $estadoPendiente?->id ?? 1,
                 ]);
+
+                foreach ($cuotas as $indice => $cuota) {
+                    PlazoVenta::create([
+                        'numero_factura' => $numeroFactura,
+                        'cliente_id' => $request->cliente_id,
+                        'numero_cuota' => $indice + 1,
+                        'fecha_vencimiento' => $cuota['fecha_vencimiento'],
+                        'monto' => $cuota['monto'],
+                        'saldo_pendiente' => $cuota['monto'],
+                    ]);
+                }
             }
 
             return $factura;

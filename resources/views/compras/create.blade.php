@@ -253,7 +253,7 @@
                             <div>
                                 <h3 class="text-lg font-bold text-[#1f2937]">Plazos de pago</h3>
                                 <p class="text-sm text-gray-600">
-                                    Total de la compra:
+                                    Total de la operación:
                                     <span id="total-compra" class="font-bold text-[#b71c1c]">₡0.00</span>
                                     <span class="text-gray-500">(incluye 13% de impuesto)</span>
                                 </p>
@@ -373,7 +373,15 @@
 
             function calcularTotal() {
                 const subtotal = calcularSubtotal();
-                return Math.round((subtotal + subtotal * IMPUESTO) * 100) / 100;
+                let total = Math.round((subtotal + subtotal * IMPUESTO) * 100) / 100;
+
+                // En venta a cliente el total considera el descuento aplicado.
+                if (esCliente()) {
+                    const desc = parseFloat(descuentoInput.value) || 0;
+                    total = Math.max(0, Math.round((total - desc) * 100) / 100);
+                }
+
+                return total;
             }
 
             function recalcular() {
@@ -390,7 +398,7 @@
                 subtotalEl.textContent = formatear(subtotal);
                 impuestoEl.textContent = formatear(impuesto);
                 totalProductosEl.textContent = formatear(total);
-                if (!esCliente() && esCredito()) actualizarSuma();
+                if (esCredito()) actualizarSuma();
             }
 
             function esCliente() {
@@ -439,14 +447,8 @@
                 tipoComprobanteSel.required = cliente;
                 descuentoInput.disabled = !cliente;
 
-                if (cliente) {
-                    // La venta no usa plazos de proveedor.
-                    seccionCredito.classList.add('hidden');
-                    listaCuotas.innerHTML = '';
-                    mensajeEl.textContent = '';
-                } else {
-                    toggleSeccion();
-                }
+                // Los plazos aplican a cualquier operación a crédito.
+                toggleSeccion();
 
                 toggleBanco();
 
@@ -556,8 +558,9 @@
             }
 
             function toggleSeccion() {
-                // Los plazos de pago solo aplican a compras a proveedor a crédito.
-                if (!esCliente() && esCredito()) {
+                // Los plazos de pago aplican a cualquier operación a crédito
+                // (compra a proveedor o venta a cliente).
+                if (esCredito()) {
                     seccionCredito.classList.remove('hidden');
                     if (listaCuotas.children.length === 0) {
                         generarCuotas();
@@ -613,15 +616,15 @@
                     alert('Debe agregar al menos un producto a la compra.');
                     return;
                 }
-                if (!esCliente() && esCredito()) {
+                if (esCredito()) {
                     if (listaCuotas.children.length === 0) {
                         e.preventDefault();
-                        alert('Debe registrar al menos un plazo de pago para una compra a crédito.');
+                        alert('Debe registrar al menos un plazo de pago para una operación a crédito.');
                         return;
                     }
                     if (!actualizarSuma()) {
                         e.preventDefault();
-                        alert('La suma de las cuotas debe ser igual al total de la compra.');
+                        alert('La suma de las cuotas debe ser igual al total.');
                         return;
                     }
                 }

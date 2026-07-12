@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CuentaCobrar;
 use App\Models\PagoCuentaCobrar;
+use App\Models\PlazoVenta;
 use App\Models\MetodoPago;
 use App\Models\Estado;
 use App\Services\BitacoraService;
@@ -77,6 +78,30 @@ class CuentaCobrarController extends Controller
                         ? ($estadoPagado?->id ?? 2)
                         : ($estadoPendiente?->id ?? 1),
                 ]);
+
+            // Distribuir el pago entre las cuotas pendientes (de la más
+            // próxima a la más lejana) para mantener actualizado el saldo
+            // pendiente de cada plazo de una venta a crédito.
+            $montoRestante = $request->monto_pagado;
+
+            $plazos = PlazoVenta::where('numero_factura', $cuenta->numero_factura)
+                ->where('cliente_id', $cuenta->cliente_id)
+                ->where('saldo_pendiente', '>', 0)
+                ->orderBy('fecha_vencimiento')
+                ->orderBy('numero_cuota')
+                ->get();
+
+            foreach ($plazos as $plazo) {
+                if ($montoRestante <= 0) {
+                    break;
+                }
+
+                $abono = min($montoRestante, (float) $plazo->saldo_pendiente);
+                $plazo->saldo_pendiente = (float) $plazo->saldo_pendiente - $abono;
+                $plazo->save();
+
+                $montoRestante -= $abono;
+            }
 
             DB::table('historial_saldos')->insert([
                 'referencia_documento' => $numero_factura,
