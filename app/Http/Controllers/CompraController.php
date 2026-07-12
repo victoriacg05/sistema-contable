@@ -32,6 +32,7 @@ class CompraController extends Controller
     {
         $compras = Compra::with(['proveedor', 'estado', 'metodoPago', 'detalles.producto', 'plazos'])
             ->orderByDesc('fecha')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('compras.index', compact('compras'));
@@ -45,6 +46,7 @@ class CompraController extends Controller
     {
         $facturas = Factura::with(['cliente', 'estado', 'metodoPago', 'detalles.producto'])
             ->orderByDesc('fecha')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('compras.clientes', compact('facturas'));

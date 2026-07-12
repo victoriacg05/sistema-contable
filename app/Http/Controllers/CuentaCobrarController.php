@@ -17,7 +17,8 @@ class CuentaCobrarController extends Controller
     public function index()
     {
         $cuentas = CuentaCobrar::with(['cliente', 'estado'])
-            ->orderBy('fecha_vencimiento')
+            ->orderByDesc('fecha_emision')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('cuentas-cobrar.index', compact('cuentas'));

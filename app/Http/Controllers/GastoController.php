@@ -17,6 +17,7 @@ class GastoController extends Controller
     {
         $gastos = Gasto::with(['categoria', 'tipoGasto', 'metodoPago', 'usuario'])
             ->orderByDesc('fecha')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('gastos.index', compact('gastos'));

@@ -461,6 +461,7 @@ class ContabilidadController extends Controller
             ->join('estados', 'asientos_contables.estado_id', '=', 'estados.id')
             ->select('asientos_contables.*', 'users.name as usuario_nombre', 'estados.nombre as estado_nombre')
             ->orderByDesc('asientos_contables.fecha')
+            ->orderByDesc('asientos_contables.created_at')
             ->get();
 
         return view('contabilidad.asientos.index', compact('asientos'));

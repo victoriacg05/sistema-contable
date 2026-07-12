@@ -14,6 +14,7 @@ class IngresoController extends Controller
     {
         $ingresos = Ingreso::with(['metodoPago', 'usuario'])
             ->orderByDesc('fecha')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('ingresos.index', compact('ingresos'));

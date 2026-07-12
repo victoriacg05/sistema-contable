@@ -23,6 +23,7 @@ class InventarioController extends Controller
                 'tipos_movimiento_inventario.nombre as tipo_nombre'
             )
             ->orderByDesc('movimientos_inventario.fecha')
+            ->orderByDesc('movimientos_inventario.created_at')
             ->get();
 
         return view('inventario.index', compact('movimientos'));
