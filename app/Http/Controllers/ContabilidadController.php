@@ -12,13 +12,41 @@ class ContabilidadController extends Controller
 {
     public function indexCuentas()
     {
-        $cuentas = DB::table('catalogo_cuentas')
-            ->join('tipos_cuenta_contable', 'catalogo_cuentas.tipo_cuenta_contable_id', '=', 'tipos_cuenta_contable.id')
-            ->select('catalogo_cuentas.*', 'tipos_cuenta_contable.nombre as tipo_nombre')
-            ->orderBy('catalogo_cuentas.codigo_cuenta')
+        // Catálogo enriquecido con jerarquía (es_hoja, ruta, tipo_nombre).
+        $cuentas = $this->catalogoConJerarquia();
+
+        // Todos los movimientos (detalle de asientos) para desplegarlos en
+        // línea dentro de cada cuenta del catálogo.
+        $movimientos = DB::table('detalle_asientos_contables')
+            ->join('asientos_contables', function ($join) {
+                $join->on('detalle_asientos_contables.numero_asiento', '=', 'asientos_contables.numero_asiento')
+                    ->on('detalle_asientos_contables.fecha_asiento', '=', 'asientos_contables.fecha');
+            })
+            ->join('estados', 'asientos_contables.estado_id', '=', 'estados.id')
+            ->orderBy('asientos_contables.fecha')
+            ->orderBy('detalle_asientos_contables.numero_asiento')
+            ->select(
+                'detalle_asientos_contables.numero_asiento',
+                'detalle_asientos_contables.fecha_asiento',
+                'detalle_asientos_contables.codigo_cuenta',
+                'detalle_asientos_contables.debe',
+                'detalle_asientos_contables.haber',
+                'detalle_asientos_contables.descripcion',
+                'asientos_contables.descripcion as asiento_descripcion',
+                'estados.nombre as estado_nombre'
+            )
             ->get();
 
-        return view('contabilidad.cuentas.index', compact('cuentas'));
+        // Módulo relacionado por cuenta (para la opción "Ver más").
+        $modulos = [];
+        foreach ($cuentas as $cuenta) {
+            $modulo = $this->moduloRelacionado($cuenta->nombre);
+            if ($modulo) {
+                $modulos[$cuenta->codigo_cuenta] = $modulo;
+            }
+        }
+
+        return view('contabilidad.cuentas.index', compact('cuentas', 'movimientos', 'modulos'));
     }
 
     public function createCuenta()
