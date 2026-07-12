@@ -18,6 +18,7 @@ class Compra extends Model
         'usuario_id',
         'estado_id',
         'metodo_pago_id',
+        'cuenta_bancaria_id',
         'tipo_compra',
         'fecha',
         'subtotal',
@@ -38,6 +39,11 @@ class Compra extends Model
     public function metodoPago()
     {
         return $this->belongsTo(MetodoPago::class, 'metodo_pago_id');
+    }
+
+    public function cuentaBancaria()
+    {
+        return $this->belongsTo(CuentaBancaria::class, 'cuenta_bancaria_id');
     }
 
     public function detalles()

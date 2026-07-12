@@ -217,6 +217,30 @@
                         </p>
                     </div>
 
+                    {{-- Cuenta bancaria de origen (solo compras de contado a proveedor) --}}
+                    <div class="md:col-span-2 grupo-proveedor" id="grupo-banco">
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Cuenta bancaria (pago de contado)
+                        </label>
+
+                        <select name="cuenta_bancaria_id"
+                                id="cuenta_bancaria_id"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
+                            <option value="">Seleccione la cuenta bancaria</option>
+                            @foreach($cuentasBancarias as $cuentaBancaria)
+                                <option value="{{ $cuentaBancaria->id }}"
+                                        data-saldo="{{ $cuentaBancaria->saldo }}"
+                                        {{ old('cuenta_bancaria_id') == $cuentaBancaria->id ? 'selected' : '' }}>
+                                    {{ $cuentaBancaria->banco_nombre }} — {{ $cuentaBancaria->numero_cuenta }} — Saldo: ₡{{ number_format($cuentaBancaria->saldo, 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <p class="mt-2 text-sm text-gray-500">
+                            Se descontará el total de la compra del saldo de esta cuenta y se generará el asiento contable automáticamente.
+                        </p>
+                    </div>
+
                 </div>
 
                 {{-- Sección de plazos (solo para compras a crédito) --}}
@@ -292,6 +316,10 @@
             const sumaCuotasEl = document.getElementById('suma-cuotas');
             const mensajeEl = document.getElementById('mensaje-cuotas');
             const form = document.getElementById('form-compra');
+
+            // --- Cuenta bancaria (pago de contado a proveedor) ---
+            const cuentaBancariaSel = document.getElementById('cuenta_bancaria_id');
+            const grupoBanco = document.getElementById('grupo-banco');
 
             // --- Tipo de operación (proveedor / cliente externo) ---
             const tipoOperacion = document.getElementById('tipo_operacion');
@@ -415,8 +443,26 @@
                     toggleSeccion();
                 }
 
+                toggleBanco();
+
                 aplicarModoPrecios();
                 recalcular();
+            }
+
+            function toggleBanco() {
+                // La cuenta bancaria solo aplica a compras de contado a proveedor.
+                const aplica = !esCliente() && !esCredito();
+
+                if (grupoBanco) {
+                    grupoBanco.classList.toggle('hidden', !aplica);
+                }
+                if (cuentaBancariaSel) {
+                    cuentaBancariaSel.disabled = !aplica;
+                    cuentaBancariaSel.required = aplica;
+                    if (!aplica) {
+                        cuentaBancariaSel.value = '';
+                    }
+                }
             }
 
             function formatear(valor) {
@@ -510,6 +556,8 @@
                     listaCuotas.innerHTML = '';
                     mensajeEl.textContent = '';
                 }
+
+                toggleBanco();
             }
 
             // Eventos de productos
@@ -560,6 +608,28 @@
                     if (!actualizarSuma()) {
                         e.preventDefault();
                         alert('La suma de las cuotas debe ser igual al total de la compra.');
+                        return;
+                    }
+                }
+
+                // Compra de contado a proveedor: exige cuenta bancaria con fondos suficientes.
+                if (!esCliente() && !esCredito()) {
+                    if (!cuentaBancariaSel.value) {
+                        e.preventDefault();
+                        alert('Seleccione la cuenta bancaria desde la cual se pagará la compra de contado.');
+                        return;
+                    }
+
+                    const opcion = cuentaBancariaSel.options[cuentaBancariaSel.selectedIndex];
+                    const saldo = parseFloat(opcion.dataset.saldo || '0');
+                    const total = calcularTotal();
+
+                    if (total > saldo + 0.0001) {
+                        e.preventDefault();
+                        alert('Fondos insuficientes en la cuenta seleccionada.\n'
+                            + 'Saldo disponible: ' + formatear(saldo) + '\n'
+                            + 'Total de la compra: ' + formatear(total));
+                        return;
                     }
                 }
             });

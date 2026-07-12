@@ -86,6 +86,28 @@
                         </select>
                     </div>
 
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Cuenta bancaria de origen
+                        </label>
+
+                        <select name="cuenta_bancaria_id"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
+                                required>
+                            <option value="">Seleccione la cuenta bancaria</option>
+
+                            @foreach($cuentasBancarias as $cuentaBancaria)
+                                <option value="{{ $cuentaBancaria->id }}" {{ old('cuenta_bancaria_id') == $cuentaBancaria->id ? 'selected' : '' }}>
+                                    {{ $cuentaBancaria->banco_nombre }} — {{ $cuentaBancaria->numero_cuenta }} — Saldo: ₡{{ number_format($cuentaBancaria->saldo, 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <p class="mt-2 text-sm text-gray-500">
+                            El monto pagado se descontará del saldo de esta cuenta y se generará el asiento contable automáticamente.
+                        </p>
+                    </div>
+
                     <div class="md:col-span-2">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
                             Observación

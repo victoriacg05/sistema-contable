@@ -51,7 +51,11 @@ class ContabilidadController extends Controller
         // directamente en la cuenta del catálogo correspondiente.
         $operativos = $this->datosOperativosPorCuenta($cuentas);
 
-        return view('contabilidad.cuentas.index', compact('cuentas', 'movimientos', 'modulos', 'operativos'));
+        // Cuentas bancarias reales con su saldo, para reflejarlas dentro de la
+        // cuenta "Bancos" (1.1.2) del catálogo.
+        $cuentasBancarias = \App\Models\CuentaBancaria::orderBy('banco_nombre')->get();
+
+        return view('contabilidad.cuentas.index', compact('cuentas', 'movimientos', 'modulos', 'operativos', 'cuentasBancarias'));
     }
 
     /**

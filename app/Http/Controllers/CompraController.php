@@ -14,8 +14,11 @@ use App\Models\DetalleFactura;
 use App\Models\Cliente;
 use App\Models\MetodoPago;
 use App\Models\CuentaCobrar;
+use App\Models\CuentaBancaria;
 use App\Services\BitacoraService;
 use App\Services\InventarioService;
+use App\Services\AsientoContableService;
+use App\Services\BancoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -60,12 +63,17 @@ class CompraController extends Controller
             ->orderBy('nombre')
             ->get();
 
+        $cuentasBancarias = CuentaBancaria::where('estado', true)
+            ->orderBy('banco_nombre')
+            ->get();
+
         return view('compras.create', compact(
             'proveedores',
             'productos',
             'clientes',
             'metodosPago',
-            'tiposComprobante'
+            'tiposComprobante',
+            'cuentasBancarias'
         ));
     }
 
@@ -114,6 +122,18 @@ class CompraController extends Controller
             'tipo_compra' => 'required|in:contado,credito',
         ]);
 
+        $esCredito = $request->tipo_compra === 'credito';
+
+        // Las compras de contado exigen una cuenta bancaria de origen del pago.
+        if (! $esCredito) {
+            $request->validate([
+                'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
+            ], [
+                'cuenta_bancaria_id.required' => 'Seleccione la cuenta bancaria desde la cual se pagará la compra de contado.',
+                'cuenta_bancaria_id.exists' => 'La cuenta bancaria seleccionada no es válida.',
+            ]);
+        }
+
         $subtotal = 0;
         foreach ($lineas as $linea) {
             $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
@@ -122,7 +142,6 @@ class CompraController extends Controller
         $impuesto = $subtotal * 0.13;
         $total = round($subtotal + $impuesto, 2);
 
-        $esCredito = $request->tipo_compra === 'credito';
         $cuotas = [];
 
         if ($esCredito) {
@@ -166,6 +185,7 @@ class CompraController extends Controller
                     ? ($estadoPendiente?->id ?? 1)
                     : ($estadoPagado?->id ?? 2),
                 'metodo_pago_id' => $request->metodo_pago_id,
+                'cuenta_bancaria_id' => $esCredito ? null : $request->cuenta_bancaria_id,
                 'tipo_compra' => $request->tipo_compra,
                 'fecha' => now(),
                 'subtotal' => $subtotal,
@@ -223,6 +243,34 @@ class CompraController extends Controller
                         'saldo_pendiente' => $cuota['monto'],
                     ]);
                 }
+            }
+
+            // Registro contable y de tesorería automático.
+            $codigoInventario = '1.1.4.1'; // Inventario en Bodega
+            $codigoBancos = '1.1.2';       // Bancos
+            $codigoPorPagar = '2.1.1';     // Cuentas por Pagar
+
+            if ($esCredito) {
+                // Crédito: no afecta el banco. Debe Inventario / Haber Cuentas por Pagar.
+                AsientoContableService::generar(now(), "Compra a crédito {$numeroCompra}", [
+                    ['codigo_cuenta' => $codigoInventario, 'debe' => $total, 'haber' => 0, 'descripcion' => "Compra a crédito {$numeroCompra}"],
+                    ['codigo_cuenta' => $codigoPorPagar, 'debe' => 0, 'haber' => $total, 'descripcion' => "Cuenta por pagar {$numeroCompra}"],
+                ]);
+            } else {
+                // Contado: descuenta el banco y genera Debe Inventario / Haber Bancos.
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()->findOrFail($request->cuenta_bancaria_id);
+
+                BancoService::debitar(
+                    $cuentaBancaria,
+                    $total,
+                    "Compra de contado {$numeroCompra}",
+                    $numeroCompra
+                );
+
+                AsientoContableService::generar(now(), "Compra de contado {$numeroCompra}", [
+                    ['codigo_cuenta' => $codigoInventario, 'debe' => $total, 'haber' => 0, 'descripcion' => "Compra de contado {$numeroCompra}"],
+                    ['codigo_cuenta' => $codigoBancos, 'debe' => 0, 'haber' => $total, 'descripcion' => "Pago desde {$cuentaBancaria->banco_nombre}"],
+                ]);
             }
         });
 

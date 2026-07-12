@@ -44,15 +44,6 @@
                     '6' => 'Costos',
                 ];
 
-                $bancosCR = [
-                    ['nombre' => 'BAC San Jose', 'monedas' => ['Colones']],
-                    ['nombre' => 'Banco de Costa Rica (BCR)', 'monedas' => ['Colones']],
-                    ['nombre' => 'Banco Nacional (BN)', 'monedas' => ['Colones']],
-                    ['nombre' => 'Scotiabank', 'monedas' => ['Colones']],
-                    ['nombre' => 'Davivienda', 'monedas' => ['Colones']],
-                    ['nombre' => 'Banco Promerica', 'monedas' => ['Colones']],
-                ];
-
                 // Devuelve los movimientos de una cuenta y de todas sus
                 // subcuentas (subárbol), ordenados por fecha.
                 $movimientosDeCuenta = function($codigo) use ($movimientos) {
@@ -144,14 +135,25 @@
                                 <div class="ml-6 mt-1 mb-3">
                                     @if($esBanco)
                                         <div class="mb-3 space-y-1">
-                                            @foreach($bancosCR as $banco)
-                                                <div class="border-l-2 border-blue-200 pl-4 py-2 hover:bg-blue-50 rounded-r-lg transition">
-                                                    <p class="font-semibold text-gray-800 text-sm">{{ $banco['nombre'] }}</p>
-                                                    <div class="flex gap-3 mt-1">
-                                                        <span class="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-medium">Colones (&#8353;)</span>
+                                            @forelse($cuentasBancarias ?? [] as $banco)
+                                                <div class="flex items-center justify-between border-l-2 {{ $banco->estado ? 'border-blue-200' : 'border-red-200' }} pl-4 py-2 hover:bg-blue-50 rounded-r-lg transition">
+                                                    <div>
+                                                        <p class="font-semibold text-gray-800 text-sm">{{ $banco->banco_nombre }}</p>
+                                                        <div class="flex gap-3 mt-1">
+                                                            <span class="text-xs text-gray-500 font-mono">{{ $banco->numero_cuenta }}</span>
+                                                            <span class="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-medium">{{ $banco->moneda === 'CRC' ? 'Colones (₡)' : $banco->moneda }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <p class="font-bold text-sm {{ $banco->saldo > 0 ? 'text-green-700' : 'text-gray-500' }}">₡{{ number_format($banco->saldo, 2) }}</p>
+                                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $banco->estado ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                                            {{ $banco->estado ? 'Activa' : 'Inactiva' }}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            @endforeach
+                                            @empty
+                                                <p class="text-sm text-gray-500 pl-4 py-2">No hay cuentas bancarias registradas.</p>
+                                            @endforelse
                                         </div>
                                     @endif
 

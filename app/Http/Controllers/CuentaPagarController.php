@@ -7,7 +7,10 @@ use App\Models\PagoCuentaPagar;
 use App\Models\PlazoCompra;
 use App\Models\MetodoPago;
 use App\Models\Estado;
+use App\Models\CuentaBancaria;
 use App\Services\BitacoraService;
+use App\Services\AsientoContableService;
+use App\Services\BancoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +37,11 @@ class CuentaPagarController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        return view('cuentas-pagar.pago', compact('cuenta', 'metodosPago'));
+        $cuentasBancarias = CuentaBancaria::where('estado', true)
+            ->orderBy('banco_nombre')
+            ->get();
+
+        return view('cuentas-pagar.pago', compact('cuenta', 'metodosPago', 'cuentasBancarias'));
     }
 
     public function storePago(Request $request, $numero_compra, $proveedor_id)
@@ -42,7 +49,11 @@ class CuentaPagarController extends Controller
         $request->validate([
             'monto_pagado' => 'required|numeric|min:1',
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
+            'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
             'observacion' => 'nullable|string|max:500',
+        ], [
+            'cuenta_bancaria_id.required' => 'Seleccione la cuenta bancaria desde la cual se realizará el pago.',
+            'cuenta_bancaria_id.exists' => 'La cuenta bancaria seleccionada no es válida.',
         ]);
 
         DB::transaction(function () use ($request, $numero_compra, $proveedor_id) {
@@ -113,6 +124,23 @@ class CuentaPagarController extends Controller
                 'fecha' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
+            ]);
+
+            // Afecta el banco solo al momento del pago de la obligación:
+            // descuenta el saldo bancario y genera el asiento contable
+            // Debe Cuentas por Pagar (2.1.1) / Haber Bancos (1.1.2).
+            $cuentaBancaria = CuentaBancaria::lockForUpdate()->findOrFail($request->cuenta_bancaria_id);
+
+            BancoService::debitar(
+                $cuentaBancaria,
+                (float) $request->monto_pagado,
+                "Pago de compra {$numero_compra}",
+                $numero_compra
+            );
+
+            AsientoContableService::generar(now(), "Pago de compra a crédito {$numero_compra}", [
+                ['codigo_cuenta' => '2.1.1', 'debe' => $request->monto_pagado, 'haber' => 0, 'descripcion' => "Pago cuenta por pagar {$numero_compra}"],
+                ['codigo_cuenta' => '1.1.2', 'debe' => 0, 'haber' => $request->monto_pagado, 'descripcion' => "Pago desde {$cuentaBancaria->banco_nombre}"],
             ]);
 
             BitacoraService::registrar('pago', 'cuentas_pagar', "Pago de ₡{$request->monto_pagado} a compra $numero_compra");
