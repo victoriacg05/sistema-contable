@@ -43,6 +43,14 @@ class GastoController extends Controller
             'fecha' => 'required|date',
         ]);
 
+        if ($error = $this->validarPresupuesto(
+            $request->categoria_gasto_id,
+            $request->fecha,
+            $request->monto
+        )) {
+            return back()->withInput()->withErrors(['monto' => $error]);
+        }
+
         Gasto::create([
             'numero_comprobante' => 'GAS-' . now()->format('YmdHis'),
             'categoria_gasto_id' => $request->categoria_gasto_id,
@@ -87,6 +95,15 @@ class GastoController extends Controller
             'fecha' => 'required|date',
         ]);
 
+        if ($error = $this->validarPresupuesto(
+            $request->categoria_gasto_id,
+            $request->fecha,
+            $request->monto,
+            $numero_comprobante
+        )) {
+            return back()->withInput()->withErrors(['monto' => $error]);
+        }
+
         DB::table('gastos')
             ->where('numero_comprobante', $numero_comprobante)
             ->where('categoria_gasto_id', $categoria_gasto_id)
@@ -116,5 +133,41 @@ class GastoController extends Controller
         return redirect()
             ->route('gastos.index')
             ->with('success', 'Gasto eliminado correctamente.');
+    }
+
+    /**
+     * Valida el gasto contra el presupuesto de la categoría en el período de la fecha.
+     * Devuelve un mensaje de error si supera el disponible, o null si es válido.
+     * Si no existe una línea presupuestaria para la categoría/período, no se controla.
+     */
+    private function validarPresupuesto($categoriaId, $fecha, $monto, $excluirComprobante = null)
+    {
+        $anio = (int) date('Y', strtotime($fecha));
+        $mes = (int) date('n', strtotime($fecha));
+
+        $presupuesto = DB::table('presupuesto')
+            ->where('categoria_gasto_id', $categoriaId)
+            ->where('anio', $anio)
+            ->where('mes', $mes)
+            ->first();
+
+        if (!$presupuesto) {
+            return null;
+        }
+
+        $ejecutado = DB::table('gastos')
+            ->where('categoria_gasto_id', $categoriaId)
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->when($excluirComprobante, function ($q) use ($excluirComprobante) {
+                $q->where('numero_comprobante', '!=', $excluirComprobante);
+            })
+            ->sum('monto');
+
+        if (($ejecutado + $monto) > $presupuesto->monto_presupuestado) {
+            return 'El monto ingresado supera el presupuesto disponible para esta categoría. No es posible registrar el gasto.';
+        }
+
+        return null;
     }
 }

@@ -102,6 +102,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
     Route::get('/presupuesto/create', [PresupuestoController::class, 'create'])->name('presupuesto.create');
     Route::post('/presupuesto', [PresupuestoController::class, 'store'])->name('presupuesto.store');
+    Route::get('/presupuesto/disponible', [PresupuestoController::class, 'disponible'])->name('presupuesto.disponible');
+    Route::get('/presupuesto/{anio}/{mes}', [PresupuestoController::class, 'show'])
+        ->whereNumber(['anio', 'mes'])
+        ->name('presupuesto.show');
 
     Route::get('/reportes', [ReporteController::class, 'index'])
     ->name('reportes.index');
@@ -110,13 +114,20 @@ Route::middleware(['auth'])->group(function () {
     ->name('reportes.pdf');
 
     Route::get('/presupuesto/{anio}/{mes}/{categoria_gasto_id}/edit', [PresupuestoController::class, 'edit'])
+        ->whereNumber(['anio', 'mes', 'categoria_gasto_id'])
         ->name('presupuesto.edit');
 
     Route::put('/presupuesto/{anio}/{mes}/{categoria_gasto_id}', [PresupuestoController::class, 'update'])
+        ->whereNumber(['anio', 'mes', 'categoria_gasto_id'])
         ->name('presupuesto.update');
 
     Route::delete('/presupuesto/{anio}/{mes}/{categoria_gasto_id}', [PresupuestoController::class, 'destroy'])
+        ->whereNumber(['anio', 'mes', 'categoria_gasto_id'])
         ->name('presupuesto.destroy');
+
+    Route::delete('/presupuesto/{anio}/{mes}', [PresupuestoController::class, 'destroyPeriodo'])
+        ->whereNumber(['anio', 'mes'])
+        ->name('presupuesto.destroyPeriodo');
 
     Route::get('/gastos/{numero_comprobante}/{categoria_gasto_id}/{fecha}/edit', [GastoController::class, 'edit'])
         ->name('gastos.edit');

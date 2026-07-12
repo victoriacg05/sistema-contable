@@ -122,6 +122,30 @@
                     </div>
 
                     <div class="md:col-span-2">
+                        <div id="panel-presupuesto"
+                             class="hidden rounded-2xl border px-6 py-5 bg-gray-50 border-gray-200">
+                            <p class="text-sm font-bold text-gray-700 mb-3">
+                                Control presupuestario · <span id="pp-periodo"></span>
+                            </p>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-500 uppercase">Presupuesto aprobado</p>
+                                    <p id="pp-aprobado" class="text-lg font-extrabold text-gray-800">₡0.00</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-500 uppercase">Consumido</p>
+                                    <p id="pp-consumido" class="text-lg font-extrabold text-gray-800">₡0.00</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-500 uppercase">Disponible</p>
+                                    <p id="pp-disponible" class="text-lg font-extrabold text-green-700">₡0.00</p>
+                                </div>
+                            </div>
+                            <p id="pp-alerta" class="hidden mt-3 text-sm font-bold text-red-700"></p>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
                             Descripción
                         </label>
@@ -180,6 +204,84 @@
 
             categoriaSel.addEventListener('change', actualizarClasificacion);
             actualizarClasificacion();
+
+            // --- Control presupuestario en tiempo real ---
+            const fechaInput = document.querySelector('input[name="fecha"]');
+            const montoInput = document.querySelector('input[name="monto"]');
+            const panel = document.getElementById('panel-presupuesto');
+            const ppPeriodo = document.getElementById('pp-periodo');
+            const ppAprobado = document.getElementById('pp-aprobado');
+            const ppConsumido = document.getElementById('pp-consumido');
+            const ppDisponible = document.getElementById('pp-disponible');
+            const ppAlerta = document.getElementById('pp-alerta');
+            const disponibleUrl = "{{ route('presupuesto.disponible') }}";
+
+            const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+            let dispActual = null;
+
+            function fmt(n) {
+                return '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            function evaluarMonto() {
+                if (dispActual === null) return;
+                const monto = parseFloat(montoInput.value) || 0;
+                if (monto > dispActual) {
+                    ppAlerta.textContent = 'El monto ingresado supera el presupuesto disponible para esta categoría.';
+                    ppAlerta.classList.remove('hidden');
+                    panel.classList.remove('bg-gray-50', 'border-gray-200');
+                    panel.classList.add('bg-red-50', 'border-red-300');
+                } else {
+                    ppAlerta.classList.add('hidden');
+                    panel.classList.remove('bg-red-50', 'border-red-300');
+                    panel.classList.add('bg-gray-50', 'border-gray-200');
+                }
+            }
+
+            function cargarPresupuesto() {
+                const categoria = categoriaSel.value;
+                const fecha = fechaInput.value;
+                if (!categoria || !fecha) {
+                    panel.classList.add('hidden');
+                    dispActual = null;
+                    return;
+                }
+
+                const d = new Date(fecha + 'T00:00:00');
+                const anio = d.getFullYear();
+                const mes = d.getMonth() + 1;
+
+                const url = disponibleUrl + '?categoria_gasto_id=' + encodeURIComponent(categoria)
+                    + '&anio=' + anio + '&mes=' + mes;
+
+                fetch(url, { headers: { 'Accept': 'application/json' } })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.tiene_presupuesto) {
+                            panel.classList.add('hidden');
+                            dispActual = null;
+                            return;
+                        }
+                        ppPeriodo.textContent = meses[mes - 1] + ' ' + anio;
+                        ppAprobado.textContent = fmt(data.presupuestado);
+                        ppConsumido.textContent = fmt(data.ejecutado);
+                        ppDisponible.textContent = fmt(data.disponible);
+                        ppDisponible.classList.toggle('text-red-700', data.disponible < 0);
+                        ppDisponible.classList.toggle('text-green-700', data.disponible >= 0);
+                        dispActual = data.disponible;
+                        panel.classList.remove('hidden');
+                        evaluarMonto();
+                    })
+                    .catch(() => {
+                        panel.classList.add('hidden');
+                        dispActual = null;
+                    });
+            }
+
+            categoriaSel.addEventListener('change', cargarPresupuesto);
+            fechaInput.addEventListener('change', cargarPresupuesto);
+            montoInput.addEventListener('input', evaluarMonto);
+            cargarPresupuesto();
         })();
     </script>
 </x-app-layout>
