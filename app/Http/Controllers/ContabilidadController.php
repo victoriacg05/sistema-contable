@@ -404,10 +404,33 @@ class ContabilidadController extends Controller
     public function createAsiento()
     {
         // Solo las cuentas de detalle (nodos hoja) permiten registrar asientos.
-        $cuentas = $this->catalogoConJerarquia()
+        $cuentasHoja = $this->catalogoConJerarquia()
             ->where('estado', true)
             ->where('es_hoja', true)
             ->values();
+
+        // Cuentas bancarias activas para desglosar la cuenta "Bancos" (1.1.2)
+        // en una ruta por cada banco registrado.
+        $bancos = \App\Models\CuentaBancaria::where('estado', true)
+            ->orderBy('banco_nombre')
+            ->get();
+
+        $cuentas = collect();
+        foreach ($cuentasHoja as $cuenta) {
+            if ($cuenta->codigo_cuenta === '1.1.2' && $bancos->isNotEmpty()) {
+                foreach ($bancos as $banco) {
+                    $cuentas->push((object) [
+                        'codigo_cuenta' => $cuenta->codigo_cuenta,
+                        'etiqueta' => $cuenta->ruta . ' → ' . $banco->banco_nombre,
+                    ]);
+                }
+            } else {
+                $cuentas->push((object) [
+                    'codigo_cuenta' => $cuenta->codigo_cuenta,
+                    'etiqueta' => $cuenta->ruta,
+                ]);
+            }
+        }
 
         $estados = DB::table('estados')->orderBy('nombre')->get();
 

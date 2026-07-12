@@ -62,7 +62,7 @@
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                 <option value="">Seleccione cuenta...</option>
                                 @foreach($cuentas as $cuenta)
-                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->ruta }}</option>
+                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->etiqueta }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -87,7 +87,7 @@
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                 <option value="">Seleccione cuenta...</option>
                                 @foreach($cuentas as $cuenta)
-                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->ruta }}</option>
+                                    <option value="{{ $cuenta->codigo_cuenta }}">{{ $cuenta->codigo_cuenta }} - {{ $cuenta->etiqueta }}</option>
                                 @endforeach
                             </select>
                         </div>
