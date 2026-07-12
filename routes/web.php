@@ -132,6 +132,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/contabilidad/cuentas/create', [ContabilidadController::class, 'createCuenta'])->name('contabilidad.cuentas.create');
     Route::post('/contabilidad/cuentas', [ContabilidadController::class, 'storeCuenta'])->name('contabilidad.cuentas.store');
     Route::get('/contabilidad/cuentas/{codigo}/edit', [ContabilidadController::class, 'editCuenta'])->name('contabilidad.cuentas.edit');
+    Route::get('/contabilidad/cuentas/{codigo}/movimientos', [ContabilidadController::class, 'showCuenta'])->name('contabilidad.cuentas.show');
     Route::put('/contabilidad/cuentas/{codigo}', [ContabilidadController::class, 'updateCuenta'])->name('contabilidad.cuentas.update');
 
     Route::get('/contabilidad/asientos', [ContabilidadController::class, 'indexAsientos'])->name('contabilidad.asientos.index');

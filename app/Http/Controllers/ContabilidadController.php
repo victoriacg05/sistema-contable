@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use App\Services\BitacoraService;
 
 class ContabilidadController extends Controller
@@ -144,6 +145,107 @@ class ContabilidadController extends Controller
         return ! DB::table('catalogo_cuentas')
             ->where('codigo_cuenta', 'like', $codigoCuenta . '.%')
             ->exists();
+    }
+
+    /**
+     * Determina el módulo del sistema relacionado con una cuenta contable a
+     * partir de su nombre, para ofrecer una opción "Ver más" que redirija al
+     * detalle completo. Solo devuelve un destino si la ruta existe.
+     */
+    private function moduloRelacionado(string $nombreCuenta): ?array
+    {
+        $nombre = mb_strtolower($nombreCuenta);
+
+        $mapa = [
+            ['claves' => ['cuentas por cobrar', 'por cobrar'], 'ruta' => 'cuentas-cobrar.index', 'modulo' => 'Cuentas por Cobrar'],
+            ['claves' => ['cuentas por pagar', 'por pagar'], 'ruta' => 'cuentas-pagar.index', 'modulo' => 'Cuentas por Pagar'],
+            ['claves' => ['inventario', 'mercader', 'bodega', 'existencia'], 'ruta' => 'inventario.index', 'modulo' => 'Inventario'],
+            ['claves' => ['banco', 'tesoreria', 'tesorería'], 'ruta' => 'tesoreria.index', 'modulo' => 'Tesorería / Bancos'],
+            ['claves' => ['activo fijo', 'activos fijos'], 'ruta' => 'activos.index', 'modulo' => 'Activos'],
+        ];
+
+        foreach ($mapa as $entrada) {
+            foreach ($entrada['claves'] as $clave) {
+                if (str_contains($nombre, $clave) && Route::has($entrada['ruta'])) {
+                    return ['ruta' => $entrada['ruta'], 'modulo' => $entrada['modulo']];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Muestra el desglose de movimientos de una cuenta contable: todas las
+     * transacciones (detalle de asientos), los totales de debe/haber y el
+     * saldo corrido. Para cuentas agrupadoras se incluyen además los
+     * movimientos de todas sus subcuentas, permitiendo navegar desde los
+     * niveles generales hasta el detalle.
+     */
+    public function showCuenta(string $codigoCuenta)
+    {
+        $cuenta = DB::table('catalogo_cuentas')
+            ->join('tipos_cuenta_contable', 'catalogo_cuentas.tipo_cuenta_contable_id', '=', 'tipos_cuenta_contable.id')
+            ->where('catalogo_cuentas.codigo_cuenta', $codigoCuenta)
+            ->select('catalogo_cuentas.*', 'tipos_cuenta_contable.nombre as tipo_nombre')
+            ->firstOrFail();
+
+        // La cuenta y todas sus descendientes (para cuentas agrupadoras).
+        $codigosIncluidos = DB::table('catalogo_cuentas')
+            ->where('codigo_cuenta', $codigoCuenta)
+            ->orWhere('codigo_cuenta', 'like', $codigoCuenta . '.%')
+            ->pluck('codigo_cuenta')
+            ->all();
+
+        $movimientos = DB::table('detalle_asientos_contables')
+            ->join('asientos_contables', function ($join) {
+                $join->on('detalle_asientos_contables.numero_asiento', '=', 'asientos_contables.numero_asiento')
+                    ->on('detalle_asientos_contables.fecha_asiento', '=', 'asientos_contables.fecha');
+            })
+            ->join('catalogo_cuentas', 'detalle_asientos_contables.codigo_cuenta', '=', 'catalogo_cuentas.codigo_cuenta')
+            ->join('estados', 'asientos_contables.estado_id', '=', 'estados.id')
+            ->whereIn('detalle_asientos_contables.codigo_cuenta', $codigosIncluidos)
+            ->orderBy('asientos_contables.fecha')
+            ->orderBy('detalle_asientos_contables.numero_asiento')
+            ->select(
+                'detalle_asientos_contables.numero_asiento',
+                'detalle_asientos_contables.fecha_asiento',
+                'detalle_asientos_contables.codigo_cuenta',
+                'detalle_asientos_contables.debe',
+                'detalle_asientos_contables.haber',
+                'detalle_asientos_contables.descripcion',
+                'asientos_contables.descripcion as asiento_descripcion',
+                'catalogo_cuentas.nombre as cuenta_nombre',
+                'estados.nombre as estado_nombre'
+            )
+            ->get();
+
+        $totalDebe = $movimientos->sum('debe');
+        $totalHaber = $movimientos->sum('haber');
+        $saldo = $totalDebe - $totalHaber;
+
+        // Saldo corrido acumulado por movimiento.
+        $acumulado = 0;
+        foreach ($movimientos as $mov) {
+            $acumulado += ($mov->debe - $mov->haber);
+            $mov->saldo_acumulado = $acumulado;
+        }
+
+        // Ruta completa y si es cuenta de detalle.
+        $info = $this->catalogoConJerarquia()->keyBy('codigo_cuenta')->get($codigoCuenta);
+        $cuenta->ruta = optional($info)->ruta ?? $cuenta->nombre;
+        $cuenta->es_hoja = optional($info)->es_hoja ?? true;
+
+        $verMas = $this->moduloRelacionado($cuenta->nombre);
+
+        return view('contabilidad.cuentas.movimientos', compact(
+            'cuenta',
+            'movimientos',
+            'totalDebe',
+            'totalHaber',
+            'saldo',
+            'verMas'
+        ));
     }
 
     public function indexAsientos()

@@ -84,6 +84,11 @@
                                    onclick="event.stopPropagation()">
                                     Editar
                                 </a>
+                                <a href="{{ route('contabilidad.cuentas.show', $cuentaPrincipal->codigo_cuenta) }}"
+                                   class="text-[#b71c1c] hover:text-red-800 text-sm font-semibold"
+                                   onclick="event.stopPropagation()">
+                                    Movimientos
+                                </a>
                             @endif
                             <span class="text-xs text-gray-700">({{ $subcuentas->count() }} subcuentas)</span>
                         </div>
@@ -120,6 +125,11 @@
                                                onclick="event.stopPropagation()">
                                                 Editar
                                             </a>
+                                            <a href="{{ route('contabilidad.cuentas.show', $subcuenta->codigo_cuenta) }}"
+                                               class="text-[#b71c1c] hover:text-red-800 text-sm font-semibold"
+                                               onclick="event.stopPropagation()">
+                                                Movimientos
+                                            </a>
                                         </div>
                                     </summary>
 
@@ -152,6 +162,10 @@
                                         <a href="{{ route('contabilidad.cuentas.edit', $subcuenta->codigo_cuenta) }}"
                                            class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
                                             Editar
+                                        </a>
+                                        <a href="{{ route('contabilidad.cuentas.show', $subcuenta->codigo_cuenta) }}"
+                                           class="text-[#b71c1c] hover:text-red-800 text-sm font-semibold">
+                                            Movimientos
                                         </a>
                                     </div>
                                 </div>
