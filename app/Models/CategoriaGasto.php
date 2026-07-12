@@ -11,5 +11,6 @@ class CategoriaGasto extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'clasificacion',
     ];
 }

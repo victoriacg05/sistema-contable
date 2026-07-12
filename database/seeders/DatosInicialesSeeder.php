@@ -167,16 +167,16 @@ class DatosInicialesSeeder extends Seeder
             ]));
         }
 
-        // Categorías de Gasto
+        // Categorías de Gasto (clasificación contable: Directo o Indirecto)
         $categoriasGasto = [
-            ['nombre' => 'Servicios públicos', 'descripcion' => 'Agua, electricidad, internet, teléfono'],
-            ['nombre' => 'Alquiler', 'descripcion' => 'Alquiler de local o bodega'],
-            ['nombre' => 'Salarios', 'descripcion' => 'Pago de planilla y cargas sociales'],
-            ['nombre' => 'Transporte', 'descripcion' => 'Combustible, mantenimiento vehicular, envíos'],
-            ['nombre' => 'Suministros', 'descripcion' => 'Materiales de oficina y operación'],
-            ['nombre' => 'Mantenimiento', 'descripcion' => 'Reparaciones y mantenimiento de equipos'],
-            ['nombre' => 'Impuestos', 'descripcion' => 'Obligaciones tributarias'],
-            ['nombre' => 'Otros', 'descripcion' => 'Gastos no clasificados'],
+            ['nombre' => 'Servicios públicos', 'descripcion' => 'Agua, electricidad, internet, teléfono', 'clasificacion' => 'Indirecto'],
+            ['nombre' => 'Alquiler', 'descripcion' => 'Alquiler de local o bodega', 'clasificacion' => 'Indirecto'],
+            ['nombre' => 'Salarios', 'descripcion' => 'Pago de planilla y cargas sociales', 'clasificacion' => 'Indirecto'],
+            ['nombre' => 'Transporte', 'descripcion' => 'Combustible, mantenimiento vehicular, envíos', 'clasificacion' => 'Directo'],
+            ['nombre' => 'Suministros', 'descripcion' => 'Materiales de oficina y operación', 'clasificacion' => 'Directo'],
+            ['nombre' => 'Mantenimiento', 'descripcion' => 'Reparaciones y mantenimiento de equipos', 'clasificacion' => 'Indirecto'],
+            ['nombre' => 'Impuestos', 'descripcion' => 'Obligaciones tributarias', 'clasificacion' => 'Indirecto'],
+            ['nombre' => 'Otros', 'descripcion' => 'Gastos no clasificados', 'clasificacion' => 'Indirecto'],
         ];
 
         foreach ($categoriasGasto as $cat) {

@@ -30,7 +30,7 @@
                     <tr>
                         <th class="px-6 py-5 text-left">Comprobante</th>
                         <th class="px-6 py-5 text-left">Categoría</th>
-                        <th class="px-6 py-5 text-left">Tipo</th>
+                        <th class="px-6 py-5 text-left">Clasificación</th>
                         <th class="px-6 py-5 text-left">Método</th>
                         <th class="px-6 py-5 text-left">Fecha</th>
                         <th class="px-6 py-5 text-left">Monto</th>
@@ -50,7 +50,14 @@
                             </td>
 
                             <td class="px-6 py-5">
-                                {{ $gasto->tipoGasto->nombre ?? 'N/A' }}
+                                @php $clasif = $gasto->categoria->clasificacion ?? null; @endphp
+                                @if($clasif)
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $clasif === 'Directo' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                        {{ $clasif }}
+                                    </span>
+                                @else
+                                    N/A
+                                @endif
                             </td>
 
                             <td class="px-6 py-5">

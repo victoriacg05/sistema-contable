@@ -53,7 +53,9 @@
                             <option value="">Seleccione una categoría</option>
 
                             @foreach($categorias as $categoria)
-                                <option value="{{ $categoria->id }}" {{ old('categoria_gasto_id', $gasto->categoria_gasto_id) == $categoria->id ? 'selected' : '' }}>
+                                <option value="{{ $categoria->id }}"
+                                        data-clasificacion="{{ $categoria->clasificacion ?? 'Indirecto' }}"
+                                        {{ old('categoria_gasto_id', $gasto->categoria_gasto_id) == $categoria->id ? 'selected' : '' }}>
                                     {{ $categoria->nombre }}
                                 </option>
                             @endforeach
@@ -62,20 +64,20 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Tipo de gasto
+                            Clasificación
                         </label>
 
-                        <select name="tipo_gasto_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
-                                required>
-                            <option value="">Seleccione un tipo</option>
+                        <div class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 flex items-center min-h-[60px]">
+                            <span id="clasificacion-badge"
+                                  class="hidden px-4 py-1.5 rounded-full text-sm font-bold"></span>
+                            <span id="clasificacion-vacia" class="text-gray-400">
+                                Seleccione una categoría
+                            </span>
+                        </div>
 
-                            @foreach($tiposGasto as $tipo)
-                                <option value="{{ $tipo->id }}" {{ old('tipo_gasto_id', $gasto->tipo_gasto_id) == $tipo->id ? 'selected' : '' }}>
-                                    {{ $tipo->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <p class="mt-1 text-xs text-gray-500">
+                            Se determina automáticamente según la categoría del gasto.
+                        </p>
                     </div>
 
                     <div>
@@ -149,4 +151,37 @@
         </div>
 
     </div>
+
+    <script>
+        (function () {
+            const categoriaSel = document.querySelector('select[name="categoria_gasto_id"]');
+            const badge = document.getElementById('clasificacion-badge');
+            const vacia = document.getElementById('clasificacion-vacia');
+
+            function actualizarClasificacion() {
+                const opcion = categoriaSel.options[categoriaSel.selectedIndex];
+                const valor = opcion ? opcion.getAttribute('data-clasificacion') : '';
+
+                if (!categoriaSel.value || !valor) {
+                    badge.classList.add('hidden');
+                    vacia.classList.remove('hidden');
+                    return;
+                }
+
+                badge.textContent = valor;
+                badge.classList.remove('hidden', 'bg-blue-100', 'text-blue-800', 'bg-purple-100', 'text-purple-800');
+
+                if (valor === 'Directo') {
+                    badge.classList.add('bg-blue-100', 'text-blue-800');
+                } else {
+                    badge.classList.add('bg-purple-100', 'text-purple-800');
+                }
+
+                vacia.classList.add('hidden');
+            }
+
+            categoriaSel.addEventListener('change', actualizarClasificacion);
+            actualizarClasificacion();
+        })();
+    </script>
 </x-app-layout>

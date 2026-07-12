@@ -14,7 +14,6 @@ class Gasto extends Model
     protected $fillable = [
         'numero_comprobante',
         'categoria_gasto_id',
-        'tipo_gasto_id',
         'usuario_id',
         'metodo_pago_id',
         'descripcion',
@@ -25,11 +24,6 @@ class Gasto extends Model
     public function categoria()
     {
         return $this->belongsTo(CategoriaGasto::class, 'categoria_gasto_id');
-    }
-
-    public function tipoGasto()
-    {
-        return $this->belongsTo(TipoGasto::class, 'tipo_gasto_id');
     }
 
     public function metodoPago()

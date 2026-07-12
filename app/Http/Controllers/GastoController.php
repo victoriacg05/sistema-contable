@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Gasto;
 use App\Models\CategoriaGasto;
-use App\Models\TipoGasto;
 use App\Models\MetodoPago;
 use App\Services\BitacoraService;
 use Illuminate\Http\Request;
@@ -15,7 +14,7 @@ class GastoController extends Controller
 {
     public function index()
     {
-        $gastos = Gasto::with(['categoria', 'tipoGasto', 'metodoPago', 'usuario'])
+        $gastos = Gasto::with(['categoria', 'metodoPago', 'usuario'])
             ->orderByDesc('fecha')
             ->orderByDesc('created_at')
             ->get();
@@ -26,12 +25,10 @@ class GastoController extends Controller
     public function create()
     {
         $categorias = CategoriaGasto::orderBy('nombre')->get();
-        $tiposGasto = TipoGasto::orderBy('nombre')->get();
         $metodosPago = MetodoPago::orderBy('nombre')->get();
 
         return view('gastos.create', compact(
             'categorias',
-            'tiposGasto',
             'metodosPago'
         ));
     }
@@ -40,7 +37,6 @@ class GastoController extends Controller
     {
         $request->validate([
             'categoria_gasto_id' => 'required|exists:categorias_gastos,id',
-            'tipo_gasto_id' => 'required|exists:tipos_gasto,id',
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
             'descripcion' => 'nullable|string|max:500',
             'monto' => 'required|numeric|min:1',
@@ -50,7 +46,6 @@ class GastoController extends Controller
         Gasto::create([
             'numero_comprobante' => 'GAS-' . now()->format('YmdHis'),
             'categoria_gasto_id' => $request->categoria_gasto_id,
-            'tipo_gasto_id' => $request->tipo_gasto_id,
             'usuario_id' => Auth::id(),
             'metodo_pago_id' => $request->metodo_pago_id,
             'descripcion' => $request->descripcion ?? '',
@@ -73,13 +68,11 @@ class GastoController extends Controller
             ->firstOrFail();
 
         $categorias = CategoriaGasto::orderBy('nombre')->get();
-        $tiposGasto = TipoGasto::orderBy('nombre')->get();
         $metodosPago = MetodoPago::orderBy('nombre')->get();
 
         return view('gastos.edit', compact(
             'gasto',
             'categorias',
-            'tiposGasto',
             'metodosPago'
         ));
     }
@@ -88,7 +81,6 @@ class GastoController extends Controller
     {
         $request->validate([
             'categoria_gasto_id' => 'required|exists:categorias_gastos,id',
-            'tipo_gasto_id' => 'required|exists:tipos_gasto,id',
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
             'descripcion' => 'nullable|string|max:500',
             'monto' => 'required|numeric|min:1',
@@ -101,7 +93,6 @@ class GastoController extends Controller
             ->where('fecha', $fecha)
             ->update([
                 'categoria_gasto_id' => $request->categoria_gasto_id,
-                'tipo_gasto_id' => $request->tipo_gasto_id,
                 'metodo_pago_id' => $request->metodo_pago_id,
                 'descripcion' => $request->descripcion ?? '',
                 'monto' => $request->monto,
