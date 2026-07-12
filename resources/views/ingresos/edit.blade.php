@@ -75,24 +75,6 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Cuenta bancaria (recibe el ingreso)
-                        </label>
-
-                        <select name="cuenta_bancaria_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
-                                required>
-                            <option value="">Seleccione la cuenta bancaria</option>
-
-                            @foreach($cuentasBancarias as $cuentaBanco)
-                                <option value="{{ $cuentaBanco->id }}" {{ old('cuenta_bancaria_id', $ingreso->cuenta_bancaria_id) == $cuentaBanco->id ? 'selected' : '' }}>
-                                    {{ $cuentaBanco->banco_nombre }} — {{ $cuentaBanco->numero_cuenta }} — Saldo: ₡{{ number_format($cuentaBanco->saldo, 2) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block mb-2 text-sm font-bold text-gray-700">
                             Monto
                         </label>
 

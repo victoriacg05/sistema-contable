@@ -218,7 +218,7 @@
                     </div>
 
                     {{-- Cuenta bancaria (compras a proveedor) --}}
-                    <div class="md:col-span-2" id="grupo-banco">
+                    <div class="md:col-span-2 grupo-proveedor" id="grupo-banco">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
                             Cuenta bancaria
                         </label>
@@ -457,30 +457,27 @@
             }
 
             function toggleBanco() {
-                // La cuenta bancaria se muestra tanto para compras a proveedor
-                // como para ventas a cliente. Solo es obligatoria y afecta el
-                // saldo en operaciones de contado; en crédito es informativa.
-                const cliente = esCliente();
+                // La cuenta bancaria se muestra para compras a proveedor
+                // (contado y crédito). Solo es obligatoria y afecta el saldo
+                // en compras de contado; en crédito es informativa.
+                const esProveedor = !esCliente();
                 const contado = !esCredito();
 
                 if (grupoBanco) {
-                    grupoBanco.classList.remove('hidden');
+                    grupoBanco.classList.toggle('hidden', !esProveedor);
                 }
                 if (cuentaBancariaSel) {
-                    cuentaBancariaSel.disabled = false;
-                    cuentaBancariaSel.required = contado;
+                    cuentaBancariaSel.disabled = !esProveedor;
+                    cuentaBancariaSel.required = esProveedor && contado;
+                    if (!esProveedor) {
+                        cuentaBancariaSel.value = '';
+                    }
                 }
                 if (bancoNotaContado) {
                     bancoNotaContado.classList.toggle('hidden', !contado);
-                    bancoNotaContado.textContent = cliente
-                        ? 'Se sumará el total de la venta al saldo de esta cuenta y se generará el asiento contable automáticamente.'
-                        : 'Se descontará el total de la compra del saldo de esta cuenta y se generará el asiento contable automáticamente.';
                 }
                 if (bancoNotaCredito) {
                     bancoNotaCredito.classList.toggle('hidden', contado);
-                    bancoNotaCredito.textContent = cliente
-                        ? 'En crédito el saldo bancario no se ve afectado ahora; el banco se acreditará cuando se registre el cobro de la cuenta por cobrar.'
-                        : 'En crédito el saldo bancario no se ve afectado ahora; el banco se descontará cuando se registre el pago de la cuenta por pagar.';
                 }
             }
 

@@ -16,7 +16,6 @@ use App\Models\MetodoPago;
 use App\Models\CuentaCobrar;
 use App\Models\PlazoVenta;
 use App\Models\CuentaBancaria;
-use App\Models\MovimientoBancario;
 use App\Services\BitacoraService;
 use App\Services\InventarioService;
 use App\Services\AsientoContableService;
@@ -174,8 +173,8 @@ class CompraController extends Controller
         }
 
         DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $total, $esCredito, $cuotas) {
-            $idPendiente = Estado::idPorNombre(Estado::PENDIENTE);
-            $idPagado = Estado::idPorNombre(Estado::PAGADO);
+            $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
+            $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
             $numeroCompra = 'COM-' . now()->format('YmdHis');
 
@@ -185,7 +184,9 @@ class CompraController extends Controller
                 'usuario_id' => Auth::id(),
                 // Contado: la compra queda pagada de inmediato.
                 // Crédito: queda pendiente hasta liquidar la cuenta por pagar.
-                'estado_id' => $esCredito ? $idPendiente : $idPagado,
+                'estado_id' => $esCredito
+                    ? ($estadoPendiente?->id ?? 1)
+                    : ($estadoPagado?->id ?? 2),
                 'metodo_pago_id' => $request->metodo_pago_id,
                 'cuenta_bancaria_id' => $esCredito ? null : $request->cuenta_bancaria_id,
                 'tipo_compra' => $request->tipo_compra,
@@ -232,7 +233,7 @@ class CompraController extends Controller
                     'saldo_pendiente' => $total,
                     'fecha_emision' => now(),
                     'fecha_vencimiento' => $fechaVencimiento,
-                    'estado_id' => $idPendiente,
+                    'estado_id' => $estadoPendiente?->id ?? 1,
                 ]);
 
                 foreach ($cuotas as $indice => $cuota) {
@@ -301,16 +302,6 @@ class CompraController extends Controller
 
         $esCredito = $request->tipo_compra === 'credito';
 
-        // Las ventas de contado exigen la cuenta bancaria que recibe el pago.
-        if (! $esCredito) {
-            $request->validate([
-                'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
-            ], [
-                'cuenta_bancaria_id.required' => 'Seleccione la cuenta bancaria en la que se recibirá el pago de la venta de contado.',
-                'cuenta_bancaria_id.exists' => 'La cuenta bancaria seleccionada no es válida.',
-            ]);
-        }
-
         $subtotal = 0;
         foreach ($lineas as $linea) {
             $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
@@ -364,8 +355,8 @@ class CompraController extends Controller
         }
 
         $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito, $cuotas) {
-            $idPendiente = Estado::idPorNombre(Estado::PENDIENTE);
-            $idPagado = Estado::idPorNombre(Estado::PAGADO);
+            $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
+            $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
             $numeroFactura = 'FAC-' . now()->format('YmdHis');
 
@@ -374,7 +365,9 @@ class CompraController extends Controller
                 'cliente_id' => $request->cliente_id,
                 'usuario_id' => Auth::id(),
                 'metodo_pago_id' => $request->metodo_pago_id,
-                'estado_id' => $esCredito ? $idPendiente : $idPagado,
+                'estado_id' => $esCredito
+                    ? ($estadoPendiente?->id ?? 1)
+                    : ($estadoPagado?->id ?? 2),
                 'tipo_comprobante_id' => $request->tipo_comprobante_id,
                 'fecha' => now(),
                 'subtotal' => $subtotal,
@@ -418,7 +411,7 @@ class CompraController extends Controller
                     'saldo_pendiente' => $total,
                     'fecha_emision' => now(),
                     'fecha_vencimiento' => $fechaVencimiento,
-                    'estado_id' => $idPendiente,
+                    'estado_id' => $estadoPendiente?->id ?? 1,
                 ]);
 
                 foreach ($cuotas as $indice => $cuota) {
@@ -431,34 +424,6 @@ class CompraController extends Controller
                         'saldo_pendiente' => $cuota['monto'],
                     ]);
                 }
-            }
-
-            // Registro contable automático de la venta.
-            $codigoBancos = '1.1.2';    // Bancos
-            $codigoPorCobrar = '1.1.3'; // Cuentas por Cobrar
-            $codigoVentas = '4.1';      // Ventas
-
-            if ($esCredito) {
-                // Crédito: no afecta el banco. Debe Cuentas por Cobrar / Haber Ventas.
-                AsientoContableService::generar(now(), "Venta a crédito {$numeroFactura}", [
-                    ['codigo_cuenta' => $codigoPorCobrar, 'debe' => $total, 'haber' => 0, 'descripcion' => "Venta a crédito {$numeroFactura}"],
-                    ['codigo_cuenta' => $codigoVentas, 'debe' => 0, 'haber' => $total, 'descripcion' => "Ingreso por ventas {$numeroFactura}"],
-                ]);
-            } else {
-                // Contado: el dinero entra al banco. Debe Bancos / Haber Ventas.
-                $cuentaBancaria = CuentaBancaria::lockForUpdate()->findOrFail($request->cuenta_bancaria_id);
-
-                BancoService::acreditar(
-                    $cuentaBancaria,
-                    $total,
-                    "Venta de contado {$numeroFactura}",
-                    $numeroFactura
-                );
-
-                AsientoContableService::generar(now(), "Venta de contado {$numeroFactura}", [
-                    ['codigo_cuenta' => $codigoBancos, 'debe' => $total, 'haber' => 0, 'descripcion' => "Cobro en {$cuentaBancaria->banco_nombre}"],
-                    ['codigo_cuenta' => $codigoVentas, 'debe' => 0, 'haber' => $total, 'descripcion' => "Ingreso por ventas {$numeroFactura}"],
-                ]);
             }
 
             return $factura;
@@ -546,16 +511,12 @@ class CompraController extends Controller
         DB::transaction(function () use ($request, $compra, $lineas) {
             $referenciaAjuste = 'AJU-' . now()->format('YmdHis');
 
-            // Revertir la tesorería y el asiento del registro anterior antes de
-            // volver a aplicarlos con los nuevos importes.
-            $this->revertirBancoYAsiento($compra->numero_compra);
-
             // Revertir el stock de los productos actuales y eliminarlos.
             foreach ($compra->detalles()->get() as $detalleAnterior) {
                 $productoAnterior = Producto::find($detalleAnterior->producto_id);
 
                 if ($productoAnterior) {
-                    $productoAnterior->stock = max(0, $productoAnterior->stock - $detalleAnterior->cantidad);
+                    $productoAnterior->stock -= $detalleAnterior->cantidad;
                     $productoAnterior->save();
 
                     // Salida por reversión de la compra editada.
@@ -610,60 +571,6 @@ class CompraController extends Controller
                     $referenciaAjuste
                 );
             }
-
-            // Regenerar la tesorería y el asiento con el nuevo total, según la
-            // condición de pago original de la compra.
-            $esCredito = $compra->tipo_compra === 'credito';
-            $codigoInventario = '1.1.4.1';
-            $codigoBancos = '1.1.2';
-            $codigoPorPagar = '2.1.1';
-
-            if ($esCredito) {
-                // Mantener sincronizada la cuenta por pagar con el nuevo total.
-                CuentaPagar::where('numero_compra', $compra->numero_compra)
-                    ->where('proveedor_id', $compra->proveedor_id)
-                    ->update([
-                        'monto_original' => $total,
-                        'saldo_pendiente' => $total,
-                    ]);
-
-                // Rehacer los plazos con el nuevo total en una sola cuota.
-                $fechaVencimiento = PlazoCompra::where('numero_compra', $compra->numero_compra)
-                    ->where('proveedor_id', $compra->proveedor_id)
-                    ->min('fecha_vencimiento') ?? now()->addDays(30);
-
-                PlazoCompra::where('numero_compra', $compra->numero_compra)
-                    ->where('proveedor_id', $compra->proveedor_id)
-                    ->delete();
-
-                PlazoCompra::create([
-                    'numero_compra' => $compra->numero_compra,
-                    'proveedor_id' => $compra->proveedor_id,
-                    'numero_cuota' => 1,
-                    'fecha_vencimiento' => $fechaVencimiento,
-                    'monto' => $total,
-                    'saldo_pendiente' => $total,
-                ]);
-
-                AsientoContableService::generar(now(), "Compra a crédito {$compra->numero_compra}", [
-                    ['codigo_cuenta' => $codigoInventario, 'debe' => $total, 'haber' => 0, 'descripcion' => "Compra a crédito {$compra->numero_compra}"],
-                    ['codigo_cuenta' => $codigoPorPagar, 'debe' => 0, 'haber' => $total, 'descripcion' => "Cuenta por pagar {$compra->numero_compra}"],
-                ]);
-            } elseif ($compra->cuenta_bancaria_id) {
-                $cuentaBancaria = CuentaBancaria::lockForUpdate()->findOrFail($compra->cuenta_bancaria_id);
-
-                BancoService::debitar(
-                    $cuentaBancaria,
-                    $total,
-                    "Compra de contado {$compra->numero_compra}",
-                    $compra->numero_compra
-                );
-
-                AsientoContableService::generar(now(), "Compra de contado {$compra->numero_compra}", [
-                    ['codigo_cuenta' => $codigoInventario, 'debe' => $total, 'haber' => 0, 'descripcion' => "Compra de contado {$compra->numero_compra}"],
-                    ['codigo_cuenta' => $codigoBancos, 'debe' => 0, 'haber' => $total, 'descripcion' => "Pago desde {$cuentaBancaria->banco_nombre}"],
-                ]);
-            }
         });
 
         return redirect()
@@ -673,11 +580,11 @@ class CompraController extends Controller
 
     public function pagar(Compra $compra)
     {
-        DB::transaction(function () use ($compra) {
-            $idPagado = Estado::idPorNombre(Estado::PAGADO);
+        $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
+        DB::transaction(function () use ($compra, $estadoPagado) {
             $compra->update([
-                'estado_id' => $idPagado,
+                'estado_id' => $estadoPagado?->id ?? $compra->estado_id,
             ]);
 
             // Liquidar la cuenta por pagar y sus plazos asociados para
@@ -686,7 +593,7 @@ class CompraController extends Controller
                 ->where('proveedor_id', $compra->proveedor_id)
                 ->update([
                     'saldo_pendiente' => 0,
-                    'estado_id' => $idPagado,
+                    'estado_id' => $estadoPagado?->id ?? 2,
                 ]);
 
             PlazoCompra::where('numero_compra', $compra->numero_compra)
@@ -702,57 +609,20 @@ class CompraController extends Controller
     public function destroy(Compra $compra)
     {
         DB::transaction(function () use ($compra) {
-            // Reversión del inventario: la compra sumó stock, al eliminar se resta.
             foreach ($compra->detalles()->get() as $detalle) {
                 $producto = Producto::find($detalle->producto_id);
 
                 if ($producto) {
-                    $producto->stock = max(0, $producto->stock - $detalle->cantidad);
+                    $producto->stock -= $detalle->cantidad;
                     $producto->save();
-
-                    InventarioService::registrarMovimiento(
-                        $producto->id,
-                        'Ajuste negativo',
-                        $detalle->cantidad,
-                        "Reversión por eliminación de compra {$compra->numero_compra}",
-                        $compra->numero_compra
-                    );
                 }
             }
-
-            // Reintegrar el banco (compras de contado) y eliminar el asiento.
-            $this->revertirBancoYAsiento($compra->numero_compra);
-
-            // Eliminar la cuenta por pagar y sus plazos (compras a crédito).
-            CuentaPagar::where('numero_compra', $compra->numero_compra)
-                ->where('proveedor_id', $compra->proveedor_id)
-                ->delete();
-
-            PlazoCompra::where('numero_compra', $compra->numero_compra)
-                ->where('proveedor_id', $compra->proveedor_id)
-                ->delete();
 
             $compra->delete();
         });
 
         return redirect()
             ->route('compras.index')
-            ->with('success', 'Compra eliminada correctamente. Se revirtió el inventario, la tesorería y los asientos.');
-    }
-
-    /**
-     * Revierte los movimientos bancarios y elimina los asientos contables
-     * asociados a un documento (por su referencia / número).
-     */
-    private function revertirBancoYAsiento(string $referencia): void
-    {
-        $movimientos = MovimientoBancario::where('referencia', $referencia)->get();
-
-        foreach ($movimientos as $movimiento) {
-            BancoService::revertir($movimiento);
-            $movimiento->delete();
-        }
-
-        AsientoContableService::eliminarPorDescripcion($referencia);
+            ->with('success', 'Compra eliminada correctamente.');
     }
 }

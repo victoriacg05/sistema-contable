@@ -15,7 +15,6 @@ class Ingreso extends Model
         'referencia_ingreso',
         'usuario_id',
         'metodo_pago_id',
-        'cuenta_bancaria_id',
         'origen',
         'descripcion',
         'monto',
@@ -25,11 +24,6 @@ class Ingreso extends Model
     public function metodoPago()
     {
         return $this->belongsTo(MetodoPago::class, 'metodo_pago_id');
-    }
-
-    public function cuentaBancaria()
-    {
-        return $this->belongsTo(CuentaBancaria::class, 'cuenta_bancaria_id');
     }
 
     public function usuario()

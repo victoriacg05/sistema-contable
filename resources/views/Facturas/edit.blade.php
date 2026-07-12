@@ -110,31 +110,9 @@
                         @enderror
                     </div>
 
-                    <div id="bloque-banco">
+                    <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Cuenta bancaria (recibe el pago)
-                        </label>
-
-                        <select name="cuenta_bancaria_id"
-                                id="cuenta_bancaria_id"
-                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
-                            <option value="">Seleccione la cuenta bancaria</option>
-
-                            @foreach($cuentasBancarias as $cuentaBanco)
-                                <option value="{{ $cuentaBanco->id }}" {{ old('cuenta_bancaria_id') == $cuentaBanco->id ? 'selected' : '' }}>
-                                    {{ $cuentaBanco->banco_nombre }} — {{ $cuentaBanco->numero_cuenta }} — Saldo: ₡{{ number_format($cuentaBanco->saldo, 2) }}
-                                </option>
-                            @endforeach
-                        </select>
-
-                        <p class="mt-1 text-xs text-gray-500">
-                            Solo aplica para ventas de contado; el monto se sumará a esta cuenta.
-                        </p>
-
-                        @error('cuenta_bancaria_id')
-                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
-                        @enderror
-                    </div>
+                            Producto
                         </label>
 
                         <select name="producto_id"
@@ -205,26 +183,4 @@
             </form>
         </div>
     </div>
-
-    <script>
-        (function () {
-            const tipoCompra = document.querySelector('select[name="tipo_compra"]');
-            const bloqueBanco = document.getElementById('bloque-banco');
-            const selectBanco = document.getElementById('cuenta_bancaria_id');
-
-            function actualizarBanco() {
-                const esContado = tipoCompra.value === 'contado';
-                bloqueBanco.style.display = esContado ? '' : 'none';
-                if (esContado) {
-                    selectBanco.setAttribute('required', 'required');
-                } else {
-                    selectBanco.removeAttribute('required');
-                    selectBanco.value = '';
-                }
-            }
-
-            tipoCompra.addEventListener('change', actualizarBanco);
-            actualizarBanco();
-        })();
-    </script>
 </x-app-layout>

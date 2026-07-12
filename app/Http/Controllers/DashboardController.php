@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
-use App\Models\Estado;
 use App\Models\Factura;
 use App\Models\Producto;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +13,16 @@ class DashboardController extends Controller
     {
         $ventasTotales = Factura::sum('total');
 
-        $facturasPagadas = Factura::where('estado_id', Estado::idPorNombre(Estado::PAGADO))->count();
-        $facturasPendientes = Factura::where('estado_id', Estado::idPorNombre(Estado::PENDIENTE))->count();
+        $estadoPagado = DB::table('estados')->where('nombre', 'pagado')->first();
+        $estadoPendiente = DB::table('estados')->where('nombre', 'pendiente')->first();
+
+        $facturasPagadas = $estadoPagado
+            ? Factura::where('estado_id', $estadoPagado->id)->count()
+            : 0;
+
+        $facturasPendientes = $estadoPendiente
+            ? Factura::where('estado_id', $estadoPendiente->id)->count()
+            : 0;
 
         $clientesRegistrados = Cliente::count();
 

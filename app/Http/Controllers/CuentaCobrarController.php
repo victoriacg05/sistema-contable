@@ -7,10 +7,7 @@ use App\Models\PagoCuentaCobrar;
 use App\Models\PlazoVenta;
 use App\Models\MetodoPago;
 use App\Models\Estado;
-use App\Models\CuentaBancaria;
 use App\Services\BitacoraService;
-use App\Services\BancoService;
-use App\Services\AsientoContableService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,11 +35,7 @@ class CuentaCobrarController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        $cuentasBancarias = CuentaBancaria::where('estado', true)
-            ->orderBy('banco_nombre')
-            ->get();
-
-        return view('cuentas-cobrar.pago', compact('cuenta', 'metodosPago', 'cuentasBancarias'));
+        return view('cuentas-cobrar.pago', compact('cuenta', 'metodosPago'));
     }
 
     public function storePago(Request $request, $numero_factura, $cliente_id)
@@ -50,11 +43,7 @@ class CuentaCobrarController extends Controller
         $request->validate([
             'monto_pagado' => 'required|numeric|min:1',
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
-            'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
             'observacion' => 'nullable|string|max:500',
-        ], [
-            'cuenta_bancaria_id.required' => 'Seleccione la cuenta bancaria en la que se recibió el pago.',
-            'cuenta_bancaria_id.exists' => 'La cuenta bancaria seleccionada no es válida.',
         ]);
 
         DB::transaction(function () use ($request, $numero_factura, $cliente_id) {
@@ -79,14 +68,16 @@ class CuentaCobrarController extends Controller
 
             $nuevoSaldo = $cuenta->saldo_pendiente - $request->monto_pagado;
 
-            $idPagado = Estado::idPorNombre(Estado::PAGADO);
-            $idPendiente = Estado::idPorNombre(Estado::PENDIENTE);
+            $estadoPagado = Estado::where('nombre', 'pagado')->first();
+            $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
 
             CuentaCobrar::where('numero_factura', $cuenta->numero_factura)
                 ->where('cliente_id', $cuenta->cliente_id)
                 ->update([
                     'saldo_pendiente' => $nuevoSaldo,
-                    'estado_id' => $nuevoSaldo <= 0 ? $idPagado : $idPendiente,
+                    'estado_id' => $nuevoSaldo <= 0
+                        ? ($estadoPagado?->id ?? 2)
+                        : ($estadoPendiente?->id ?? 1),
                 ]);
 
             // Distribuir el pago entre las cuotas pendientes (de la más
@@ -123,22 +114,6 @@ class CuentaCobrarController extends Controller
                 'fecha' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
-
-            // El cobro entra a la tesorería: aumenta el saldo del banco y
-            // genera el asiento Debe Bancos (1.1.2) / Haber Cuentas por Cobrar (1.1.3).
-            $cuentaBancaria = CuentaBancaria::lockForUpdate()->findOrFail($request->cuenta_bancaria_id);
-
-            BancoService::acreditar(
-                $cuentaBancaria,
-                (float) $request->monto_pagado,
-                "Cobro de factura {$numero_factura}",
-                $numero_factura
-            );
-
-            AsientoContableService::generar(now(), "Cobro de factura a crédito {$numero_factura}", [
-                ['codigo_cuenta' => '1.1.2', 'debe' => $request->monto_pagado, 'haber' => 0, 'descripcion' => "Cobro recibido en {$cuentaBancaria->banco_nombre}"],
-                ['codigo_cuenta' => '1.1.3', 'debe' => 0, 'haber' => $request->monto_pagado, 'descripcion' => "Cobro cuenta por cobrar {$numero_factura}"],
             ]);
 
             BitacoraService::registrar('pago', 'cuentas_cobrar', "Pago de ₡{$request->monto_pagado} a factura $numero_factura");
