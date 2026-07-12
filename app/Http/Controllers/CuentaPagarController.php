@@ -79,16 +79,14 @@ class CuentaPagarController extends Controller
 
             $nuevoSaldo = $cuenta->saldo_pendiente - $request->monto_pagado;
 
-            $estadoPagado = Estado::where('nombre', 'pagado')->first();
-            $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
+            $idPagado = Estado::idPorNombre(Estado::PAGADO);
+            $idPendiente = Estado::idPorNombre(Estado::PENDIENTE);
 
             CuentaPagar::where('numero_compra', $cuenta->numero_compra)
                 ->where('proveedor_id', $cuenta->proveedor_id)
                 ->update([
                     'saldo_pendiente' => $nuevoSaldo,
-                    'estado_id' => $nuevoSaldo <= 0
-                        ? ($estadoPagado?->id ?? 2)
-                        : ($estadoPendiente?->id ?? 1),
+                    'estado_id' => $nuevoSaldo <= 0 ? $idPagado : $idPendiente,
                 ]);
 
             // Distribuir el pago entre las cuotas pendientes (de la más

@@ -6,6 +6,7 @@ use App\Models\Gasto;
 use App\Models\CategoriaGasto;
 use App\Models\MetodoPago;
 use App\Models\CuentaBancaria;
+use App\Models\MovimientoBancario;
 use App\Services\BitacoraService;
 use App\Services\BancoService;
 use App\Services\AsientoContableService;
@@ -147,36 +148,80 @@ class GastoController extends Controller
             return back()->withInput()->withErrors(['monto' => $error]);
         }
 
-        DB::table('gastos')
-            ->where('numero_comprobante', $numero_comprobante)
-            ->where('categoria_gasto_id', $categoria_gasto_id)
-            ->where('fecha', $fecha)
-            ->update([
-                'categoria_gasto_id' => $request->categoria_gasto_id,
-                'metodo_pago_id' => $request->metodo_pago_id,
-                'cuenta_bancaria_id' => $request->cuenta_bancaria_id,
-                'descripcion' => $request->descripcion ?? '',
-                'monto' => $request->monto,
-                'fecha' => $request->fecha,
-                'updated_at' => now(),
+        DB::transaction(function () use ($request, $numero_comprobante, $categoria_gasto_id, $fecha) {
+            // Revertir la tesorería y el asiento del gasto anterior antes de
+            // volver a aplicarlos con los nuevos importes.
+            $this->revertirBancoYAsiento($numero_comprobante);
+
+            DB::table('gastos')
+                ->where('numero_comprobante', $numero_comprobante)
+                ->where('categoria_gasto_id', $categoria_gasto_id)
+                ->where('fecha', $fecha)
+                ->update([
+                    'categoria_gasto_id' => $request->categoria_gasto_id,
+                    'metodo_pago_id' => $request->metodo_pago_id,
+                    'cuenta_bancaria_id' => $request->cuenta_bancaria_id,
+                    'descripcion' => $request->descripcion ?? '',
+                    'monto' => $request->monto,
+                    'fecha' => $request->fecha,
+                    'updated_at' => now(),
+                ]);
+
+            // Volver a descontar el banco y regenerar el asiento con los datos nuevos.
+            $cuentaBancaria = CuentaBancaria::lockForUpdate()->findOrFail($request->cuenta_bancaria_id);
+
+            BancoService::debitar(
+                $cuentaBancaria,
+                (float) $request->monto,
+                "Gasto {$numero_comprobante}",
+                $numero_comprobante
+            );
+
+            $codigoGasto = $this->codigoCuentaGasto($request->categoria_gasto_id);
+
+            AsientoContableService::generar($request->fecha, "Gasto {$numero_comprobante}", [
+                ['codigo_cuenta' => $codigoGasto, 'debe' => $request->monto, 'haber' => 0, 'descripcion' => "Gasto {$numero_comprobante}"],
+                ['codigo_cuenta' => '1.1.2', 'debe' => 0, 'haber' => $request->monto, 'descripcion' => "Pago desde {$cuentaBancaria->banco_nombre}"],
             ]);
+        });
 
         return redirect()
             ->route('gastos.index')
-            ->with('success', 'Gasto actualizado correctamente.');
+            ->with('success', 'Gasto actualizado correctamente. Se ajustó el saldo del banco y el asiento contable.');
     }
 
     public function destroy($numero_comprobante, $categoria_gasto_id, $fecha)
     {
-        DB::table('gastos')
-            ->where('numero_comprobante', $numero_comprobante)
-            ->where('categoria_gasto_id', $categoria_gasto_id)
-            ->where('fecha', $fecha)
-            ->delete();
+        DB::transaction(function () use ($numero_comprobante, $categoria_gasto_id, $fecha) {
+            // Reintegrar el saldo del banco y eliminar el asiento del gasto.
+            $this->revertirBancoYAsiento($numero_comprobante);
+
+            DB::table('gastos')
+                ->where('numero_comprobante', $numero_comprobante)
+                ->where('categoria_gasto_id', $categoria_gasto_id)
+                ->where('fecha', $fecha)
+                ->delete();
+        });
 
         return redirect()
             ->route('gastos.index')
-            ->with('success', 'Gasto eliminado correctamente.');
+            ->with('success', 'Gasto eliminado correctamente. Se reintegró el saldo del banco y se revirtió el asiento.');
+    }
+
+    /**
+     * Revierte los movimientos bancarios y elimina los asientos contables
+     * asociados a un gasto (por su número de comprobante).
+     */
+    private function revertirBancoYAsiento(string $referencia): void
+    {
+        $movimientos = MovimientoBancario::where('referencia', $referencia)->get();
+
+        foreach ($movimientos as $movimiento) {
+            BancoService::revertir($movimiento);
+            $movimiento->delete();
+        }
+
+        AsientoContableService::eliminarPorDescripcion($referencia);
     }
 
     /**

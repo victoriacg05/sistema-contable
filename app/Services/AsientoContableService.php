@@ -29,9 +29,7 @@ class AsientoContableService
         $totalDebe = round(array_sum(array_map(fn ($l) => $l['debe'] ?? 0, $lineas)), 2);
         $totalHaber = round(array_sum(array_map(fn ($l) => $l['haber'] ?? 0, $lineas)), 2);
 
-        $estadoId = Estado::where('nombre', 'Aprobado')->value('id')
-            ?? Estado::where('nombre', 'Activo')->value('id')
-            ?? 1;
+        $estadoId = Estado::idPorNombre(Estado::APROBADO);
 
         DB::table('asientos_contables')->insert([
             'numero_asiento' => $numeroAsiento,
@@ -59,5 +57,30 @@ class AsientoContableService
         }
 
         return $numeroAsiento;
+    }
+
+    /**
+     * Elimina los asientos contables (y su detalle) cuya descripción contenga
+     * la referencia indicada. Se usa para revertir movimientos al editar o
+     * anular documentos, dado que los asientos no guardan una llave foránea
+     * directa al documento de origen.
+     */
+    public static function eliminarPorDescripcion(string $referencia): void
+    {
+        $asientos = DB::table('asientos_contables')
+            ->where('descripcion', 'like', '%' . $referencia . '%')
+            ->get(['numero_asiento', 'fecha']);
+
+        foreach ($asientos as $asiento) {
+            DB::table('detalle_asientos_contables')
+                ->where('numero_asiento', $asiento->numero_asiento)
+                ->where('fecha_asiento', $asiento->fecha)
+                ->delete();
+
+            DB::table('asientos_contables')
+                ->where('numero_asiento', $asiento->numero_asiento)
+                ->where('fecha', $asiento->fecha)
+                ->delete();
+        }
     }
 }
