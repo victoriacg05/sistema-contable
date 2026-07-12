@@ -107,6 +107,8 @@
                                 $esBanco = stripos($subcuenta->nombre, 'banco') !== false;
                                 $movs = $movimientosDeCuenta($subcuenta->codigo_cuenta);
                                 $modulo = $modulos[$subcuenta->codigo_cuenta] ?? null;
+                                $operativo = $operativos[$subcuenta->codigo_cuenta] ?? null;
+                                $totalItems = $movs->count() + ($operativo ? $operativo['items']->count() : 0);
                             @endphp
 
                             <details class="cuenta-details" style="margin-left: {{ $marginLeft }}rem">
@@ -118,9 +120,9 @@
                                         </svg>
                                         <span class="font-mono text-sm text-[#b71c1c] font-semibold">{{ $subcuenta->codigo_cuenta }}</span>
                                         <span class="text-gray-800 {{ $esBanco ? 'font-semibold' : '' }}">{{ $subcuenta->nombre }}</span>
-                                        @if($movs->isNotEmpty())
+                                        @if($totalItems > 0)
                                             <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
-                                                {{ $movs->count() }} {{ $movs->count() === 1 ? 'movimiento' : 'movimientos' }}
+                                                {{ $totalItems }} {{ $totalItems === 1 ? 'movimiento' : 'movimientos' }}
                                             </span>
                                         @endif
                                     </div>
@@ -153,7 +155,7 @@
                                         </div>
                                     @endif
 
-                                    @include('contabilidad.cuentas._movimientos-inline', ['movs' => $movs, 'modulo' => $modulo])
+                                    @include('contabilidad.cuentas._movimientos-inline', ['movs' => $movs, 'modulo' => $modulo, 'operativo' => $operativo])
                                 </div>
                             </details>
                         @endforeach

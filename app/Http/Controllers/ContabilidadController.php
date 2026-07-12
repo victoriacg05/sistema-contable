@@ -46,7 +46,116 @@ class ContabilidadController extends Controller
             }
         }
 
-        return view('contabilidad.cuentas.index', compact('cuentas', 'movimientos', 'modulos'));
+        // Datos operativos (cuentas por pagar/cobrar, inventario) que viven en
+        // sus propios módulos y no generan asientos contables, para reflejarlos
+        // directamente en la cuenta del catálogo correspondiente.
+        $operativos = $this->datosOperativosPorCuenta($cuentas);
+
+        return view('contabilidad.cuentas.index', compact('cuentas', 'movimientos', 'modulos', 'operativos'));
+    }
+
+    /**
+     * Construye un mapa (código de cuenta => datos operativos) para las
+     * cuentas del catálogo que se corresponden con módulos que gestionan sus
+     * propios documentos sin pasar por asientos contables: Cuentas por Pagar,
+     * Cuentas por Cobrar e Inventario. Así el catálogo refleja los saldos y
+     * documentos reales existentes en esos módulos.
+     */
+    private function datosOperativosPorCuenta($cuentas): array
+    {
+        $mapa = [];
+
+        $porPagar = null;
+        $porCobrar = null;
+        $inventario = null;
+
+        foreach ($cuentas as $cuenta) {
+            $nombre = mb_strtolower($cuenta->nombre);
+
+            if (str_contains($nombre, 'cuentas por pagar')) {
+                $porPagar ??= $this->documentosPorPagar();
+                $mapa[$cuenta->codigo_cuenta] = $porPagar;
+            } elseif (str_contains($nombre, 'cuentas por cobrar')) {
+                $porCobrar ??= $this->documentosPorCobrar();
+                $mapa[$cuenta->codigo_cuenta] = $porCobrar;
+            } elseif (str_contains($nombre, 'inventario') || str_contains($nombre, 'mercader') || str_contains($nombre, 'bodega')) {
+                $inventario ??= $this->documentosInventario();
+                $mapa[$cuenta->codigo_cuenta] = $inventario;
+            }
+        }
+
+        return $mapa;
+    }
+
+    private function documentosPorPagar(): array
+    {
+        $items = DB::table('cuentas_pagar')
+            ->join('proveedores', 'cuentas_pagar.proveedor_id', '=', 'proveedores.id')
+            ->join('estados', 'cuentas_pagar.estado_id', '=', 'estados.id')
+            ->orderBy('cuentas_pagar.fecha_vencimiento')
+            ->select(
+                'cuentas_pagar.numero_compra as documento',
+                'proveedores.nombre as tercero',
+                'cuentas_pagar.fecha_emision',
+                'cuentas_pagar.fecha_vencimiento',
+                'cuentas_pagar.monto_original',
+                'cuentas_pagar.saldo_pendiente',
+                'estados.nombre as estado_nombre'
+            )
+            ->get();
+
+        return [
+            'tipo' => 'documentos',
+            'titulo' => 'Cuentas por pagar',
+            'tercero_label' => 'Proveedor',
+            'items' => $items,
+            'total_saldo' => $items->sum('saldo_pendiente'),
+        ];
+    }
+
+    private function documentosPorCobrar(): array
+    {
+        $items = DB::table('cuentas_cobrar')
+            ->join('clientes', 'cuentas_cobrar.cliente_id', '=', 'clientes.id')
+            ->join('estados', 'cuentas_cobrar.estado_id', '=', 'estados.id')
+            ->orderBy('cuentas_cobrar.fecha_vencimiento')
+            ->select(
+                'cuentas_cobrar.numero_factura as documento',
+                'clientes.nombre as tercero',
+                'cuentas_cobrar.fecha_emision',
+                'cuentas_cobrar.fecha_vencimiento',
+                'cuentas_cobrar.monto_original',
+                'cuentas_cobrar.saldo_pendiente',
+                'estados.nombre as estado_nombre'
+            )
+            ->get();
+
+        return [
+            'tipo' => 'documentos',
+            'titulo' => 'Cuentas por cobrar',
+            'tercero_label' => 'Cliente',
+            'items' => $items,
+            'total_saldo' => $items->sum('saldo_pendiente'),
+        ];
+    }
+
+    private function documentosInventario(): array
+    {
+        $items = DB::table('productos')
+            ->orderBy('nombre')
+            ->select('nombre', 'stock', 'precio')
+            ->get();
+
+        foreach ($items as $item) {
+            $item->valor = $item->stock * $item->precio;
+        }
+
+        return [
+            'tipo' => 'inventario',
+            'titulo' => 'Productos en inventario',
+            'items' => $items,
+            'total_saldo' => $items->sum('valor'),
+        ];
     }
 
     public function createCuenta()
