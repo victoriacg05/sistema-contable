@@ -25,44 +25,8 @@
 
     </div>
 
-    <!-- Alertas de morosidad -->
-    @if((isset($morosasCobrar) && $morosasCobrar->cantidad > 0) || (isset($morosasPagar) && $morosasPagar->cantidad > 0))
-        <div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            @if(isset($morosasCobrar) && $morosasCobrar->cantidad > 0)
-                <a href="{{ route('cuentas-cobrar.index') }}"
-                   class="flex items-center justify-between bg-amber-50 border border-amber-300 rounded-3xl p-6 shadow-md hover:bg-amber-100 transition">
-                    <div>
-                        <p class="text-amber-800 font-bold text-lg">Cuentas por cobrar morosas</p>
-                        <p class="text-amber-700 text-sm mt-1">
-                            {{ $morosasCobrar->cantidad }} {{ $morosasCobrar->cantidad == 1 ? 'documento vencido' : 'documentos vencidos' }}
-                        </p>
-                        <h3 class="text-3xl font-extrabold text-amber-900 mt-2">
-                            ₡{{ number_format($morosasCobrar->monto, 2) }}
-                        </h3>
-                    </div>
-                    <span class="text-amber-700 font-bold text-sm whitespace-nowrap">Ver módulo →</span>
-                </a>
-            @endif
-
-            @if(isset($morosasPagar) && $morosasPagar->cantidad > 0)
-                <a href="{{ route('cuentas-pagar.index') }}"
-                   class="flex items-center justify-between bg-red-50 border border-red-300 rounded-3xl p-6 shadow-md hover:bg-red-100 transition">
-                    <div>
-                        <p class="text-red-800 font-bold text-lg">Cuentas por pagar morosas</p>
-                        <p class="text-red-700 text-sm mt-1">
-                            {{ $morosasPagar->cantidad }} {{ $morosasPagar->cantidad == 1 ? 'documento vencido' : 'documentos vencidos' }}
-                        </p>
-                        <h3 class="text-3xl font-extrabold text-red-900 mt-2">
-                            ₡{{ number_format($morosasPagar->monto, 2) }}
-                        </h3>
-                    </div>
-                    <span class="text-red-700 font-bold text-sm whitespace-nowrap">Ver módulo →</span>
-                </a>
-            @endif
-
-        </div>
-    @endif
+    {{-- Las alertas de morosidad ahora se muestran de forma global en el layout
+         (barra superior), por lo que aparecen en cualquier pantalla del sistema. --}}
 
     <!-- Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
