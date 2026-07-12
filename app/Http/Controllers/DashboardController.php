@@ -61,6 +61,20 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        // Resumen de morosidad (documentos vencidos con saldo pendiente) para
+        // mostrar alertas destacadas al ingresar al menú.
+        $morosasCobrar = DB::table('cuentas_cobrar')
+            ->where('saldo_pendiente', '>', 0)
+            ->where('fecha_vencimiento', '<', now())
+            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
+            ->first();
+
+        $morosasPagar = DB::table('cuentas_pagar')
+            ->where('saldo_pendiente', '>', 0)
+            ->where('fecha_vencimiento', '<', now())
+            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
+            ->first();
+
         return view('dashboard', compact(
             'ventasTotales',
             'facturasPagadas',
@@ -69,7 +83,9 @@ class DashboardController extends Controller
             'productosRegistrados',
             'stockBajo',
             'cuentasVencidas',
-            'cuentasPorVencer'
+            'cuentasPorVencer',
+            'morosasCobrar',
+            'morosasPagar'
         ));
     }
 }
