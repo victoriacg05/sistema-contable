@@ -93,7 +93,9 @@
                                         class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
                                     <option value="">Seleccione un producto</option>
                                     @foreach($productos as $producto)
-                                        <option value="{{ $producto->id }}">{{ $producto->nombre }} | Stock actual: {{ $producto->stock }}</option>
+                                        <option value="{{ $producto->id }}" data-precio-mayorista="{{ $producto->precio }}">
+                                            {{ $producto->nombre }} | Stock actual: {{ $producto->stock }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -103,9 +105,10 @@
                                        class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
                             </div>
                             <div class="md:col-span-3">
-                                <label class="block text-xs font-semibold text-gray-500 mb-1">Precio unitario</label>
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Costo mayorista</label>
                                 <input type="number" step="0.01" min="0" data-campo="precio"
-                                       class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
+                                       class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-100 cursor-not-allowed outline-none transition"
+                                       readonly>
                             </div>
                             <div class="md:col-span-1 flex justify-center">
                                 <button type="button"
@@ -179,7 +182,20 @@
                 }
                 listaProductos.appendChild(nodo);
                 reindexar();
+                if (!datos) {
+                    aplicarPrecio(nodo);
+                }
                 recalcular();
+            }
+
+            function aplicarPrecio(linea) {
+                const select = linea.querySelector('[data-campo="producto"]');
+                const opcion = select.options[select.selectedIndex];
+                const precio = opcion ? parseFloat(opcion.dataset.precioMayorista) || 0 : 0;
+
+                linea.querySelector('[data-campo="precio"]').value = opcion && opcion.value
+                    ? precio.toFixed(2)
+                    : '';
             }
 
             function recalcular() {
@@ -209,6 +225,12 @@
                 }
             });
             listaProductos.addEventListener('input', recalcular);
+            listaProductos.addEventListener('change', function (e) {
+                if (e.target.dataset.campo === 'producto') {
+                    aplicarPrecio(e.target.closest('.linea-producto'));
+                    recalcular();
+                }
+            });
 
             form.addEventListener('submit', function (e) {
                 if (listaProductos.querySelectorAll('.linea-producto').length === 0) {

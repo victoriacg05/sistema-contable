@@ -72,11 +72,28 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Precio
+                            Precio mayorista
                         </label>
                         <input type="number" step="0.01" name="precio" value="{{ old('precio', $producto->precio) }}"
                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Porcentaje de ganancia
+                        </label>
+                        <div class="relative">
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   max="999.99"
+                                   name="porcentaje_ganancia"
+                                   value="{{ old('porcentaje_ganancia', $producto->porcentaje_ganancia) }}"
+                                   class="w-full px-5 py-4 pr-12 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
+                                   required>
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-gray-500">%</span>
+                        </div>
                     </div>
 
                     <div>

@@ -24,7 +24,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-[#2b2b2b] text-white">
                     <tr>
@@ -33,7 +33,9 @@
                         <th class="px-6 py-5 text-left">Categoría</th>
                         <th class="px-6 py-5 text-left">Stock</th>
                         <th class="px-6 py-5 text-left">Stock mínimo</th>
-                        <th class="px-6 py-5 text-left">Precio</th>
+                        <th class="px-6 py-5 text-left">Costo mayorista</th>
+                        <th class="px-6 py-5 text-left">Ganancia</th>
+                        <th class="px-6 py-5 text-left">Venta con impuesto</th>
                         <th class="px-6 py-5 text-center">Estado</th>
                         <th class="px-6 py-5 text-center">Acciones</th>
                     </tr>
@@ -64,6 +66,14 @@
 
                             <td class="px-6 py-5 text-gray-600">
                                 ₡{{ number_format($producto->precio, 2) }}
+                            </td>
+
+                            <td class="px-6 py-5 text-gray-600">
+                                {{ number_format($producto->porcentaje_ganancia, 2) }}%
+                            </td>
+
+                            <td class="px-6 py-5 font-semibold text-gray-700">
+                                ₡{{ number_format($producto->precio_venta_con_impuesto, 2) }}
                             </td>
 
                             <td class="px-6 py-5 text-center">
@@ -100,7 +110,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-10 text-center text-gray-700 text-lg">
+                            <td colspan="10" class="px-6 py-10 text-center text-gray-700 text-lg">
                                 No hay productos registrados
                             </td>
                         </tr>

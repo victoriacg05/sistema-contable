@@ -137,7 +137,7 @@
 
                             @foreach($productos as $producto)
                                 <option value="{{ $producto->id }}" {{ old('producto_id') == $producto->id ? 'selected' : '' }}>
-                                    {{ $producto->nombre }} - ₡{{ number_format($producto->precio, 2) }} | Stock: {{ $producto->stock }}
+                                    {{ $producto->nombre }} - Venta con impuesto: ₡{{ number_format($producto->precio_venta_con_impuesto, 2) }} | Stock: {{ $producto->stock }}
                                 </option>
                             @endforeach
                         </select>

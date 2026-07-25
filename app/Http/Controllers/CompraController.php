@@ -8,6 +8,7 @@ use App\Models\Proveedor;
 use App\Models\Producto;
 use App\Models\Estado;
 use App\Models\CuentaPagar;
+use App\Models\PagoCuentaPagar;
 use App\Models\PlazoCompra;
 use App\Models\Factura;
 use App\Models\DetalleFactura;
@@ -20,6 +21,7 @@ use App\Services\BitacoraService;
 use App\Services\InventarioService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
+use App\Services\CodigoProductoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +30,11 @@ use Illuminate\Validation\ValidationException;
 
 class CompraController extends Controller
 {
+    public function __construct(CodigoProductoService $codigoProductoService)
+    {
+        $codigoProductoService->asegurarEstructuraPrecios();
+    }
+
     public function index()
     {
         $compras = Compra::with(['proveedor', 'estado', 'metodoPago', 'detalles.producto', 'plazos'])
@@ -89,13 +96,11 @@ class CompraController extends Controller
             'productos' => 'required|array|min:1',
             'productos.*.producto_id' => 'required|exists:productos,id',
             'productos.*.cantidad' => 'required|integer|min:1',
-            'productos.*.precio_unitario' => 'required|numeric|min:0',
         ], [
             'productos.required' => 'Debe agregar al menos un producto.',
             'productos.min' => 'Debe agregar al menos un producto.',
             'productos.*.producto_id.required' => 'Seleccione un producto en cada línea.',
             'productos.*.cantidad.required' => 'Indique la cantidad de cada producto.',
-            'productos.*.precio_unitario.required' => 'Indique el precio unitario de cada producto.',
         ]);
 
         $lineas = array_values($request->productos);
@@ -107,6 +112,11 @@ class CompraController extends Controller
                 'productos' => 'No repita el mismo producto; ajuste la cantidad en una sola línea.',
             ]);
         }
+
+        $lineas = $this->aplicarPreciosProductos(
+            $lineas,
+            $request->tipo_operacion === 'cliente'
+        );
 
         if ($request->tipo_operacion === 'cliente') {
             return $this->registrarVentaCliente($request, $lineas);
@@ -144,7 +154,7 @@ class CompraController extends Controller
             $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
         }
 
-        $impuesto = $subtotal * 0.13;
+        $impuesto = $subtotal * Producto::IMPUESTO;
         $total = round($subtotal + $impuesto, 2);
 
         $cuotas = [];
@@ -309,7 +319,7 @@ class CompraController extends Controller
             $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
         }
 
-        $impuesto = $subtotal * 0.13;
+        $impuesto = $subtotal * Producto::IMPUESTO;
         $descuento = $request->descuento ?? 0;
         $total = round(($subtotal + $impuesto) - $descuento, 2);
 
@@ -495,7 +505,6 @@ class CompraController extends Controller
             'productos' => 'required|array|min:1',
             'productos.*.producto_id' => 'required|exists:productos,id',
             'productos.*.cantidad' => 'required|integer|min:1',
-            'productos.*.precio_unitario' => 'required|numeric|min:0',
         ], [
             'productos.required' => 'Debe agregar al menos un producto a la compra.',
             'productos.min' => 'Debe agregar al menos un producto a la compra.',
@@ -510,8 +519,36 @@ class CompraController extends Controller
             ]);
         }
 
+        $preciosExistentes = $compra->detalles()
+            ->pluck('precio_unitario', 'producto_id')
+            ->map(fn ($precio) => (float) $precio)
+            ->all();
+
+        $lineas = $this->aplicarPreciosProductos($lineas, false, $preciosExistentes);
+
         DB::transaction(function () use ($request, $compra, $lineas) {
             $referenciaAjuste = 'AJU-' . now()->format('YmdHis');
+            $cuentaPagar = CuentaPagar::where('numero_compra', $compra->numero_compra)
+                ->where('proveedor_id', $compra->proveedor_id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($cuentaPagar && (int) $compra->proveedor_id !== (int) $request->proveedor_id) {
+                throw ValidationException::withMessages([
+                    'proveedor_id' => 'No se puede cambiar el proveedor de una compra que tiene una cuenta por pagar.',
+                ]);
+            }
+
+            if (
+                $cuentaPagar
+                && PagoCuentaPagar::where('numero_compra', $compra->numero_compra)
+                    ->where('proveedor_id', $compra->proveedor_id)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'productos' => 'No se puede editar una compra que ya tiene pagos registrados.',
+                ]);
+            }
 
             // Revertir el stock de los productos actuales y eliminarlos.
             foreach ($compra->detalles()->get() as $detalleAnterior) {
@@ -539,7 +576,7 @@ class CompraController extends Controller
                 $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
             }
 
-            $impuesto = $subtotal * 0.13;
+            $impuesto = $subtotal * Producto::IMPUESTO;
             $total = round($subtotal + $impuesto, 2);
 
             $compra->update([
@@ -572,6 +609,33 @@ class CompraController extends Controller
                     "Actualización de compra {$compra->numero_compra}",
                     $referenciaAjuste
                 );
+            }
+
+            if ($cuentaPagar) {
+                $cuentaPagar->update([
+                    'monto_original' => $total,
+                    'saldo_pendiente' => $total,
+                ]);
+
+                $plazos = PlazoCompra::where('numero_compra', $compra->numero_compra)
+                    ->where('proveedor_id', $compra->proveedor_id)
+                    ->orderBy('numero_cuota')
+                    ->get();
+
+                if ($plazos->isNotEmpty()) {
+                    $montoBase = floor(($total / $plazos->count()) * 100) / 100;
+
+                    foreach ($plazos as $indice => $plazo) {
+                        $monto = $indice === $plazos->count() - 1
+                            ? round($total - ($montoBase * ($plazos->count() - 1)), 2)
+                            : $montoBase;
+
+                        $plazo->update([
+                            'monto' => $monto,
+                            'saldo_pendiente' => $monto,
+                        ]);
+                    }
+                }
             }
         });
 
@@ -626,5 +690,33 @@ class CompraController extends Controller
         return redirect()
             ->route('compras.index')
             ->with('success', 'Compra eliminada correctamente.');
+    }
+
+    private function aplicarPreciosProductos(
+        array $lineas,
+        bool $esVentaCliente,
+        array $preciosExistentes = []
+    ): array
+    {
+        $productos = Producto::whereIn('id', array_column($lineas, 'producto_id'))
+            ->get()
+            ->keyBy('id');
+
+        return array_map(function (array $linea) use ($productos, $esVentaCliente, $preciosExistentes) {
+            $producto = $productos->get($linea['producto_id']);
+
+            if (! $producto) {
+                throw ValidationException::withMessages([
+                    'productos' => 'Uno de los productos seleccionados ya no está disponible.',
+                ]);
+            }
+
+            $linea['precio_unitario'] = $preciosExistentes[$producto->id]
+                ?? ($esVentaCliente
+                    ? $producto->precio_venta_sin_impuesto
+                    : (float) $producto->precio);
+
+            return $linea;
+        }, $lineas);
     }
 }

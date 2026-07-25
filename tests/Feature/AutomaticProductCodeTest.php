@@ -20,6 +20,7 @@ it('generates the product code from the selected category', function () {
         'stock' => 1,
         'stock_minimo' => 0,
         'precio' => 100,
+        'porcentaje_ganancia' => 20,
         'estado' => true,
     ]);
 
@@ -31,6 +32,7 @@ it('generates the product code from the selected category', function () {
         'stock' => 5,
         'stock_minimo' => 1,
         'precio' => 250,
+        'porcentaje_ganancia' => 20,
     ]);
 
     app(ProductoController::class)->store($request);
@@ -58,6 +60,7 @@ it('regenerates the code when the product category changes', function () {
         'stock' => 1,
         'stock_minimo' => 0,
         'precio' => 100,
+        'porcentaje_ganancia' => 20,
         'estado' => true,
     ]);
 
@@ -69,6 +72,7 @@ it('regenerates the code when the product category changes', function () {
         'stock' => 2,
         'stock_minimo' => 1,
         'precio' => 150,
+        'porcentaje_ganancia' => 25,
         'estado' => 1,
     ]);
 
@@ -91,6 +95,7 @@ it('normalizes legacy product codes when a product listing is opened', function 
         'stock' => 1,
         'stock_minimo' => 0,
         'precio' => 100,
+        'porcentaje_ganancia' => 20,
         'estado' => true,
     ]);
     $segundoProducto = Producto::create([
@@ -101,6 +106,7 @@ it('normalizes legacy product codes when a product listing is opened', function 
         'stock' => 1,
         'stock_minimo' => 0,
         'precio' => 100,
+        'porcentaje_ganancia' => 20,
         'estado' => true,
     ]);
 
@@ -110,4 +116,15 @@ it('normalizes legacy product codes when a product listing is opened', function 
         ->toBe(sprintf('PRD-%03d-0001', $categoria->id))
         ->and($segundoProducto->fresh()->codigo_barras)
         ->toBe(sprintf('PRD-%03d-0002', $categoria->id));
+});
+
+it('calculates supplier and customer prices from the wholesale cost', function () {
+    $producto = new Producto([
+        'precio' => 100,
+        'porcentaje_ganancia' => 25,
+    ]);
+
+    expect($producto->precio_compra_con_impuesto)->toBe(113.0)
+        ->and($producto->precio_venta_sin_impuesto)->toBe(125.0)
+        ->and($producto->precio_venta_con_impuesto)->toBe(141.25);
 });

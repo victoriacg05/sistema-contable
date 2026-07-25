@@ -9,16 +9,25 @@ use App\Models\Producto;
 use App\Models\MetodoPago;
 use App\Models\Estado;
 use App\Models\CuentaCobrar;
+use App\Models\PlazoVenta;
 use App\Services\BitacoraService;
 use App\Services\InventarioService;
+use App\Services\CodigoProductoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class FacturaController extends Controller
 {
+    public function __construct(CodigoProductoService $codigoProductoService)
+    {
+        $codigoProductoService->asegurarEstructuraPrecios();
+    }
+
     public function index()
     {
         $facturas = Factura::with(['cliente', 'estado', 'metodoPago', 'detalles.producto'])
@@ -71,8 +80,9 @@ class FacturaController extends Controller
                 abort(422, 'No hay suficiente stock disponible para este producto.');
             }
 
-            $subtotal = $producto->precio * $request->cantidad;
-            $impuesto = $subtotal * 0.13;
+            $precioVenta = $producto->precio_venta_sin_impuesto;
+            $subtotal = $precioVenta * $request->cantidad;
+            $impuesto = $subtotal * Producto::IMPUESTO;
             $descuento = $request->descuento ?? 0;
             $total = ($subtotal + $impuesto) - $descuento;
 
@@ -106,7 +116,7 @@ class FacturaController extends Controller
                 'cliente_id' => $request->cliente_id,
                 'producto_id' => $producto->id,
                 'cantidad' => $request->cantidad,
-                'precio_unitario' => $producto->precio,
+                'precio_unitario' => $precioVenta,
                 'subtotal' => $subtotal,
             ]);
 
@@ -119,6 +129,15 @@ class FacturaController extends Controller
                     'fecha_emision' => now(),
                     'fecha_vencimiento' => now()->addDays(30),
                     'estado_id' => $estadoPendiente?->id ?? 1,
+                ]);
+
+                PlazoVenta::create([
+                    'numero_factura' => $numeroFactura,
+                    'cliente_id' => $request->cliente_id,
+                    'numero_cuota' => 1,
+                    'fecha_vencimiento' => now()->addDays(30),
+                    'monto' => $total,
+                    'saldo_pendiente' => $total,
                 ]);
             }
 
@@ -240,6 +259,22 @@ class FacturaController extends Controller
 
         DB::transaction(function () use ($request, $factura) {
             $referenciaAjuste = 'AJU-' . now()->format('YmdHis');
+            $clienteIdAnterior = $factura->cliente_id;
+
+            $tablaPagos = Schema::hasTable('pagos_cuentas_cobrar')
+                ? 'pagos_cuentas_cobrar'
+                : 'pagos_clientes';
+
+            if (
+                DB::table($tablaPagos)
+                    ->where('numero_factura', $factura->numero_factura)
+                    ->where('cliente_id', $clienteIdAnterior)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'producto_id' => 'No se puede editar una factura que ya tiene pagos registrados.',
+                ]);
+            }
 
             $detalleAnterior = $factura->detalles()->first();
 
@@ -269,8 +304,12 @@ class FacturaController extends Controller
                 abort(422, 'No hay suficiente stock disponible para este producto.');
             }
 
-            $subtotal = $producto->precio * $request->cantidad;
-            $impuesto = $subtotal * 0.13;
+            $precioVenta = $detalleAnterior
+                && (int) $detalleAnterior->producto_id === (int) $producto->id
+                    ? (float) $detalleAnterior->precio_unitario
+                    : $producto->precio_venta_sin_impuesto;
+            $subtotal = $precioVenta * $request->cantidad;
+            $impuesto = $subtotal * Producto::IMPUESTO;
             $descuento = $request->descuento ?? 0;
             $total = ($subtotal + $impuesto) - $descuento;
 
@@ -296,23 +335,37 @@ class FacturaController extends Controller
                 'cliente_id' => $request->cliente_id,
                 'producto_id' => $producto->id,
                 'cantidad' => $request->cantidad,
-                'precio_unitario' => $producto->precio,
+                'precio_unitario' => $precioVenta,
                 'subtotal' => $subtotal,
             ]);
 
             CuentaCobrar::where('numero_factura', $factura->numero_factura)
-                ->where('cliente_id', $factura->cliente_id)
+                ->where('cliente_id', $clienteIdAnterior)
+                ->delete();
+            PlazoVenta::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $clienteIdAnterior)
                 ->delete();
 
             if ($esCredito) {
+                $fechaVencimiento = now()->addDays(30);
+
                 CuentaCobrar::create([
                     'numero_factura' => $factura->numero_factura,
                     'cliente_id' => $request->cliente_id,
                     'monto_original' => $total,
                     'saldo_pendiente' => $total,
                     'fecha_emision' => now(),
-                    'fecha_vencimiento' => now()->addDays(30),
+                    'fecha_vencimiento' => $fechaVencimiento,
                     'estado_id' => $estadoPendiente?->id ?? 1,
+                ]);
+
+                PlazoVenta::create([
+                    'numero_factura' => $factura->numero_factura,
+                    'cliente_id' => $request->cliente_id,
+                    'numero_cuota' => 1,
+                    'fecha_vencimiento' => $fechaVencimiento,
+                    'monto' => $total,
+                    'saldo_pendiente' => $total,
                 ]);
             }
 
@@ -347,16 +400,22 @@ class FacturaController extends Controller
     {
         $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
-        $factura->update([
-            'estado_id' => $estadoPagado?->id ?? $factura->estado_id,
-        ]);
-
-        CuentaCobrar::where('numero_factura', $factura->numero_factura)
-            ->where('cliente_id', $factura->cliente_id)
-            ->update([
-                'saldo_pendiente' => 0,
-                'estado_id' => $estadoPagado?->id ?? 2,
+        DB::transaction(function () use ($factura, $estadoPagado) {
+            $factura->update([
+                'estado_id' => $estadoPagado?->id ?? $factura->estado_id,
             ]);
+
+            CuentaCobrar::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->update([
+                    'saldo_pendiente' => 0,
+                    'estado_id' => $estadoPagado?->id ?? 2,
+                ]);
+
+            PlazoVenta::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->update(['saldo_pendiente' => 0]);
+        });
 
         return redirect()
             ->route('facturas.index')
@@ -399,6 +458,9 @@ class FacturaController extends Controller
 
             // Eliminar cuenta por cobrar asociada
             CuentaCobrar::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->delete();
+            PlazoVenta::where('numero_factura', $factura->numero_factura)
                 ->where('cliente_id', $factura->cliente_id)
                 ->delete();
 

@@ -204,6 +204,7 @@ return [
         'cliente_id' => 'cliente',
         'cantidad' => 'cantidad',
         'precio' => 'precio',
+        'porcentaje_ganancia' => 'porcentaje de ganancia',
         'precio_unitario' => 'precio unitario',
         'modulo' => 'módulo',
         'termino' => 'término de búsqueda',

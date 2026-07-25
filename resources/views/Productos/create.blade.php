@@ -109,7 +109,7 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Precio
+                            Precio mayorista
                         </label>
 
                         <input type="number"
@@ -117,10 +117,32 @@
                                name="precio"
                                value="{{ old('precio') }}"
                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
-                               placeholder="0.00"
+                               placeholder="Costo de compra sin impuesto"
                                required>
 
                         @error('precio')
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Porcentaje de ganancia
+                        </label>
+
+                        <div class="relative">
+                            <input type="number"
+                                   step="0.01"
+                                   name="porcentaje_ganancia"
+                                   value="{{ old('porcentaje_ganancia', 0) }}"
+                                   class="w-full px-5 py-4 pr-12 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
+                                   min="0"
+                                   max="999.99"
+                                   required>
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-gray-500">%</span>
+                        </div>
+
+                        @error('porcentaje_ganancia')
                             <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
                         @enderror
                     </div>

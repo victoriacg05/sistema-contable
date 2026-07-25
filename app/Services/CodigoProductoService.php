@@ -4,11 +4,27 @@ namespace App\Services;
 
 use App\Models\CategoriaProducto;
 use App\Models\Producto;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class CodigoProductoService
 {
+    public function asegurarEstructuraPrecios(): void
+    {
+        if (
+            Schema::hasTable('productos')
+            && ! Schema::hasColumn('productos', 'porcentaje_ganancia')
+        ) {
+            Schema::table('productos', function (Blueprint $table) {
+                $table->decimal('porcentaje_ganancia', 5, 2)
+                    ->default(0)
+                    ->after('precio');
+            });
+        }
+    }
+
     public function siguiente(int $categoriaId): string
     {
         $prefijo = sprintf('PRD-%03d-', $categoriaId);

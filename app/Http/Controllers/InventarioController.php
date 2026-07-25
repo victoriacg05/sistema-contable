@@ -14,6 +14,7 @@ class InventarioController extends Controller
     public function __construct(
         private readonly CodigoProductoService $codigoProductoService
     ) {
+        $this->codigoProductoService->asegurarEstructuraPrecios();
     }
 
     public function index()

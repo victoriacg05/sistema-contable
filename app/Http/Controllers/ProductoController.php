@@ -13,6 +13,7 @@ class ProductoController extends Controller
     public function __construct(
         private readonly CodigoProductoService $codigoProductoService
     ) {
+        $this->codigoProductoService->asegurarEstructuraPrecios();
     }
 
     public function index()
@@ -43,6 +44,7 @@ class ProductoController extends Controller
             'stock' => 'required|integer|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'precio' => 'required|numeric|min:0',
+            'porcentaje_ganancia' => 'required|numeric|min:0|max:999.99',
         ]);
 
         DB::transaction(function () use ($datos) {
@@ -89,6 +91,7 @@ class ProductoController extends Controller
             'stock' => 'required|integer|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'precio' => 'required|numeric|min:0',
+            'porcentaje_ganancia' => 'required|numeric|min:0|max:999.99',
         ]);
 
         DB::transaction(function () use ($datos, $producto, $request) {

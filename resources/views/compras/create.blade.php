@@ -178,7 +178,12 @@
                                         class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
                                     <option value="">Seleccione un producto</option>
                                     @foreach($productos as $producto)
-                                        <option value="{{ $producto->id }}" data-precio="{{ $producto->precio }}">{{ $producto->nombre }} | Stock actual: {{ $producto->stock }}</option>
+                                        <option value="{{ $producto->id }}"
+                                                data-precio-mayorista="{{ $producto->precio }}"
+                                                data-precio-venta="{{ $producto->precio_venta_sin_impuesto }}"
+                                                data-ganancia="{{ $producto->porcentaje_ganancia }}">
+                                            {{ $producto->nombre }} | Stock actual: {{ $producto->stock }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -188,9 +193,11 @@
                                        class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
                             </div>
                             <div class="md:col-span-3">
-                                <label class="block text-xs font-semibold text-gray-500 mb-1">Precio unitario</label>
+                                <label data-etiqueta-precio class="block text-xs font-semibold text-gray-500 mb-1">Costo mayorista</label>
                                 <input type="number" step="0.01" min="0" data-campo="precio"
-                                       class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
+                                       class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-100 cursor-not-allowed outline-none transition"
+                                       readonly>
+                                <p data-detalle-precio class="mt-1 text-xs text-gray-500"></p>
                             </div>
                             <div class="md:col-span-1 flex justify-center">
                                 <button type="button"
@@ -405,22 +412,25 @@
                 return tipoOperacion.value === 'cliente';
             }
 
-            // En venta a cliente el precio se toma del producto y no se edita.
-            // En compra a proveedor el precio lo ingresa el usuario.
             function aplicarPrecioLinea(linea) {
                 const select = linea.querySelector('[data-campo="producto"]');
                 const precioInput = linea.querySelector('[data-campo="precio"]');
+                const etiqueta = linea.querySelector('[data-etiqueta-precio]');
+                const detalle = linea.querySelector('[data-detalle-precio]');
                 const opcion = select.options[select.selectedIndex];
+                const mayorista = opcion ? parseFloat(opcion.dataset.precioMayorista) || 0 : 0;
+                const precioVenta = opcion ? parseFloat(opcion.dataset.precioVenta) || 0 : 0;
+                const ganancia = opcion ? parseFloat(opcion.dataset.ganancia) || 0 : 0;
 
-                if (esCliente()) {
-                    const precio = opcion ? parseFloat(opcion.dataset.precio) || 0 : 0;
-                    precioInput.value = opcion && opcion.value ? precio : '';
-                    precioInput.readOnly = true;
-                    precioInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                } else {
-                    precioInput.readOnly = false;
-                    precioInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
-                }
+                precioInput.value = opcion && opcion.value
+                    ? (esCliente() ? precioVenta : mayorista).toFixed(2)
+                    : '';
+                etiqueta.textContent = esCliente()
+                    ? 'Venta antes de impuesto'
+                    : 'Costo mayorista';
+                detalle.textContent = opcion && opcion.value && esCliente()
+                    ? `${formatear(mayorista)} + ${ganancia.toFixed(2)}% de ganancia`
+                    : 'El costo se toma del producto guardado.';
             }
 
             function aplicarModoPrecios() {
