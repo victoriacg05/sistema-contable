@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\CategoriaProducto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductoController extends Controller
 {
@@ -27,9 +28,8 @@ class ProductoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'categoria_producto_id' => 'required|exists:categorias_productos,id',
-            'codigo_barras' => 'required|string|max:255|unique:productos,codigo_barras',
             'nombre' => 'required|string|max:255',
             'descripcion' => 'required|string|max:500',
             'stock' => 'required|integer|min:0',
@@ -37,20 +37,32 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
         ]);
 
-        Producto::create([
-            'categoria_producto_id' => $request->categoria_producto_id,
-            'codigo_barras' => $request->codigo_barras,
-            'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion,
-            'stock' => $request->stock,
-            'stock_minimo' => $request->stock_minimo,
-            'precio' => $request->precio,
-            'estado' => 1,
-        ]);
+        DB::transaction(function () use ($datos) {
+            CategoriaProducto::whereKey($datos['categoria_producto_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            Producto::create([
+                ...$datos,
+                'codigo_barras' => $this->siguienteCodigo((int) $datos['categoria_producto_id']),
+                'estado' => 1,
+            ]);
+        });
 
         return redirect()
             ->route('productos.index')
             ->with('success', 'Producto creado correctamente.');
+    }
+
+    public function codigoSugerido(Request $request)
+    {
+        $datos = $request->validate([
+            'categoria_producto_id' => 'required|exists:categorias_productos,id',
+        ]);
+
+        return response()->json([
+            'codigo' => $this->siguienteCodigo((int) $datos['categoria_producto_id']),
+        ]);
     }
 
     public function edit(Producto $producto)
@@ -62,9 +74,8 @@ class ProductoController extends Controller
 
     public function update(Request $request, Producto $producto)
     {
-        $request->validate([
+        $datos = $request->validate([
             'categoria_producto_id' => 'required|exists:categorias_productos,id',
-            'codigo_barras' => 'required|string|max:255|unique:productos,codigo_barras,' . $producto->id,
             'nombre' => 'required|string|max:255',
             'descripcion' => 'required|string|max:500',
             'stock' => 'required|integer|min:0',
@@ -72,16 +83,24 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
         ]);
 
-        $producto->update([
-            'categoria_producto_id' => $request->categoria_producto_id,
-            'codigo_barras' => $request->codigo_barras,
-            'nombre' => $request->nombre,
-            'descripcion' => $request->descripcion,
-            'stock' => $request->stock,
-            'stock_minimo' => $request->stock_minimo,
-            'precio' => $request->precio,
-            'estado' => $request->has('estado') ? 1 : 0,
-        ]);
+        DB::transaction(function () use ($datos, $producto, $request) {
+            $productoBloqueado = Producto::whereKey($producto->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ((int) $productoBloqueado->categoria_producto_id !== (int) $datos['categoria_producto_id']) {
+                CategoriaProducto::whereKey($datos['categoria_producto_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $datos['codigo_barras'] = $this->siguienteCodigo((int) $datos['categoria_producto_id']);
+            }
+
+            $productoBloqueado->update([
+                ...$datos,
+                'estado' => $request->has('estado') ? 1 : 0,
+            ]);
+        });
 
         return redirect()
             ->route('productos.index')
@@ -95,5 +114,22 @@ class ProductoController extends Controller
         return redirect()
             ->route('productos.index')
             ->with('success', 'Producto eliminado correctamente.');
+    }
+
+    private function siguienteCodigo(int $categoriaId): string
+    {
+        $prefijo = sprintf('PRD-%03d-', $categoriaId);
+        $ultimaSecuencia = Producto::where('categoria_producto_id', $categoriaId)
+            ->where('codigo_barras', 'like', $prefijo . '%')
+            ->pluck('codigo_barras')
+            ->reduce(function (int $maximo, string $codigo) use ($prefijo) {
+                $secuencia = substr($codigo, strlen($prefijo));
+
+                return ctype_digit($secuencia)
+                    ? max($maximo, (int) $secuencia)
+                    : $maximo;
+            }, 0);
+
+        return $prefijo . sprintf('%04d', $ultimaSecuencia + 1);
     }
 }

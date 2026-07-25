@@ -60,6 +60,7 @@
                 <thead class="bg-[#2b2b2b] text-white">
                     <tr>
                         <th class="px-6 py-5 text-left">Referencia</th>
+                        <th class="px-6 py-5 text-left">Código</th>
                         <th class="px-6 py-5 text-left">Producto</th>
                         <th class="px-6 py-5 text-left">Tipo</th>
                         <th class="px-6 py-5 text-center">Cantidad</th>
@@ -76,6 +77,7 @@
                         <tr class="fila-movimiento border-b border-gray-200 hover:bg-gray-50 transition"
                             data-tipo="{{ $esEntrada ? 'entrada' : 'salida' }}">
                             <td class="px-6 py-5 font-semibold">{{ $mov->referencia_movimiento }}</td>
+                            <td class="px-6 py-5 font-mono text-sm">{{ $mov->producto_codigo }}</td>
                             <td class="px-6 py-5">{{ $mov->producto_nombre }}</td>
                             <td class="px-6 py-5">
                                 <span class="px-3 py-1 rounded-full text-xs font-bold
@@ -91,10 +93,10 @@
                     @endforelse
 
                     <tr id="fila-vacia-entrada">
-                        <td colspan="6" class="px-6 py-10 text-center text-gray-600">No hay entradas registradas.</td>
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-600">No hay entradas registradas.</td>
                     </tr>
                     <tr id="fila-vacia-salida" class="hidden">
-                        <td colspan="6" class="px-6 py-10 text-center text-gray-600">No hay salidas registradas.</td>
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-600">No hay salidas registradas.</td>
                     </tr>
                 </tbody>
             </table>

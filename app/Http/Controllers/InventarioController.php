@@ -19,6 +19,7 @@ class InventarioController extends Controller
             ->select(
                 'movimientos_inventario.*',
                 'productos.nombre as producto_nombre',
+                'productos.codigo_barras as producto_codigo',
                 'users.name as usuario_nombre',
                 'tipos_movimiento_inventario.nombre as tipo_nombre'
             )

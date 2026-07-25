@@ -44,19 +44,19 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
-                            Código de barras
+                            Código del producto
                         </label>
 
                         <input type="text"
-                               name="codigo_barras"
-                               value="{{ old('codigo_barras') }}"
-                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
-                               placeholder="Ej: PROD-001"
-                               required>
+                               id="codigo_barras"
+                               value=""
+                               class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-100 text-gray-700 outline-none"
+                               placeholder="Selecciona una categoría"
+                               readonly>
 
-                        @error('codigo_barras')
-                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
-                        @enderror
+                        <p id="codigo-ayuda" class="mt-2 text-sm text-gray-500">
+                            Se genera automáticamente según la categoría.
+                        </p>
                     </div>
 
                     <div>
@@ -89,6 +89,7 @@
                         </div>
 
                         <select name="categoria_producto_id"
+                                id="categoria_producto_id"
                                 class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione una categoría</option>
@@ -190,4 +191,48 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const categoria = document.getElementById('categoria_producto_id');
+            const codigo = document.getElementById('codigo_barras');
+            const ayuda = document.getElementById('codigo-ayuda');
+            const url = @json(route('productos.codigo-sugerido'));
+
+            const actualizarCodigo = async () => {
+                if (!categoria.value) {
+                    codigo.value = '';
+                    ayuda.textContent = 'Se genera automáticamente según la categoría.';
+                    ayuda.className = 'mt-2 text-sm text-gray-500';
+                    return;
+                }
+
+                codigo.value = 'Generando...';
+
+                try {
+                    const respuesta = await fetch(`${url}?categoria_producto_id=${encodeURIComponent(categoria.value)}`, {
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                    });
+
+                    if (!respuesta.ok) {
+                        throw new Error('No se pudo generar el código.');
+                    }
+
+                    const datos = await respuesta.json();
+                    codigo.value = datos.codigo;
+                    ayuda.textContent = 'Este código se confirmará al guardar el producto.';
+                    ayuda.className = 'mt-2 text-sm text-gray-500';
+                } catch (error) {
+                    codigo.value = '';
+                    ayuda.textContent = 'No se pudo mostrar el código. Se generará al guardar.';
+                    ayuda.className = 'mt-2 text-sm text-red-800 font-semibold';
+                }
+            };
+
+            categoria.addEventListener('change', actualizarCodigo);
+            actualizarCodigo();
+        });
+    </script>
 </x-app-layout>

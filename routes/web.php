@@ -41,6 +41,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('proveedores', ProveedorController::class)
         ->parameters(['proveedores' => 'proveedor']);
 
+    Route::get('/productos/codigo-sugerido', [ProductoController::class, 'codigoSugerido'])
+        ->name('productos.codigo-sugerido');
     Route::resource('productos', ProductoController::class);
 
     Route::resource('facturas', FacturaController::class);
