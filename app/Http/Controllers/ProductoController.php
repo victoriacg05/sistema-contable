@@ -4,13 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use App\Models\CategoriaProducto;
+use App\Services\CodigoProductoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ProductoController extends Controller
 {
+    public function __construct(
+        private readonly CodigoProductoService $codigoProductoService
+    ) {
+    }
+
     public function index()
     {
+        $this->codigoProductoService->normalizarExistentes();
+
         $productos = Producto::with('categoria')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -44,7 +52,7 @@ class ProductoController extends Controller
 
             Producto::create([
                 ...$datos,
-                'codigo_barras' => $this->siguienteCodigo((int) $datos['categoria_producto_id']),
+                'codigo_barras' => $this->codigoProductoService->siguiente((int) $datos['categoria_producto_id']),
                 'estado' => 1,
             ]);
         });
@@ -61,7 +69,7 @@ class ProductoController extends Controller
         ]);
 
         return response()->json([
-            'codigo' => $this->siguienteCodigo((int) $datos['categoria_producto_id']),
+            'codigo' => $this->codigoProductoService->siguiente((int) $datos['categoria_producto_id']),
         ]);
     }
 
@@ -84,16 +92,16 @@ class ProductoController extends Controller
         ]);
 
         DB::transaction(function () use ($datos, $producto, $request) {
+            CategoriaProducto::whereKey($datos['categoria_producto_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $productoBloqueado = Producto::whereKey($producto->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
 
             if ((int) $productoBloqueado->categoria_producto_id !== (int) $datos['categoria_producto_id']) {
-                CategoriaProducto::whereKey($datos['categoria_producto_id'])
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                $datos['codigo_barras'] = $this->siguienteCodigo((int) $datos['categoria_producto_id']);
+                $datos['codigo_barras'] = $this->codigoProductoService->siguiente((int) $datos['categoria_producto_id']);
             }
 
             $productoBloqueado->update([
@@ -116,20 +124,4 @@ class ProductoController extends Controller
             ->with('success', 'Producto eliminado correctamente.');
     }
 
-    private function siguienteCodigo(int $categoriaId): string
-    {
-        $prefijo = sprintf('PRD-%03d-', $categoriaId);
-        $ultimaSecuencia = Producto::where('categoria_producto_id', $categoriaId)
-            ->where('codigo_barras', 'like', $prefijo . '%')
-            ->pluck('codigo_barras')
-            ->reduce(function (int $maximo, string $codigo) use ($prefijo) {
-                $secuencia = substr($codigo, strlen($prefijo));
-
-                return ctype_digit($secuencia)
-                    ? max($maximo, (int) $secuencia)
-                    : $maximo;
-            }, 0);
-
-        return $prefijo . sprintf('%04d', $ultimaSecuencia + 1);
-    }
 }

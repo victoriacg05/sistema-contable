@@ -7,11 +7,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Producto;
 use App\Services\BitacoraService;
+use App\Services\CodigoProductoService;
 
 class InventarioController extends Controller
 {
+    public function __construct(
+        private readonly CodigoProductoService $codigoProductoService
+    ) {
+    }
+
     public function index()
     {
+        $this->codigoProductoService->normalizarExistentes();
+
         $movimientos = DB::table('movimientos_inventario')
             ->join('productos', 'movimientos_inventario.producto_id', '=', 'productos.id')
             ->join('users', 'movimientos_inventario.usuario_id', '=', 'users.id')
@@ -33,6 +41,8 @@ class InventarioController extends Controller
 
     public function create()
     {
+        $this->codigoProductoService->normalizarExistentes();
+
         $productos = Producto::where('estado', true)->orderBy('nombre')->get();
         $tipos = DB::table('tipos_movimiento_inventario')->orderBy('nombre')->get();
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProductoController;
 use App\Models\CategoriaProducto;
 use App\Models\Producto;
+use App\Services\CodigoProductoService;
 use Illuminate\Http\Request;
 
 it('generates the product code from the selected category', function () {
@@ -75,4 +76,38 @@ it('regenerates the code when the product category changes', function () {
 
     expect($producto->fresh()->codigo_barras)
         ->toBe(sprintf('PRD-%03d-0001', $categoriaNueva->id));
+});
+
+it('normalizes legacy product codes when a product listing is opened', function () {
+    $categoria = CategoriaProducto::create([
+        'nombre' => 'Limpieza',
+        'descripcion' => 'Productos existentes',
+    ]);
+    $primerProducto = Producto::create([
+        'categoria_producto_id' => $categoria->id,
+        'codigo_barras' => 'LIM-001',
+        'nombre' => 'Limpiador',
+        'descripcion' => 'Producto existente',
+        'stock' => 1,
+        'stock_minimo' => 0,
+        'precio' => 100,
+        'estado' => true,
+    ]);
+    $segundoProducto = Producto::create([
+        'categoria_producto_id' => $categoria->id,
+        'codigo_barras' => 'LIM-002',
+        'nombre' => 'Desinfectante',
+        'descripcion' => 'Producto existente',
+        'stock' => 1,
+        'stock_minimo' => 0,
+        'precio' => 100,
+        'estado' => true,
+    ]);
+
+    app(CodigoProductoService::class)->normalizarExistentes();
+
+    expect($primerProducto->fresh()->codigo_barras)
+        ->toBe(sprintf('PRD-%03d-0001', $categoria->id))
+        ->and($segundoProducto->fresh()->codigo_barras)
+        ->toBe(sprintf('PRD-%03d-0002', $categoria->id));
 });
