@@ -1,16 +1,11 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto">
 
-        <div class="flex items-center justify-between mb-8">
+        <div class="mb-8">
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">Asientos Contables</h1>
                 <p class="mt-2 text-gray-700 text-lg">Registro de asientos contables del sistema</p>
             </div>
-
-            <a href="{{ route('contabilidad.asientos.create') }}"
-               class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
-                Nuevo Asiento
-            </a>
         </div>
 
         @if(session('success'))
