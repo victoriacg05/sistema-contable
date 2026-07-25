@@ -22,8 +22,9 @@ class FacturaController extends Controller
     public function index()
     {
         $facturas = Factura::with(['cliente', 'estado', 'metodoPago', 'detalles.producto'])
-            ->orderByDesc('fecha')
             ->orderByDesc('created_at')
+            ->orderByDesc('fecha')
+            ->orderByDesc('numero_factura')
             ->get();
 
         return view('facturas.index', compact('facturas'));

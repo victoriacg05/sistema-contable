@@ -16,7 +16,7 @@
     $tDebe = $movs->sum('debe');
     $tHaber = $movs->sum('haber');
     $saldo = $tDebe - $tHaber;
-    $acumulado = 0;
+    $acumulado = $saldo;
 @endphp
 
 <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
@@ -153,7 +153,6 @@
                 </thead>
                 <tbody>
                     @foreach($movs as $mov)
-                        @php $acumulado += ($mov->debe - $mov->haber); @endphp
                         <tr class="border-b border-gray-100 hover:bg-white transition">
                             <td class="py-2 pr-3 whitespace-nowrap text-gray-700">
                                 {{ \Carbon\Carbon::parse($mov->fecha_asiento)->format('d/m/Y') }}
@@ -185,6 +184,7 @@
                                 {{ number_format($acumulado, 2) }}
                             </td>
                         </tr>
+                        @php $acumulado -= ($mov->debe - $mov->haber); @endphp
                     @endforeach
                 </tbody>
                 <tfoot>

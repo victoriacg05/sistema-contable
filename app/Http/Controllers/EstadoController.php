@@ -9,7 +9,9 @@ class EstadoController extends Controller
 {
     public function index()
     {
-        $estados = Estado::orderBy('nombre')->get();
+        $estados = Estado::orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         return view('estados.index', compact('estados'));
     }

@@ -48,7 +48,9 @@ class Compra extends Model
 
     public function detalles()
     {
-        return $this->hasMany(DetalleCompra::class, 'numero_compra', 'numero_compra');
+        return $this->hasMany(DetalleCompra::class, 'numero_compra', 'numero_compra')
+            ->orderByDesc('created_at')
+            ->orderByDesc('producto_id');
     }
 
     public function plazos()

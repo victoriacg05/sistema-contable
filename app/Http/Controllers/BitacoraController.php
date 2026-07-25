@@ -12,6 +12,7 @@ class BitacoraController extends Controller
         $registros = DB::table('bitacora')
             ->join('users', 'bitacora.usuario_id', '=', 'users.id')
             ->select('bitacora.*', 'users.name as usuario_nombre')
+            ->orderByDesc('bitacora.created_at')
             ->orderByDesc('bitacora.fecha')
             ->paginate(50);
 
@@ -21,6 +22,7 @@ class BitacoraController extends Controller
     public function intentosAcceso()
     {
         $intentos = DB::table('intentos_acceso')
+            ->orderByDesc('created_at')
             ->orderByDesc('fecha')
             ->paginate(50);
 

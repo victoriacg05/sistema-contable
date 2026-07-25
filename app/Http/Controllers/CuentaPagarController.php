@@ -20,6 +20,7 @@ class CuentaPagarController extends Controller
     public function index()
     {
         $cuentas = CuentaPagar::with(['proveedor', 'estado'])
+            ->orderByDesc('created_at')
             ->orderByDesc('fecha_emision')
             ->orderByDesc('numero_compra')
             ->get();

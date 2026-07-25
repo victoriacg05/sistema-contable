@@ -9,7 +9,9 @@ class CategoriaProductoController extends Controller
 {
     public function index()
     {
-        $categorias = CategoriaProducto::orderBy('nombre')->get();
+        $categorias = CategoriaProducto::orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         return view('categorias_productos.index', compact('categorias'));
     }

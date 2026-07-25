@@ -45,12 +45,11 @@
                 ];
 
                 // Devuelve los movimientos de una cuenta y de todas sus
-                // subcuentas (subárbol), ordenados por fecha.
+                // subcuentas conservando el orden descendente del controlador.
                 $movimientosDeCuenta = function($codigo) use ($movimientos) {
                     return $movimientos
                         ->filter(fn($m) => $m->codigo_cuenta === $codigo
                             || str_starts_with($m->codigo_cuenta, $codigo . '.'))
-                        ->sortBy('fecha_asiento')
                         ->values();
                 };
             @endphp

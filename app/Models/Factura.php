@@ -43,7 +43,9 @@ class Factura extends Model
 
     public function detalles()
     {
-        return $this->hasMany(DetalleFactura::class, 'numero_factura', 'numero_factura');
+        return $this->hasMany(DetalleFactura::class, 'numero_factura', 'numero_factura')
+            ->orderByDesc('created_at')
+            ->orderByDesc('producto_id');
     }
 
 }

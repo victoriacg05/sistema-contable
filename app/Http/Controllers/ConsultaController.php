@@ -44,7 +44,11 @@ class ConsultaController extends Controller
                 if ($fechaDesde) $query->where('facturas.fecha', '>=', $fechaDesde);
                 if ($fechaHasta) $query->where('facturas.fecha', '<=', $fechaHasta);
 
-                $resultados = $query->orderByDesc('facturas.fecha')->limit(100)->get();
+                $resultados = $query
+                    ->orderByDesc('facturas.created_at')
+                    ->orderByDesc('facturas.numero_factura')
+                    ->limit(100)
+                    ->get();
                 break;
 
             case 'compras':
@@ -62,7 +66,11 @@ class ConsultaController extends Controller
                 if ($fechaDesde) $query->where('compras.fecha', '>=', $fechaDesde);
                 if ($fechaHasta) $query->where('compras.fecha', '<=', $fechaHasta);
 
-                $resultados = $query->orderByDesc('compras.fecha')->limit(100)->get();
+                $resultados = $query
+                    ->orderByDesc('compras.created_at')
+                    ->orderByDesc('compras.numero_compra')
+                    ->limit(100)
+                    ->get();
                 break;
 
             case 'ingresos':
@@ -79,7 +87,11 @@ class ConsultaController extends Controller
                 if ($fechaDesde) $query->where('ingresos.fecha', '>=', $fechaDesde);
                 if ($fechaHasta) $query->where('ingresos.fecha', '<=', $fechaHasta);
 
-                $resultados = $query->orderByDesc('ingresos.fecha')->limit(100)->get();
+                $resultados = $query
+                    ->orderByDesc('ingresos.created_at')
+                    ->orderByDesc('ingresos.referencia_ingreso')
+                    ->limit(100)
+                    ->get();
                 break;
 
             case 'gastos':
@@ -96,7 +108,11 @@ class ConsultaController extends Controller
                 if ($fechaDesde) $query->where('gastos.fecha', '>=', $fechaDesde);
                 if ($fechaHasta) $query->where('gastos.fecha', '<=', $fechaHasta);
 
-                $resultados = $query->orderByDesc('gastos.fecha')->limit(100)->get();
+                $resultados = $query
+                    ->orderByDesc('gastos.created_at')
+                    ->orderByDesc('gastos.numero_comprobante')
+                    ->limit(100)
+                    ->get();
                 break;
 
             case 'clientes':
@@ -111,7 +127,11 @@ class ConsultaController extends Controller
                     });
                 }
 
-                $resultados = $query->orderBy('clientes.nombre')->limit(100)->get();
+                $resultados = $query
+                    ->orderByDesc('clientes.created_at')
+                    ->orderByDesc('clientes.id')
+                    ->limit(100)
+                    ->get();
                 break;
 
             case 'proveedores':
@@ -126,7 +146,11 @@ class ConsultaController extends Controller
                     });
                 }
 
-                $resultados = $query->orderBy('proveedores.nombre')->limit(100)->get();
+                $resultados = $query
+                    ->orderByDesc('proveedores.created_at')
+                    ->orderByDesc('proveedores.id')
+                    ->limit(100)
+                    ->get();
                 break;
         }
 

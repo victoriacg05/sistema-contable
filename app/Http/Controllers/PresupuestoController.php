@@ -16,10 +16,15 @@ class PresupuestoController extends Controller
     public function index()
     {
         $periodos = DB::table('presupuesto')
-            ->select('anio', 'mes',
+            ->select(
+                'anio',
+                'mes',
                 DB::raw('SUM(monto_presupuestado) as total_presupuestado'),
-                DB::raw('COUNT(*) as lineas'))
+                DB::raw('COUNT(*) as lineas'),
+                DB::raw('MAX(created_at) as ultimo_registro')
+            )
             ->groupBy('anio', 'mes')
+            ->orderByDesc('ultimo_registro')
             ->orderByDesc('anio')
             ->orderByDesc('mes')
             ->get()
@@ -135,6 +140,8 @@ class PresupuestoController extends Controller
         $lineas = Presupuesto::with('categoria')
             ->where('anio', $anio)
             ->where('mes', $mes)
+            ->orderByDesc('created_at')
+            ->orderByDesc('categoria_gasto_id')
             ->get()
             ->map(function ($linea) use ($anio, $mes) {
                 $ejecutado = $this->ejecutadoCategoria($linea->categoria_gasto_id, $anio, $mes);
@@ -144,10 +151,8 @@ class PresupuestoController extends Controller
                 $linea->porcentaje = $linea->monto_presupuestado > 0
                     ? round(($ejecutado / $linea->monto_presupuestado) * 100, 1)
                     : 0;
-
                 return $linea;
             })
-            ->sortBy(fn ($l) => $l->categoria->nombre ?? '')
             ->values();
 
         if ($lineas->isEmpty()) {

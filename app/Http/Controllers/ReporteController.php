@@ -67,6 +67,7 @@ class ReporteController extends Controller
             ->select(
                 'categorias_gastos.nombre as categoria',
                 'presupuesto.monto_presupuestado',
+                'presupuesto.created_at',
                 DB::raw('(
                     SELECT COALESCE(SUM(gastos.monto), 0)
                     FROM gastos
@@ -75,6 +76,8 @@ class ReporteController extends Controller
                     AND MONTH(gastos.fecha) = presupuesto.mes
                 ) as gasto_real')
             )
+            ->orderByDesc('presupuesto.created_at')
+            ->orderByDesc('presupuesto.categoria_gasto_id')
             ->get()
             ->map(function ($item) {
                 $item->diferencia = $item->monto_presupuestado - $item->gasto_real;

@@ -23,8 +23,9 @@ class ContabilidadController extends Controller
                     ->on('detalle_asientos_contables.fecha_asiento', '=', 'asientos_contables.fecha');
             })
             ->join('estados', 'asientos_contables.estado_id', '=', 'estados.id')
-            ->orderBy('asientos_contables.fecha')
-            ->orderBy('detalle_asientos_contables.numero_asiento')
+            ->orderByDesc('asientos_contables.created_at')
+            ->orderByDesc('asientos_contables.fecha')
+            ->orderByDesc('detalle_asientos_contables.numero_asiento')
             ->select(
                 'detalle_asientos_contables.numero_asiento',
                 'detalle_asientos_contables.fecha_asiento',
@@ -53,7 +54,9 @@ class ContabilidadController extends Controller
 
         // Cuentas bancarias reales con su saldo, para reflejarlas dentro de la
         // cuenta "Bancos" (1.1.2) del catálogo.
-        $cuentasBancarias = \App\Models\CuentaBancaria::orderBy('banco_nombre')->get();
+        $cuentasBancarias = \App\Models\CuentaBancaria::orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         // Saldo/total acumulado por cada cuenta (hoja y agrupadora) para
         // mostrarlo junto al nombre en el catálogo.
@@ -161,7 +164,8 @@ class ContabilidadController extends Controller
         $items = DB::table('cuentas_pagar')
             ->join('proveedores', 'cuentas_pagar.proveedor_id', '=', 'proveedores.id')
             ->join('estados', 'cuentas_pagar.estado_id', '=', 'estados.id')
-            ->orderBy('cuentas_pagar.fecha_vencimiento')
+            ->orderByDesc('cuentas_pagar.created_at')
+            ->orderByDesc('cuentas_pagar.numero_compra')
             ->select(
                 'cuentas_pagar.numero_compra as documento',
                 'proveedores.nombre as tercero',
@@ -187,7 +191,8 @@ class ContabilidadController extends Controller
         $items = DB::table('cuentas_cobrar')
             ->join('clientes', 'cuentas_cobrar.cliente_id', '=', 'clientes.id')
             ->join('estados', 'cuentas_cobrar.estado_id', '=', 'estados.id')
-            ->orderBy('cuentas_cobrar.fecha_vencimiento')
+            ->orderByDesc('cuentas_cobrar.created_at')
+            ->orderByDesc('cuentas_cobrar.numero_factura')
             ->select(
                 'cuentas_cobrar.numero_factura as documento',
                 'clientes.nombre as tercero',
@@ -211,7 +216,8 @@ class ContabilidadController extends Controller
     private function documentosInventario(): array
     {
         $items = DB::table('productos')
-            ->orderBy('nombre')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->select('nombre', 'stock', 'precio')
             ->get();
 
@@ -411,8 +417,9 @@ class ContabilidadController extends Controller
             ->join('catalogo_cuentas', 'detalle_asientos_contables.codigo_cuenta', '=', 'catalogo_cuentas.codigo_cuenta')
             ->join('estados', 'asientos_contables.estado_id', '=', 'estados.id')
             ->whereIn('detalle_asientos_contables.codigo_cuenta', $codigosIncluidos)
-            ->orderBy('asientos_contables.fecha')
-            ->orderBy('detalle_asientos_contables.numero_asiento')
+            ->orderByDesc('asientos_contables.created_at')
+            ->orderByDesc('asientos_contables.fecha')
+            ->orderByDesc('detalle_asientos_contables.numero_asiento')
             ->select(
                 'detalle_asientos_contables.numero_asiento',
                 'detalle_asientos_contables.fecha_asiento',
@@ -431,10 +438,10 @@ class ContabilidadController extends Controller
         $saldo = $totalDebe - $totalHaber;
 
         // Saldo corrido acumulado por movimiento.
-        $acumulado = 0;
+        $acumulado = $saldo;
         foreach ($movimientos as $mov) {
-            $acumulado += ($mov->debe - $mov->haber);
             $mov->saldo_acumulado = $acumulado;
+            $acumulado -= ($mov->debe - $mov->haber);
         }
 
         // Ruta completa y si es cuenta de detalle.
@@ -460,8 +467,9 @@ class ContabilidadController extends Controller
             ->join('users', 'asientos_contables.usuario_id', '=', 'users.id')
             ->join('estados', 'asientos_contables.estado_id', '=', 'estados.id')
             ->select('asientos_contables.*', 'users.name as usuario_nombre', 'estados.nombre as estado_nombre')
-            ->orderByDesc('asientos_contables.fecha')
             ->orderByDesc('asientos_contables.created_at')
+            ->orderByDesc('asientos_contables.fecha')
+            ->orderByDesc('asientos_contables.numero_asiento')
             ->get();
 
         return view('contabilidad.asientos.index', compact('asientos'));
@@ -586,6 +594,8 @@ class ContabilidadController extends Controller
             ->where('detalle_asientos_contables.numero_asiento', $numeroAsiento)
             ->where('detalle_asientos_contables.fecha_asiento', $fecha)
             ->select('detalle_asientos_contables.*', 'catalogo_cuentas.nombre as cuenta_nombre')
+            ->orderByDesc('detalle_asientos_contables.created_at')
+            ->orderByDesc('detalle_asientos_contables.codigo_cuenta')
             ->get();
 
         // Añadir la ruta completa de cada cuenta dentro del catálogo.

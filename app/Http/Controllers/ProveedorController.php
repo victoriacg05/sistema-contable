@@ -9,7 +9,9 @@ class ProveedorController extends Controller
 {
     public function index()
     {
-        $proveedores = Proveedor::orderBy('nombre')->get();
+        $proveedores = Proveedor::orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         return view('proveedores.index', compact('proveedores'));
     }

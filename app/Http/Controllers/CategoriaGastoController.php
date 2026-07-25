@@ -9,7 +9,9 @@ class CategoriaGastoController extends Controller
 {
     public function index()
     {
-        $categorias = CategoriaGasto::orderBy('nombre')->get();
+        $categorias = CategoriaGasto::orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         return view('categorias_gastos.index', compact('categorias'));
     }

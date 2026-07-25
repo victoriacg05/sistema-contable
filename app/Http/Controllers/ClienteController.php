@@ -9,7 +9,9 @@ class ClienteController extends Controller
 {
     public function index()
     {
-        $clientes = Cliente::orderBy('nombre')->get();
+        $clientes = Cliente::orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         return view('clientes.index', compact('clientes'));
     }

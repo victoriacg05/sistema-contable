@@ -9,7 +9,9 @@ class MetodoPagoController extends Controller
 {
     public function index()
     {
-        $metodos = MetodoPago::orderBy('nombre')->get();
+        $metodos = MetodoPago::orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
 
         return view('metodos_pago.index', compact('metodos'));
     }
