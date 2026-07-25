@@ -58,14 +58,30 @@ const mensajesValidacion = (input) => {
         return 'Por favor, introduce un número válido.';
     }
 
-    return '';
+    if (validity.customError) {
+        return 'El valor ingresado no es válido.';
+    }
+
+    return 'Por favor, revisa el valor ingresado.';
 };
 
 document.addEventListener('invalid', (event) => {
     const input = event.target;
+
+    if (typeof input.setCustomValidity !== 'function') {
+        return;
+    }
+
     input.setCustomValidity(mensajesValidacion(input));
 }, true);
 
-document.addEventListener('input', (event) => {
-    event.target.setCustomValidity('');
-}, true);
+const limpiarMensajeValidacion = (event) => {
+    const input = event.target;
+
+    if (typeof input.setCustomValidity === 'function') {
+        input.setCustomValidity('');
+    }
+};
+
+document.addEventListener('input', limpiarMensajeValidacion, true);
+document.addEventListener('change', limpiarMensajeValidacion, true);
