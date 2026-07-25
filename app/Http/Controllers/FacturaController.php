@@ -26,6 +26,7 @@ class FacturaController extends Controller
     public function __construct(CodigoProductoService $codigoProductoService)
     {
         $codigoProductoService->asegurarEstructuraPrecios();
+        $codigoProductoService->convertirPreciosExistentes();
     }
 
     public function index()

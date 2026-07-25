@@ -14,6 +14,7 @@ class ProductoController extends Controller
         private readonly CodigoProductoService $codigoProductoService
     ) {
         $this->codigoProductoService->asegurarEstructuraPrecios();
+        $this->codigoProductoService->convertirPreciosExistentes();
     }
 
     public function index()
@@ -44,7 +45,7 @@ class ProductoController extends Controller
             'stock' => 'required|integer|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'precio' => 'required|numeric|min:0',
-            'porcentaje_ganancia' => 'required|numeric|min:0|max:999.99',
+            'porcentaje_ganancia' => 'required|numeric|min:0.01|max:999.99',
         ]);
 
         DB::transaction(function () use ($datos) {
@@ -77,13 +78,16 @@ class ProductoController extends Controller
 
     public function edit(Producto $producto)
     {
+        $producto->refresh();
         $categorias = CategoriaProducto::orderBy('nombre')->get();
+        $permiteGananciaCero = $this->permiteGananciaCero($producto);
 
-        return view('productos.edit', compact('producto', 'categorias'));
+        return view('productos.edit', compact('producto', 'categorias', 'permiteGananciaCero'));
     }
 
     public function update(Request $request, Producto $producto)
     {
+        $gananciaMinima = $this->permiteGananciaCero($producto) ? 0 : 0.01;
         $datos = $request->validate([
             'categoria_producto_id' => 'required|exists:categorias_productos,id',
             'nombre' => 'required|string|max:255',
@@ -91,7 +95,7 @@ class ProductoController extends Controller
             'stock' => 'required|integer|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'precio' => 'required|numeric|min:0',
-            'porcentaje_ganancia' => 'required|numeric|min:0|max:999.99',
+            'porcentaje_ganancia' => "required|numeric|min:{$gananciaMinima}|max:999.99",
         ]);
 
         DB::transaction(function () use ($datos, $producto, $request) {
@@ -116,6 +120,12 @@ class ProductoController extends Controller
         return redirect()
             ->route('productos.index')
             ->with('success', 'Producto actualizado correctamente.');
+    }
+
+    private function permiteGananciaCero(Producto $producto): bool
+    {
+        return (float) $producto->porcentaje_ganancia === 0.0
+            && $this->codigoProductoService->conversionPreciosRevertida();
     }
 
     public function destroy(Producto $producto)

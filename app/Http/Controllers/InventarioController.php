@@ -15,6 +15,7 @@ class InventarioController extends Controller
         private readonly CodigoProductoService $codigoProductoService
     ) {
         $this->codigoProductoService->asegurarEstructuraPrecios();
+        $this->codigoProductoService->convertirPreciosExistentes();
     }
 
     public function index()

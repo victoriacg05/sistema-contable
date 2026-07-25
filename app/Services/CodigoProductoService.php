@@ -5,24 +5,118 @@ namespace App\Services;
 use App\Models\CategoriaProducto;
 use App\Models\Producto;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class CodigoProductoService
 {
+    private const GANANCIA_EXISTENTE = 30;
+    private const ESTADO_REVERTIDO = 'revertida';
+    private const TABLA_RESPALDO_PRECIOS = 'respaldo_precios_productos_20260725';
+    private const TABLA_ESTADO_CONVERSION = 'estado_conversion_precios_productos_20260725';
+
     public function asegurarEstructuraPrecios(): void
     {
-        if (
-            Schema::hasTable('productos')
-            && ! Schema::hasColumn('productos', 'porcentaje_ganancia')
-        ) {
-            Schema::table('productos', function (Blueprint $table) {
-                $table->decimal('porcentaje_ganancia', 5, 2)
-                    ->default(0)
-                    ->after('precio');
-            });
+        if (! Schema::hasTable('productos') || Schema::hasColumn('productos', 'porcentaje_ganancia')) {
+            return;
         }
+
+        Cache::lock('preparar-estructura-precios-productos', 30)->block(10, function () {
+            if (! Schema::hasColumn('productos', 'porcentaje_ganancia')) {
+                Schema::table('productos', function (Blueprint $table) {
+                    $table->decimal('porcentaje_ganancia', 5, 2)
+                        ->default(0)
+                        ->after('precio');
+                });
+            }
+        });
+    }
+
+    public function convertirPreciosExistentes(): void
+    {
+        if (! Producto::where('porcentaje_ganancia', 0)->exists()) {
+            return;
+        }
+
+        Cache::lock('convertir-precios-existentes-productos', 60)->block(10, function () {
+            $this->asegurarEstadoConversion();
+
+            if (
+                DB::table(self::TABLA_ESTADO_CONVERSION)
+                    ->where('id', 1)
+                    ->value('estado') === self::ESTADO_REVERTIDO
+            ) {
+                return;
+            }
+
+            if (! Producto::where('porcentaje_ganancia', 0)->exists()) {
+                return;
+            }
+
+            $this->asegurarRespaldoPrecios();
+
+            DB::transaction(function () {
+                Producto::where('porcentaje_ganancia', 0)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->each(function (Producto $producto) {
+                        DB::table(self::TABLA_RESPALDO_PRECIOS)->insertOrIgnore([
+                            'producto_id' => $producto->id,
+                            'precio_anterior' => $producto->precio,
+                            'porcentaje_anterior' => $producto->porcentaje_ganancia,
+                        ]);
+
+                        $producto->update([
+                            'precio' => round(
+                                (float) $producto->precio / (1 + (self::GANANCIA_EXISTENTE / 100)),
+                                2
+                            ),
+                            'porcentaje_ganancia' => self::GANANCIA_EXISTENTE,
+                        ]);
+                    });
+
+                DB::table(self::TABLA_ESTADO_CONVERSION)->updateOrInsert(
+                    ['id' => 1],
+                    ['estado' => 'aplicada']
+                );
+            }, 3);
+        });
+    }
+
+    public function conversionPreciosRevertida(): bool
+    {
+        return Schema::hasTable(self::TABLA_ESTADO_CONVERSION)
+            && DB::table(self::TABLA_ESTADO_CONVERSION)
+                ->where('id', 1)
+                ->value('estado') === self::ESTADO_REVERTIDO;
+    }
+
+    private function asegurarEstadoConversion(): void
+    {
+        if (Schema::hasTable(self::TABLA_ESTADO_CONVERSION)) {
+            return;
+        }
+
+        Schema::create(self::TABLA_ESTADO_CONVERSION, function (Blueprint $table) {
+            $table->unsignedTinyInteger('id')->primary();
+            $table->string('estado', 20);
+        });
+    }
+
+    private function asegurarRespaldoPrecios(): void
+    {
+        if (Schema::hasTable(self::TABLA_RESPALDO_PRECIOS)) {
+            return;
+        }
+
+        Schema::create(self::TABLA_RESPALDO_PRECIOS, function (Blueprint $table) {
+            $table->unsignedBigInteger('producto_id')->primary();
+            $table->decimal('precio_anterior', 10, 2);
+            $table->decimal('porcentaje_anterior', 5, 2);
+        });
     }
 
     public function siguiente(int $categoriaId): string

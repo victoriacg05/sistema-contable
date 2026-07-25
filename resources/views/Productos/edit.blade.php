@@ -86,7 +86,7 @@
                         <div class="relative">
                             <input type="number"
                                    step="0.01"
-                                   min="0"
+                                   min="{{ $permiteGananciaCero ? '0' : '0.01' }}"
                                    max="999.99"
                                    name="porcentaje_ganancia"
                                    value="{{ old('porcentaje_ganancia', $producto->porcentaje_ganancia) }}"
