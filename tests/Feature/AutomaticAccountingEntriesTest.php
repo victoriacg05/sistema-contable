@@ -198,5 +198,15 @@ it('excludes automatic receipts from additional income in financial reports', fu
         'mes' => now()->month,
     ]));
 
-    expect((float) $vista->getData()['ingresos'])->toBe(50.0);
+    expect((float) $vista->getData()['ingresos'])->toBe(50.0)
+        ->and((float) $vista->getData()['resultado'])->toBe(50.0)
+        ->and($vista->getData())->toHaveKeys([
+            'ventasNetas',
+            'utilidadBruta',
+            'saldoBancos',
+            'valorInventario',
+            'comparativo',
+            'topProductos',
+            'presupuestoVsGasto',
+        ]);
 });
