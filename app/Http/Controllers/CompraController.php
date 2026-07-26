@@ -755,6 +755,11 @@ class CompraController extends Controller
                 ->where('proveedor_id', $compra->proveedor_id)
                 ->lockForUpdate()
                 ->first();
+            $detalles = $compra->detalles()->get();
+            $productos = Producto::whereIn('id', $detalles->pluck('producto_id'))
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
             if (
                 PagoCuentaPagar::where('numero_compra', $compra->numero_compra)
@@ -770,6 +775,17 @@ class CompraController extends Controller
                 throw ValidationException::withMessages([
                     'compra' => 'No se puede eliminar una compra que ya fue liquidada.',
                 ]);
+            }
+
+            foreach ($detalles as $detalle) {
+                $producto = $productos->get($detalle->producto_id);
+
+                if ($producto && $producto->stock < $detalle->cantidad) {
+                    throw ValidationException::withMessages([
+                        'compra' => "No se puede eliminar la compra porque el stock actual de {$producto->nombre} "
+                            . "es menor que las {$detalle->cantidad} unidades recibidas.",
+                    ]);
+                }
             }
 
             if (! $cuentaPagar && $compra->cuenta_bancaria_id) {
@@ -791,16 +807,21 @@ class CompraController extends Controller
                 "Reversión de compra {$compra->numero_compra}"
             );
 
-            foreach ($compra->detalles()->get() as $detalle) {
-                $producto = Producto::find($detalle->producto_id);
-
+            foreach ($detalles as $detalle) {
+                $producto = $productos->get($detalle->producto_id);
                 if ($producto) {
                     $producto->stock -= $detalle->cantidad;
                     $producto->save();
                 }
             }
 
-            $compra->delete();
+            DB::table('movimientos_inventario')
+                ->where('referencia_movimiento', $compra->numero_compra)
+                ->delete();
+
+            Compra::where('numero_compra', $compra->numero_compra)
+                ->where('proveedor_id', $compra->proveedor_id)
+                ->delete();
         });
 
         return redirect()

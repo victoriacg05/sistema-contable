@@ -36,6 +36,17 @@
             </div>
         @endif
 
+        @if($errors->any())
+            <div class="mb-6 rounded-2xl border border-red-300 bg-red-50 px-6 py-4 text-red-800">
+                <p class="font-bold">No fue posible eliminar la compra:</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
             <table class="w-full">
                 <thead class="bg-[#2b2b2b] text-white">
