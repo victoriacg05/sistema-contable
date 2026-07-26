@@ -1,16 +1,25 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto">
 
-        <div class="flex items-center justify-between mb-8">
+        <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">Catálogo de Cuentas</h1>
                 <p class="mt-2 text-gray-600 text-lg">Gestión del catálogo de cuentas contables</p>
             </div>
 
-            <a href="{{ route('contabilidad.cuentas.create') }}"
-               class="bg-[#b71c1c] hover:bg-red-800 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
-                Nueva Cuenta
-            </a>
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="button"
+                        id="alternar-cuentas"
+                        aria-expanded="false"
+                        class="rounded-2xl border border-gray-300 bg-white px-6 py-4 font-bold text-gray-700 shadow-sm transition hover:bg-gray-100">
+                    Abrir todos
+                </button>
+
+                <a href="{{ route('contabilidad.cuentas.create') }}"
+                   class="bg-[#b71c1c] hover:bg-red-800 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
+                    Nueva Cuenta
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
@@ -174,4 +183,28 @@
 
         </div>
     </div>
+
+    <script>
+        (function () {
+            const boton = document.getElementById('alternar-cuentas');
+
+            if (!boton) {
+                return;
+            }
+
+            boton.addEventListener('click', function () {
+                const secciones = Array.from(document.querySelectorAll('.cuenta-details'));
+                const abrir = secciones.some(function (seccion) {
+                    return !seccion.open;
+                });
+
+                secciones.forEach(function (seccion) {
+                    seccion.open = abrir;
+                });
+
+                boton.textContent = abrir ? 'Cerrar todos' : 'Abrir todos';
+                boton.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+            });
+        })();
+    </script>
 </x-app-layout>
