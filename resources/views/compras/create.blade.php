@@ -306,6 +306,7 @@
                     </a>
 
                     <button type="submit"
+                            id="guardar-compra"
                             class="px-8 py-3 rounded-2xl bg-[#b71c1c] text-white font-bold hover:bg-red-700 transition shadow-md">
                         Guardar Compra
                     </button>
@@ -327,6 +328,7 @@
             const sumaCuotasEl = document.getElementById('suma-cuotas');
             const mensajeEl = document.getElementById('mensaje-cuotas');
             const form = document.getElementById('form-compra');
+            const guardarBtn = document.getElementById('guardar-compra');
 
             // --- Cuenta bancaria (pago de contado a proveedor) ---
             const cuentaBancariaSel = document.getElementById('cuenta_bancaria_id');
@@ -623,6 +625,12 @@
             metodoPagoSel.addEventListener('change', toggleBanco);
             descuentoInput.addEventListener('input', recalcular);
 
+            form.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                }
+            });
+
             form.addEventListener('submit', function (e) {
                 if (listaProductos.querySelectorAll('.linea-producto').length === 0) {
                     e.preventDefault();
@@ -662,6 +670,10 @@
                         return;
                     }
                 }
+
+                guardarBtn.disabled = true;
+                guardarBtn.textContent = 'Guardando...';
+                guardarBtn.classList.add('cursor-wait', 'opacity-70');
             });
 
             // Estado inicial: una línea de producto y el modo de operación.
