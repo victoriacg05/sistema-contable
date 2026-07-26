@@ -11,6 +11,7 @@ use App\Models\CuentaBancaria;
 use App\Services\BitacoraService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
+use App\Services\IngresoAutomaticoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -151,6 +152,15 @@ class CuentaCobrarController extends Controller
                     $referenciaPago
                 );
             }
+
+            IngresoAutomaticoService::registrarCobro(
+                $referenciaPago,
+                $numero_factura,
+                now(),
+                (int) Auth::id(),
+                (int) $request->metodo_pago_id,
+                (float) $request->monto_pagado
+            );
 
             BitacoraService::registrar('pago', 'cuentas_cobrar', "Pago de ₡{$request->monto_pagado} a factura $numero_factura");
         });

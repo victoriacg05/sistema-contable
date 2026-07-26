@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\User;
+use App\Http\Controllers\ReporteController;
 use App\Services\AsientoContableService;
+use App\Services\IngresoAutomaticoService;
 use Database\Seeders\DatosInicialesSeeder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -129,4 +132,71 @@ it('posts inventory losses as adjustments instead of cost of sales', function ()
             ->where('fecha_asiento', $asiento->fecha)
             ->where('codigo_cuenta', '5.1')
             ->exists())->toBeFalse();
+});
+
+it('registers cash sales and receivable collections in income without duplicating journals', function () {
+    $usuario = User::where('email', 'admin@ipacarai.com')->firstOrFail();
+    $metodoPagoId = DB::table('metodos_pago')
+        ->where('nombre', 'Efectivo')
+        ->value('id');
+    $asientosAntes = DB::table('asientos_contables')->count();
+
+    IngresoAutomaticoService::registrarVentaContado(
+        'FAC-INGRESO',
+        now(),
+        $usuario->id,
+        $metodoPagoId,
+        125
+    );
+    IngresoAutomaticoService::registrarCobro(
+        'PCL-INGRESO',
+        'FAC-CREDITO',
+        now(),
+        $usuario->id,
+        $metodoPagoId,
+        80
+    );
+
+    expect(DB::table('ingresos')
+        ->where('referencia_ingreso', 'AUTO-VENTA-FAC-INGRESO')
+        ->where('monto', 125)
+        ->exists())->toBeTrue()
+        ->and(DB::table('ingresos')
+            ->where('referencia_ingreso', 'AUTO-COBRO-PCL-INGRESO')
+            ->where('monto', 80)
+            ->exists())->toBeTrue()
+        ->and(DB::table('asientos_contables')->count())->toBe($asientosAntes);
+});
+
+it('excludes automatic receipts from additional income in financial reports', function () {
+    $usuario = User::where('email', 'admin@ipacarai.com')->firstOrFail();
+    $metodoPagoId = DB::table('metodos_pago')
+        ->where('nombre', 'Efectivo')
+        ->value('id');
+
+    DB::table('ingresos')->insert([
+        'referencia_ingreso' => 'ING-MANUAL-PRUEBA',
+        'usuario_id' => $usuario->id,
+        'metodo_pago_id' => $metodoPagoId,
+        'origen' => 'Ingreso adicional',
+        'descripcion' => '',
+        'monto' => 50,
+        'fecha' => now()->toDateString(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    IngresoAutomaticoService::registrarVentaContado(
+        'FAC-REPORTE',
+        now(),
+        $usuario->id,
+        $metodoPagoId,
+        125
+    );
+
+    $vista = app(ReporteController::class)->index(Request::create('/reportes', 'GET', [
+        'anio' => now()->year,
+        'mes' => now()->month,
+    ]));
+
+    expect((float) $vista->getData()['ingresos'])->toBe(50.0);
 });

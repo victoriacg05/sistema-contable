@@ -22,6 +22,7 @@ use App\Services\InventarioService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
 use App\Services\CodigoProductoService;
+use App\Services\IngresoAutomaticoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -480,6 +481,16 @@ class CompraController extends Controller
                     (float) $total,
                     "Venta {$numeroFactura}",
                     $numeroFactura
+                );
+            }
+
+            if (! $esCredito) {
+                IngresoAutomaticoService::registrarVentaContado(
+                    $numeroFactura,
+                    now(),
+                    (int) Auth::id(),
+                    (int) $request->metodo_pago_id,
+                    (float) $total
                 );
             }
 

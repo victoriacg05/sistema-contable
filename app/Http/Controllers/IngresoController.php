@@ -8,6 +8,7 @@ use App\Models\CuentaBancaria;
 use App\Models\MovimientoBancario;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
+use App\Services\IngresoAutomaticoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -92,6 +93,8 @@ class IngresoController extends Controller
 
     public function edit($referencia_ingreso, $fecha, $usuario_id)
     {
+        $this->validarIngresoManual($referencia_ingreso);
+
         $ingreso = Ingreso::where('referencia_ingreso', $referencia_ingreso)
             ->where('fecha', $fecha)
             ->where('usuario_id', $usuario_id)
@@ -107,6 +110,8 @@ class IngresoController extends Controller
 
     public function update(Request $request, $referencia_ingreso, $fecha, $usuario_id)
     {
+        $this->validarIngresoManual($referencia_ingreso);
+
         $request->validate([
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
             'origen' => 'required|string|max:255',
@@ -172,6 +177,8 @@ class IngresoController extends Controller
 
     public function destroy($referencia_ingreso, $fecha, $usuario_id)
     {
+        $this->validarIngresoManual($referencia_ingreso);
+
         DB::transaction(function () use ($referencia_ingreso, $fecha, $usuario_id) {
             DB::table('ingresos')
                 ->where('referencia_ingreso', $referencia_ingreso)
@@ -221,5 +228,12 @@ class IngresoController extends Controller
             "Reversión de ingreso {$referencia}",
             $referencia
         );
+    }
+
+    private function validarIngresoManual(string $referencia): void
+    {
+        if (IngresoAutomaticoService::esAutomatico($referencia)) {
+            abort(403, 'Los ingresos automáticos se administran desde la operación que los generó.');
+        }
     }
 }

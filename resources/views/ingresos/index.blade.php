@@ -61,23 +61,29 @@
                             </td>
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
-                                <a href="{{ route('ingresos.edit', [$ingreso->referencia_ingreso, $ingreso->fecha, $ingreso->usuario_id]) }}"
-                                   class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition">
-                                    Editar
-                                </a>
+                                @if(\Illuminate\Support\Str::startsWith($ingreso->referencia_ingreso, 'AUTO-'))
+                                    <span class="inline-block bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold">
+                                        Automático
+                                    </span>
+                                @else
+                                    <a href="{{ route('ingresos.edit', [$ingreso->referencia_ingreso, $ingreso->fecha, $ingreso->usuario_id]) }}"
+                                       class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition">
+                                        Editar
+                                    </a>
 
-                                <form action="{{ route('ingresos.destroy', [$ingreso->referencia_ingreso, $ingreso->fecha, $ingreso->usuario_id]) }}"
-                                      method="POST"
-                                      class="inline-block"
-                                      onsubmit="return confirm('¿Está segura de eliminar este ingreso?');">
-                                    @csrf
-                                    @method('DELETE')
+                                    <form action="{{ route('ingresos.destroy', [$ingreso->referencia_ingreso, $ingreso->fecha, $ingreso->usuario_id]) }}"
+                                          method="POST"
+                                          class="inline-block"
+                                          onsubmit="return confirm('¿Está segura de eliminar este ingreso?');">
+                                        @csrf
+                                        @method('DELETE')
 
-                                    <button type="submit"
-                                            class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
-                                        Eliminar
-                                    </button>
-                                </form>
+                                        <button type="submit"
+                                                class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @empty

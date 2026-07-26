@@ -41,6 +41,7 @@ class ReporteController extends Controller
             ->sum('total');
 
         $ingresos = DB::table('ingresos')
+            ->where('referencia_ingreso', 'not like', 'AUTO-%')
             ->whereYear('fecha', $anio)
             ->whereMonth('fecha', $mes)
             ->sum('monto');

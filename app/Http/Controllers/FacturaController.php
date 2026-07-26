@@ -17,6 +17,7 @@ use App\Services\InventarioService;
 use App\Services\CodigoProductoService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
+use App\Services\IngresoAutomaticoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -200,6 +201,16 @@ class FacturaController extends Controller
                     (float) $total,
                     "Venta {$numeroFactura}",
                     $numeroFactura
+                );
+            }
+
+            if (! $esCredito) {
+                IngresoAutomaticoService::registrarVentaContado(
+                    $numeroFactura,
+                    now(),
+                    (int) Auth::id(),
+                    (int) $request->metodo_pago_id,
+                    (float) $total
                 );
             }
 
@@ -518,6 +529,18 @@ class FacturaController extends Controller
                     $factura->numero_factura
                 );
             }
+
+            if ($esCredito) {
+                IngresoAutomaticoService::eliminarVentaContado($factura->numero_factura);
+            } else {
+                IngresoAutomaticoService::registrarVentaContado(
+                    $factura->numero_factura,
+                    $factura->fecha,
+                    (int) $factura->usuario_id,
+                    (int) $request->metodo_pago_id,
+                    (float) $total
+                );
+            }
         });
 
         return redirect()
@@ -564,6 +587,7 @@ class FacturaController extends Controller
             }
 
             $this->revertirCobroBancario($factura);
+            IngresoAutomaticoService::eliminarVentaContado($factura->numero_factura);
 
             AsientoContableService::revertir(
                 now(),
@@ -628,6 +652,7 @@ class FacturaController extends Controller
             }
 
             $this->revertirCobroBancario($factura);
+            IngresoAutomaticoService::eliminarVentaContado($factura->numero_factura);
 
             $estadoAnulado = Estado::where('nombre', 'Anulado')->first();
 
