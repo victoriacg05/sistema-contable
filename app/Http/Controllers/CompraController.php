@@ -189,7 +189,7 @@ class CompraController extends Controller
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
-            $numeroCompra = 'COM-' . now()->format('YmdHis');
+            $numeroCompra = 'COM-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
             Compra::create([
                 'numero_compra' => $numeroCompra,
@@ -271,7 +271,7 @@ class CompraController extends Controller
                 AsientoContableService::generar(now(), "Compra a crédito {$numeroCompra}", [
                     ['codigo_cuenta' => $codigoInventario, 'debe' => $total, 'haber' => 0, 'descripcion' => "Compra a crédito {$numeroCompra}"],
                     ['codigo_cuenta' => $codigoPorPagar, 'debe' => 0, 'haber' => $total, 'descripcion' => "Cuenta por pagar {$numeroCompra}"],
-                ]);
+                ], 'COMPRA:' . $numeroCompra);
             } else {
                 // Contado: descuenta el banco y genera Debe Inventario / Haber Bancos.
                 $cuentaBancaria = CuentaBancaria::lockForUpdate()->findOrFail($request->cuenta_bancaria_id);
@@ -286,7 +286,7 @@ class CompraController extends Controller
                 AsientoContableService::generar(now(), "Compra de contado {$numeroCompra}", [
                     ['codigo_cuenta' => $codigoInventario, 'debe' => $total, 'haber' => 0, 'descripcion' => "Compra de contado {$numeroCompra}"],
                     ['codigo_cuenta' => $codigoBancos, 'debe' => 0, 'haber' => $total, 'descripcion' => "Pago desde {$cuentaBancaria->banco_nombre}"],
-                ]);
+                ], 'COMPRA:' . $numeroCompra);
             }
         });
 
@@ -315,6 +315,15 @@ class CompraController extends Controller
 
         $esCredito = $request->tipo_compra === 'credito';
 
+        if (
+            ! $esCredito
+            && AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)
+        ) {
+            $request->validate([
+                'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
+            ]);
+        }
+
         $subtotal = 0;
         foreach ($lineas as $linea) {
             $subtotal += $linea['precio_unitario'] * $linea['cantidad'];
@@ -327,6 +336,12 @@ class CompraController extends Controller
         if ($total < 0) {
             throw ValidationException::withMessages([
                 'descuento' => 'El descuento no puede ser mayor al total de la venta.',
+            ]);
+        }
+
+        if ($descuento > $subtotal) {
+            throw ValidationException::withMessages([
+                'descuento' => 'El descuento no puede ser mayor al subtotal de la venta.',
             ]);
         }
 
@@ -358,8 +373,11 @@ class CompraController extends Controller
         }
 
         // Validar stock disponible antes de crear la factura.
+        $costoInventario = 0.0;
+
         foreach ($lineas as $linea) {
             $producto = Producto::findOrFail($linea['producto_id']);
+            $costoInventario += (float) $producto->precio * $linea['cantidad'];
             if ($producto->stock < $linea['cantidad']) {
                 throw ValidationException::withMessages([
                     'productos' => "No hay suficiente stock de {$producto->nombre} (disponible: {$producto->stock}).",
@@ -367,11 +385,11 @@ class CompraController extends Controller
             }
         }
 
-        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito, $cuotas) {
+        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito, $cuotas, $costoInventario) {
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
-            $numeroFactura = 'FAC-' . now()->format('YmdHis');
+            $numeroFactura = 'FAC-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
             $factura = Factura::create([
                 'numero_factura' => $numeroFactura,
@@ -437,6 +455,32 @@ class CompraController extends Controller
                         'saldo_pendiente' => $cuota['monto'],
                     ]);
                 }
+            }
+
+            AsientoContableService::registrarVenta(
+                now(),
+                $numeroFactura,
+                (float) $subtotal,
+                (float) $impuesto,
+                (float) $descuento,
+                round($costoInventario, 2),
+                $esCredito,
+                (int) $request->metodo_pago_id
+            );
+
+            if (
+                ! $esCredito
+                && AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)
+            ) {
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()
+                    ->findOrFail($request->cuenta_bancaria_id);
+
+                BancoService::acreditar(
+                    $cuentaBancaria,
+                    (float) $total,
+                    "Venta {$numeroFactura}",
+                    $numeroFactura
+                );
             }
 
             return $factura;
@@ -528,7 +572,12 @@ class CompraController extends Controller
         $lineas = $this->aplicarPreciosProductos($lineas, false, $preciosExistentes);
 
         DB::transaction(function () use ($request, $compra, $lineas) {
+            $compra = Compra::where('numero_compra', $compra->numero_compra)
+                ->where('proveedor_id', $compra->proveedor_id)
+                ->lockForUpdate()
+                ->firstOrFail();
             $referenciaAjuste = 'AJU-' . now()->format('YmdHis');
+            $totalAnterior = (float) $compra->total;
             $cuentaPagar = CuentaPagar::where('numero_compra', $compra->numero_compra)
                 ->where('proveedor_id', $compra->proveedor_id)
                 ->lockForUpdate()
@@ -548,6 +597,12 @@ class CompraController extends Controller
             ) {
                 throw ValidationException::withMessages([
                     'productos' => 'No se puede editar una compra que ya tiene pagos registrados.',
+                ]);
+            }
+
+            if ($cuentaPagar && (float) $cuentaPagar->saldo_pendiente <= 0) {
+                throw ValidationException::withMessages([
+                    'productos' => 'No se puede editar una compra que ya fue liquidada.',
                 ]);
             }
 
@@ -637,7 +692,40 @@ class CompraController extends Controller
                         ]);
                     }
                 }
+            } elseif ($compra->cuenta_bancaria_id) {
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()
+                    ->findOrFail($compra->cuenta_bancaria_id);
+                $diferencia = round($total - $totalAnterior, 2);
+
+                if ($diferencia > 0) {
+                    BancoService::debitar(
+                        $cuentaBancaria,
+                        $diferencia,
+                        "Ajuste de compra {$compra->numero_compra}",
+                        $compra->numero_compra
+                    );
+                } elseif ($diferencia < 0) {
+                    BancoService::acreditar(
+                        $cuentaBancaria,
+                        abs($diferencia),
+                        "Reintegro por ajuste de compra {$compra->numero_compra}",
+                        $compra->numero_compra
+                    );
+                }
             }
+
+            $descripcionAsiento = $cuentaPagar
+                ? "Compra a crédito {$compra->numero_compra}"
+                : "Compra de contado {$compra->numero_compra}";
+
+            AsientoContableService::generar($compra->fecha, $descripcionAsiento, [
+                ['codigo_cuenta' => '1.1.4.1', 'debe' => $total, 'haber' => 0],
+                [
+                    'codigo_cuenta' => $cuentaPagar ? '2.1.1' : '1.1.2',
+                    'debe' => 0,
+                    'haber' => $total,
+                ],
+            ], 'COMPRA:' . $compra->numero_compra);
         });
 
         return redirect()
@@ -645,37 +733,53 @@ class CompraController extends Controller
             ->with('success', 'Compra actualizada correctamente.');
     }
 
-    public function pagar(Compra $compra)
-    {
-        $estadoPagado = Estado::where('nombre', 'pagado')->first();
-
-        DB::transaction(function () use ($compra, $estadoPagado) {
-            $compra->update([
-                'estado_id' => $estadoPagado?->id ?? $compra->estado_id,
-            ]);
-
-            // Liquidar la cuenta por pagar y sus plazos asociados para
-            // mantener sincronizada la información financiera.
-            CuentaPagar::where('numero_compra', $compra->numero_compra)
-                ->where('proveedor_id', $compra->proveedor_id)
-                ->update([
-                    'saldo_pendiente' => 0,
-                    'estado_id' => $estadoPagado?->id ?? 2,
-                ]);
-
-            PlazoCompra::where('numero_compra', $compra->numero_compra)
-                ->where('proveedor_id', $compra->proveedor_id)
-                ->update(['saldo_pendiente' => 0]);
-        });
-
-        return redirect()
-            ->route('compras.index')
-            ->with('success', 'Compra marcada como pagada. Se actualizó la cuenta por pagar.');
-    }
-
     public function destroy(Compra $compra)
     {
         DB::transaction(function () use ($compra) {
+            $compra = Compra::where('numero_compra', $compra->numero_compra)
+                ->where('proveedor_id', $compra->proveedor_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $cuentaPagar = CuentaPagar::where('numero_compra', $compra->numero_compra)
+                ->where('proveedor_id', $compra->proveedor_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (
+                PagoCuentaPagar::where('numero_compra', $compra->numero_compra)
+                    ->where('proveedor_id', $compra->proveedor_id)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'compra' => 'No se puede eliminar una compra que ya tiene pagos registrados.',
+                ]);
+            }
+
+            if ($cuentaPagar && (float) $cuentaPagar->saldo_pendiente <= 0) {
+                throw ValidationException::withMessages([
+                    'compra' => 'No se puede eliminar una compra que ya fue liquidada.',
+                ]);
+            }
+
+            if (! $cuentaPagar && $compra->cuenta_bancaria_id) {
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()
+                    ->findOrFail($compra->cuenta_bancaria_id);
+
+                BancoService::acreditar(
+                    $cuentaBancaria,
+                    (float) $compra->total,
+                    "Reintegro por eliminación de compra {$compra->numero_compra}",
+                    $compra->numero_compra
+                );
+            }
+
+            AsientoContableService::revertir(
+                now(),
+                'COMPRA:' . $compra->numero_compra,
+                'REVERSO-COMPRA:' . $compra->numero_compra,
+                "Reversión de compra {$compra->numero_compra}"
+            );
+
             foreach ($compra->detalles()->get() as $detalle) {
                 $producto = Producto::find($detalle->producto_id);
 

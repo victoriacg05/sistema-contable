@@ -108,7 +108,9 @@
                             <option value="">Seleccione un método de pago</option>
 
                             @foreach($metodosPago as $metodo)
-                                <option value="{{ $metodo->id }}" {{ old('metodo_pago_id') == $metodo->id ? 'selected' : '' }}>
+                                <option value="{{ $metodo->id }}"
+                                        data-requiere-banco="{{ \Illuminate\Support\Str::lower($metodo->nombre) === 'efectivo' ? '0' : '1' }}"
+                                        {{ old('metodo_pago_id') == $metodo->id ? 'selected' : '' }}>
                                     {{ $metodo->nombre }}
                                 </option>
                             @endforeach
@@ -224,8 +226,7 @@
                         </p>
                     </div>
 
-                    {{-- Cuenta bancaria (compras a proveedor) --}}
-                    <div class="md:col-span-2 grupo-proveedor" id="grupo-banco">
+                    <div class="md:col-span-2" id="grupo-banco">
                         <label class="block mb-2 text-sm font-bold text-gray-700">
                             Cuenta bancaria
                         </label>
@@ -244,7 +245,7 @@
                         </select>
 
                         <p class="mt-2 text-sm text-gray-500" id="banco-nota-contado">
-                            Se descontará el total de la compra del saldo de esta cuenta y se generará el asiento contable automáticamente.
+                            En compras se descontará el pago; en ventas se acreditará el cobro en la cuenta seleccionada.
                         </p>
                         <p class="mt-2 text-sm text-gray-500 hidden" id="banco-nota-credito">
                             En crédito el saldo bancario no se ve afectado ahora; el banco se descontará cuando se registre el pago de la cuenta por pagar.
@@ -467,19 +468,20 @@
             }
 
             function toggleBanco() {
-                // La cuenta bancaria se muestra para compras a proveedor
-                // (contado y crédito). Solo es obligatoria y afecta el saldo
-                // en compras de contado; en crédito es informativa.
                 const esProveedor = !esCliente();
                 const contado = !esCredito();
+                const opcionMetodo = metodoPagoSel.options[metodoPagoSel.selectedIndex];
+                const metodoRequiereBanco = opcionMetodo?.dataset.requiereBanco === '1';
+                const mostrarBanco = esProveedor || (contado && metodoRequiereBanco);
 
                 if (grupoBanco) {
-                    grupoBanco.classList.toggle('hidden', !esProveedor);
+                    grupoBanco.classList.toggle('hidden', !mostrarBanco);
                 }
                 if (cuentaBancariaSel) {
-                    cuentaBancariaSel.disabled = !esProveedor;
-                    cuentaBancariaSel.required = esProveedor && contado;
-                    if (!esProveedor) {
+                    cuentaBancariaSel.disabled = !mostrarBanco;
+                    cuentaBancariaSel.required = (esProveedor && contado)
+                        || (!esProveedor && contado && metodoRequiereBanco);
+                    if (!mostrarBanco) {
                         cuentaBancariaSel.value = '';
                     }
                 }
@@ -618,6 +620,7 @@
 
             // Eventos de tipo de operación
             tipoOperacion.addEventListener('change', toggleOperacion);
+            metodoPagoSel.addEventListener('change', toggleBanco);
             descuentoInput.addEventListener('input', recalcular);
 
             form.addEventListener('submit', function (e) {

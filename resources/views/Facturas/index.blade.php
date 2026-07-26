@@ -36,6 +36,7 @@
                 <tbody>
                     @forelse($facturas as $factura)
                         <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
+                            @php($estadoFactura = strtolower(optional($factura->estado)->nombre ?? ''))
                             <td class="px-6 py-5 font-semibold text-gray-700">
                                 {{ $factura->numero_factura }}
                             </td>
@@ -57,9 +58,13 @@
                             </td>
 
                             <td class="px-6 py-5 text-center">
-                                @if(strtolower(optional($factura->estado)->nombre ?? '') === 'pagado')
+                                @if($estadoFactura === 'pagado')
                                     <span class="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-bold">
                                         Pagado
+                                    </span>
+                                @elseif($estadoFactura === 'anulado')
+                                    <span class="px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-bold">
+                                        Anulado
                                     </span>
                                 @else
                                     <span class="px-4 py-2 rounded-full bg-amber-100 text-amber-800 text-sm font-bold">
@@ -70,19 +75,11 @@
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
 
-                                @if(strtolower(optional($factura->estado)->nombre ?? '') !== 'pagado')
-                                    <form action="{{ route('facturas.pagar', $factura) }}"
-                                          method="POST"
-                                          class="inline-block"
-                                          onsubmit="return confirm('¿Deseas marcar esta factura como pagada?');">
-                                        @csrf
-                                        @method('PUT')
-
-                                        <button type="submit"
-                                                class="bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
-                                            Pagar
-                                        </button>
-                                    </form>
+                                @if(! in_array($estadoFactura, ['pagado', 'anulado']))
+                                    <a href="{{ route('cuentas-cobrar.pago.create', [$factura->numero_factura, $factura->cliente_id]) }}"
+                                       class="inline-block bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
+                                        Registrar pago
+                                    </a>
                                 @endif
 
                                 <a href="{{ route('facturas.show', ['factura' => $factura, 'imprimible' => 1]) }}"
@@ -95,23 +92,27 @@
                                     PDF
                                 </a>
 
-                                <a href="{{ route('facturas.edit', $factura) }}"
-                                   class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition ml-2">
-                                    Editar
-                                </a>
+                                @if($estadoFactura !== 'anulado' && $factura->detalles->count() === 1)
+                                    <a href="{{ route('facturas.edit', $factura) }}"
+                                       class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition ml-2">
+                                        Editar
+                                    </a>
+                                @endif
 
-                                <form action="{{ route('facturas.destroy', $factura) }}"
-                                      method="POST"
-                                      class="inline-block"
-                                      onsubmit="return confirm('¿Está segura de eliminar esta factura? Esta acción no se puede deshacer.');">
-                                    @csrf
-                                    @method('DELETE')
+                                @if($estadoFactura !== 'anulado')
+                                    <form action="{{ route('facturas.destroy', $factura) }}"
+                                          method="POST"
+                                          class="inline-block"
+                                          onsubmit="return confirm('¿Está segura de eliminar esta factura? Esta acción no se puede deshacer.');">
+                                        @csrf
+                                        @method('DELETE')
 
-                                    <button type="submit"
-                                            class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
-                                        Eliminar
-                                    </button>
-                                </form>
+                                        <button type="submit"
+                                                class="bg-[#b71c1c] hover:bg-red-700 text-white px-5 py-2 rounded-xl font-bold transition ml-2">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                @endif
 
                             </td>
                         </tr>

@@ -100,18 +100,10 @@
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
                                 @if(strtolower(optional($compra->estado)->nombre ?? '') !== 'pagado')
-                                    <form action="{{ route('compras.pagar', $compra) }}"
-                                          method="POST"
-                                          class="inline-block"
-                                          onsubmit="return confirm('¿Deseas marcar esta compra como pagada?');">
-                                        @csrf
-                                        @method('PUT')
-
-                                        <button type="submit"
-                                                class="bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
-                                            Pagar
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('cuentas-pagar.pago.create', [$compra->numero_compra, $compra->proveedor_id]) }}"
+                                       class="inline-block bg-green-100 hover:bg-green-200 text-green-700 px-5 py-2 rounded-xl font-bold transition">
+                                        Registrar pago
+                                    </a>
                                 @endif
 
                                 <a href="{{ route('compras.edit', $compra) }}"

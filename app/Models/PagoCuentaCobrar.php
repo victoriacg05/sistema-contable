@@ -6,15 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class PagoCuentaCobrar extends Model
 {
-    protected $table = 'pagos_cuentas_cobrar';
+    protected $table = 'pagos_clientes';
+
+    public $incrementing = false;
+    protected $primaryKey = null;
 
     protected $fillable = [
         'numero_factura',
         'cliente_id',
+        'referencia_pago',
+        'usuario_id',
         'fecha_pago',
-        'monto_pagado',
+        'monto',
         'metodo_pago_id',
-        'observacion',
     ];
 
     public function metodoPago()

@@ -63,7 +63,7 @@ class GastoController extends Controller
             return back()->withInput()->withErrors(['monto' => $error]);
         }
 
-        $numeroComprobante = 'GAS-' . now()->format('YmdHis');
+        $numeroComprobante = 'GAS-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
         DB::transaction(function () use ($request, $numeroComprobante) {
             Gasto::create([
@@ -94,7 +94,7 @@ class GastoController extends Controller
             AsientoContableService::generar($request->fecha, "Gasto {$numeroComprobante}", [
                 ['codigo_cuenta' => $codigoGasto, 'debe' => $request->monto, 'haber' => 0, 'descripcion' => "Gasto {$numeroComprobante}"],
                 ['codigo_cuenta' => $codigoBancos, 'debe' => 0, 'haber' => $request->monto, 'descripcion' => "Pago desde {$cuentaBancaria->banco_nombre}"],
-            ]);
+            ], 'GASTO:' . $numeroComprobante);
         });
 
         BitacoraService::registrar('crear', 'gastos', 'Gasto registrado por ₡' . $request->monto);
@@ -148,19 +148,64 @@ class GastoController extends Controller
             return back()->withInput()->withErrors(['monto' => $error]);
         }
 
-        DB::table('gastos')
-            ->where('numero_comprobante', $numero_comprobante)
-            ->where('categoria_gasto_id', $categoria_gasto_id)
-            ->where('fecha', $fecha)
-            ->update([
-                'categoria_gasto_id' => $request->categoria_gasto_id,
-                'metodo_pago_id' => $request->metodo_pago_id,
-                'cuenta_bancaria_id' => $request->cuenta_bancaria_id,
-                'descripcion' => $request->descripcion ?? '',
-                'monto' => $request->monto,
-                'fecha' => $request->fecha,
-                'updated_at' => now(),
-            ]);
+        DB::transaction(function () use ($request, $numero_comprobante, $categoria_gasto_id, $fecha) {
+            $gastoAnterior = DB::table('gastos')
+                ->where('numero_comprobante', $numero_comprobante)
+                ->where('categoria_gasto_id', $categoria_gasto_id)
+                ->where('fecha', $fecha)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $cuentas = CuentaBancaria::whereIn('id', array_unique(array_filter([
+                $gastoAnterior->cuenta_bancaria_id,
+                $request->cuenta_bancaria_id,
+            ])))
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $cuentaAnterior = $cuentas->get($gastoAnterior->cuenta_bancaria_id);
+            $cuentaNueva = $cuentas->get((int) $request->cuenta_bancaria_id);
+
+            if ($gastoAnterior->cuenta_bancaria_id === null) {
+                BancoService::debitar($cuentaNueva, (float) $request->monto, "Gasto actualizado {$numero_comprobante}", $numero_comprobante);
+            } elseif ((int) $gastoAnterior->cuenta_bancaria_id === (int) $request->cuenta_bancaria_id) {
+                $diferencia = round((float) $request->monto - (float) $gastoAnterior->monto, 2);
+
+                if ($diferencia > 0) {
+                    BancoService::debitar($cuentaNueva, $diferencia, "Ajuste de gasto {$numero_comprobante}", $numero_comprobante);
+                } elseif ($diferencia < 0) {
+                    BancoService::acreditar($cuentaNueva, abs($diferencia), "Reintegro por ajuste de gasto {$numero_comprobante}", $numero_comprobante);
+                }
+            } else {
+                BancoService::acreditar($cuentaAnterior, (float) $gastoAnterior->monto, "Reintegro de gasto {$numero_comprobante}", $numero_comprobante);
+                BancoService::debitar($cuentaNueva, (float) $request->monto, "Gasto actualizado {$numero_comprobante}", $numero_comprobante);
+            }
+
+            DB::table('gastos')
+                ->where('numero_comprobante', $numero_comprobante)
+                ->where('categoria_gasto_id', $categoria_gasto_id)
+                ->where('fecha', $fecha)
+                ->update([
+                    'categoria_gasto_id' => $request->categoria_gasto_id,
+                    'metodo_pago_id' => $request->metodo_pago_id,
+                    'cuenta_bancaria_id' => $request->cuenta_bancaria_id,
+                    'descripcion' => $request->descripcion ?? '',
+                    'monto' => $request->monto,
+                    'fecha' => $request->fecha,
+                    'updated_at' => now(),
+                ]);
+
+            AsientoContableService::generar($request->fecha, "Gasto {$numero_comprobante}", [
+                [
+                    'codigo_cuenta' => $this->codigoCuentaGasto($request->categoria_gasto_id),
+                    'debe' => $request->monto,
+                    'haber' => 0,
+                ],
+                ['codigo_cuenta' => '1.1.2', 'debe' => 0, 'haber' => $request->monto],
+            ], 'GASTO:' . $numero_comprobante);
+        });
 
         return redirect()
             ->route('gastos.index')
@@ -169,11 +214,39 @@ class GastoController extends Controller
 
     public function destroy($numero_comprobante, $categoria_gasto_id, $fecha)
     {
-        DB::table('gastos')
-            ->where('numero_comprobante', $numero_comprobante)
-            ->where('categoria_gasto_id', $categoria_gasto_id)
-            ->where('fecha', $fecha)
-            ->delete();
+        DB::transaction(function () use ($numero_comprobante, $categoria_gasto_id, $fecha) {
+            $gasto = DB::table('gastos')
+                ->where('numero_comprobante', $numero_comprobante)
+                ->where('categoria_gasto_id', $categoria_gasto_id)
+                ->where('fecha', $fecha)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($gasto->cuenta_bancaria_id !== null) {
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()
+                    ->findOrFail($gasto->cuenta_bancaria_id);
+
+                BancoService::acreditar(
+                    $cuentaBancaria,
+                    (float) $gasto->monto,
+                    "Reintegro por eliminación de gasto {$numero_comprobante}",
+                    $numero_comprobante
+                );
+            }
+
+            AsientoContableService::revertir(
+                now(),
+                'GASTO:' . $numero_comprobante,
+                'REVERSO-GASTO:' . $numero_comprobante,
+                "Reversión de gasto {$numero_comprobante}"
+            );
+
+            DB::table('gastos')
+                ->where('numero_comprobante', $numero_comprobante)
+                ->where('categoria_gasto_id', $categoria_gasto_id)
+                ->where('fecha', $fecha)
+                ->delete();
+        });
 
         return redirect()
             ->route('gastos.index')

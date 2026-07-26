@@ -10,9 +10,13 @@ use App\Models\MetodoPago;
 use App\Models\Estado;
 use App\Models\CuentaCobrar;
 use App\Models\PlazoVenta;
+use App\Models\CuentaBancaria;
+use App\Models\MovimientoBancario;
 use App\Services\BitacoraService;
 use App\Services\InventarioService;
 use App\Services\CodigoProductoService;
+use App\Services\AsientoContableService;
+use App\Services\BancoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -53,12 +57,16 @@ class FacturaController extends Controller
         $tiposComprobante = DB::table('tipos_comprobante')
             ->orderBy('nombre')
             ->get();
+        $cuentasBancarias = CuentaBancaria::where('estado', true)
+            ->orderBy('banco_nombre')
+            ->get();
 
         return view('facturas.create', compact(
             'clientes',
             'productos',
             'metodosPago',
-            'tiposComprobante'
+            'tiposComprobante',
+            'cuentasBancarias'
         ));
     }
 
@@ -74,6 +82,15 @@ class FacturaController extends Controller
             'tipo_compra' => 'required|in:contado,credito',
         ]);
 
+        if (
+            $request->tipo_compra === 'contado'
+            && AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)
+        ) {
+            $request->validate([
+                'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
+            ]);
+        }
+
         $factura = DB::transaction(function () use ($request) {
             $producto = Producto::findOrFail($request->producto_id);
 
@@ -87,10 +104,16 @@ class FacturaController extends Controller
             $descuento = $request->descuento ?? 0;
             $total = ($subtotal + $impuesto) - $descuento;
 
+            if ($descuento > $subtotal) {
+                throw ValidationException::withMessages([
+                    'descuento' => 'El descuento no puede ser mayor al subtotal de la venta.',
+                ]);
+            }
+
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
-            $numeroFactura = 'FAC-' . now()->format('YmdHis');
+            $numeroFactura = 'FAC-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
             // La condición de pago determina si la venta queda pagada
             // (contado) o pendiente con cuenta por cobrar (crédito).
@@ -153,6 +176,32 @@ class FacturaController extends Controller
                 "Venta a cliente {$numeroFactura}",
                 $numeroFactura
             );
+
+            AsientoContableService::registrarVenta(
+                now(),
+                $numeroFactura,
+                (float) $subtotal,
+                (float) $impuesto,
+                (float) $descuento,
+                round((float) $producto->precio * $request->cantidad, 2),
+                $esCredito,
+                (int) $request->metodo_pago_id
+            );
+
+            if (
+                ! $esCredito
+                && AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)
+            ) {
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()
+                    ->findOrFail($request->cuenta_bancaria_id);
+
+                BancoService::acreditar(
+                    $cuentaBancaria,
+                    (float) $total,
+                    "Venta {$numeroFactura}",
+                    $numeroFactura
+                );
+            }
 
             return $factura;
         });
@@ -228,6 +277,12 @@ class FacturaController extends Controller
 
     public function edit(Factura $factura)
     {
+        if ($factura->detalles()->count() > 1) {
+            throw ValidationException::withMessages([
+                'factura' => 'Las facturas con varios productos no se pueden editar desde este formulario.',
+            ]);
+        }
+
         $clientes = Cliente::orderBy('nombre')->get();
 
         $productos = Producto::where('estado', 1)
@@ -235,6 +290,9 @@ class FacturaController extends Controller
             ->get();
 
         $metodosPago = MetodoPago::orderBy('nombre')->get();
+        $cuentasBancarias = CuentaBancaria::where('estado', true)
+            ->orderBy('banco_nombre')
+            ->get();
 
         $detalle = $factura->detalles()->first();
 
@@ -243,12 +301,25 @@ class FacturaController extends Controller
             'clientes',
             'productos',
             'metodosPago',
+            'cuentasBancarias',
             'detalle'
         ));
     }
 
     public function update(Request $request, Factura $factura)
     {
+        if ($this->estaAnulada($factura)) {
+            throw ValidationException::withMessages([
+                'factura' => 'No se puede editar una factura anulada.',
+            ]);
+        }
+
+        if ($factura->detalles()->count() > 1) {
+            throw ValidationException::withMessages([
+                'factura' => 'Las facturas con varios productos no se pueden editar desde este formulario.',
+            ]);
+        }
+
         $request->validate([
             'cliente_id' => 'required|exists:clientes,id',
             'producto_id' => 'required|exists:productos,id',
@@ -258,9 +329,26 @@ class FacturaController extends Controller
             'tipo_compra' => 'required|in:contado,credito',
         ]);
 
+        if (
+            $request->tipo_compra === 'contado'
+            && AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)
+        ) {
+            $request->validate([
+                'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
+            ]);
+        }
+
         DB::transaction(function () use ($request, $factura) {
+            $factura = Factura::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->lockForUpdate()
+                ->firstOrFail();
             $referenciaAjuste = 'AJU-' . now()->format('YmdHis');
             $clienteIdAnterior = $factura->cliente_id;
+            $cuentaCobrarAnterior = CuentaCobrar::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $clienteIdAnterior)
+                ->lockForUpdate()
+                ->first();
 
             $tablaPagos = Schema::hasTable('pagos_cuentas_cobrar')
                 ? 'pagos_cuentas_cobrar'
@@ -276,6 +364,23 @@ class FacturaController extends Controller
                     'producto_id' => 'No se puede editar una factura que ya tiene pagos registrados.',
                 ]);
             }
+
+            if ($cuentaCobrarAnterior && (float) $cuentaCobrarAnterior->saldo_pendiente <= 0) {
+                throw ValidationException::withMessages([
+                    'producto_id' => 'No se puede editar una factura que ya fue liquidada.',
+                ]);
+            }
+
+            if (
+                $cuentaCobrarAnterior
+                && (int) $clienteIdAnterior !== (int) $request->cliente_id
+            ) {
+                throw ValidationException::withMessages([
+                    'cliente_id' => 'No se puede cambiar el cliente de una factura a crédito.',
+                ]);
+            }
+
+            $this->revertirCobroBancario($factura);
 
             $detalleAnterior = $factura->detalles()->first();
 
@@ -313,6 +418,12 @@ class FacturaController extends Controller
             $impuesto = $subtotal * Producto::IMPUESTO;
             $descuento = $request->descuento ?? 0;
             $total = ($subtotal + $impuesto) - $descuento;
+
+            if ($descuento > $subtotal) {
+                throw ValidationException::withMessages([
+                    'descuento' => 'El descuento no puede ser mayor al subtotal de la venta.',
+                ]);
+            }
 
             $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
             $estadoPagado = Estado::where('nombre', 'pagado')->first();
@@ -381,6 +492,32 @@ class FacturaController extends Controller
                 "Actualización de factura {$factura->numero_factura}",
                 $referenciaAjuste
             );
+
+            AsientoContableService::registrarVenta(
+                $factura->fecha,
+                $factura->numero_factura,
+                (float) $subtotal,
+                (float) $impuesto,
+                (float) $descuento,
+                round((float) $producto->precio * $request->cantidad, 2),
+                $esCredito,
+                (int) $request->metodo_pago_id
+            );
+
+            if (
+                ! $esCredito
+                && AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)
+            ) {
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()
+                    ->findOrFail($request->cuenta_bancaria_id);
+
+                BancoService::acreditar(
+                    $cuentaBancaria,
+                    (float) $total,
+                    "Venta actualizada {$factura->numero_factura}",
+                    $factura->numero_factura
+                );
+            }
         });
 
         return redirect()
@@ -390,46 +527,108 @@ class FacturaController extends Controller
 
     public function destroy(Factura $factura)
     {
-        $factura->delete();
+        if ($this->estaAnulada($factura)) {
+            throw ValidationException::withMessages([
+                'factura' => 'No se puede eliminar una factura anulada.',
+            ]);
+        }
+
+        DB::transaction(function () use ($factura) {
+            $factura = Factura::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $cuentaCobrar = CuentaCobrar::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->lockForUpdate()
+                ->first();
+            $tablaPagos = Schema::hasTable('pagos_cuentas_cobrar')
+                ? 'pagos_cuentas_cobrar'
+                : 'pagos_clientes';
+
+            if (
+                DB::table($tablaPagos)
+                    ->where('numero_factura', $factura->numero_factura)
+                    ->where('cliente_id', $factura->cliente_id)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'factura' => 'No se puede eliminar una factura que ya tiene pagos registrados.',
+                ]);
+            }
+
+            if ($cuentaCobrar && (float) $cuentaCobrar->saldo_pendiente <= 0) {
+                throw ValidationException::withMessages([
+                    'factura' => 'No se puede eliminar una factura que ya fue liquidada.',
+                ]);
+            }
+
+            $this->revertirCobroBancario($factura);
+
+            AsientoContableService::revertir(
+                now(),
+                'VENTA:' . $factura->numero_factura,
+                'REVERSO-VENTA:' . $factura->numero_factura,
+                "Reversión de factura eliminada {$factura->numero_factura}"
+            );
+
+            foreach ($factura->detalles as $detalle) {
+                Producto::whereKey($detalle->producto_id)
+                    ->increment('stock', $detalle->cantidad);
+            }
+
+            $factura->delete();
+        });
 
         return redirect()
             ->route('facturas.index')
             ->with('success', 'Factura eliminada correctamente.');
     }
 
-    public function pagar(Factura $factura)
-    {
-        $estadoPagado = Estado::where('nombre', 'pagado')->first();
-
-        DB::transaction(function () use ($factura, $estadoPagado) {
-            $factura->update([
-                'estado_id' => $estadoPagado?->id ?? $factura->estado_id,
-            ]);
-
-            CuentaCobrar::where('numero_factura', $factura->numero_factura)
-                ->where('cliente_id', $factura->cliente_id)
-                ->update([
-                    'saldo_pendiente' => 0,
-                    'estado_id' => $estadoPagado?->id ?? 2,
-                ]);
-
-            PlazoVenta::where('numero_factura', $factura->numero_factura)
-                ->where('cliente_id', $factura->cliente_id)
-                ->update(['saldo_pendiente' => 0]);
-        });
-
-        return redirect()
-            ->route('facturas.index')
-            ->with('success', 'Factura marcada como pagada.');
-    }
-
     public function anular(Request $request, Factura $factura)
     {
+        if ($this->estaAnulada($factura)) {
+            throw ValidationException::withMessages([
+                'motivo' => 'La factura ya se encuentra anulada.',
+            ]);
+        }
+
         $request->validate([
             'motivo' => 'required|string|max:500',
         ]);
 
         DB::transaction(function () use ($request, $factura) {
+            $factura = Factura::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $cuentaCobrar = CuentaCobrar::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->lockForUpdate()
+                ->first();
+            $tablaPagos = Schema::hasTable('pagos_cuentas_cobrar')
+                ? 'pagos_cuentas_cobrar'
+                : 'pagos_clientes';
+
+            if (
+                DB::table($tablaPagos)
+                    ->where('numero_factura', $factura->numero_factura)
+                    ->where('cliente_id', $factura->cliente_id)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'motivo' => 'No se puede anular una factura que ya tiene pagos registrados.',
+                ]);
+            }
+
+            if ($cuentaCobrar && (float) $cuentaCobrar->saldo_pendiente <= 0) {
+                throw ValidationException::withMessages([
+                    'motivo' => 'No se puede anular una factura que ya fue liquidada.',
+                ]);
+            }
+
+            $this->revertirCobroBancario($factura);
+
             $estadoAnulado = Estado::where('nombre', 'Anulado')->first();
 
             // Registrar anulación
@@ -465,11 +664,45 @@ class FacturaController extends Controller
                 ->where('cliente_id', $factura->cliente_id)
                 ->delete();
 
+            AsientoContableService::revertir(
+                now(),
+                'VENTA:' . $factura->numero_factura,
+                'ANULACION-VENTA:' . $factura->numero_factura,
+                "Anulación de factura {$factura->numero_factura}"
+            );
+
             BitacoraService::registrar('anular', 'facturas', "Factura {$factura->numero_factura} anulada. Motivo: {$request->motivo}");
         });
 
         return redirect()
             ->route('facturas.index')
             ->with('success', 'Factura anulada correctamente.');
+    }
+
+    private function estaAnulada(Factura $factura): bool
+    {
+        return strtolower((string) $factura->estado()->value('nombre')) === 'anulado';
+    }
+
+    private function revertirCobroBancario(Factura $factura): void
+    {
+        $movimiento = MovimientoBancario::where('referencia', $factura->numero_factura)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $movimiento || $movimiento->tipo !== 'entrada') {
+            return;
+        }
+
+        $cuentaBancaria = CuentaBancaria::lockForUpdate()
+            ->findOrFail($movimiento->cuenta_bancaria_id);
+
+        BancoService::debitar(
+            $cuentaBancaria,
+            (float) $movimiento->monto,
+            "Reversión de cobro de {$factura->numero_factura}",
+            $factura->numero_factura
+        );
     }
 }

@@ -48,17 +48,12 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('facturas', FacturaController::class);
     Route::get('/facturas/{factura}/pdf', [FacturaController::class, 'pdf'])
         ->name('facturas.pdf');
-    Route::put('/facturas/{factura}/pagar', [FacturaController::class, 'pagar'])
-        ->name('facturas.pagar');
     Route::put('/facturas/{factura}/anular', [FacturaController::class, 'anular'])
         ->name('facturas.anular');
 
     Route::get('/compras/clientes', [CompraController::class, 'clientes'])
         ->name('compras.clientes');
     Route::resource('compras', CompraController::class);
-    Route::put('/compras/{compra}/pagar', [CompraController::class, 'pagar'])
-        ->name('compras.pagar');
-
     Route::resource('usuarios', UserController::class);
 
     Route::resource('categorias-productos', CategoriaProductoController::class);
@@ -149,8 +144,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/contabilidad/cuentas/{codigo}', [ContabilidadController::class, 'updateCuenta'])->name('contabilidad.cuentas.update');
 
     Route::get('/contabilidad/asientos', [ContabilidadController::class, 'indexAsientos'])->name('contabilidad.asientos.index');
-    Route::get('/contabilidad/asientos/create', [ContabilidadController::class, 'createAsiento'])->name('contabilidad.asientos.create');
-    Route::post('/contabilidad/asientos', [ContabilidadController::class, 'storeAsiento'])->name('contabilidad.asientos.store');
     Route::get('/contabilidad/asientos/{numero}/{fecha}', [ContabilidadController::class, 'showAsiento'])->name('contabilidad.asientos.show');
 
     // Inventario

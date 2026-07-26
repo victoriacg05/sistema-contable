@@ -14,6 +14,31 @@ use Illuminate\Validation\ValidationException;
  */
 class BancoService
 {
+    public static function acreditar(
+        CuentaBancaria $cuenta,
+        float $monto,
+        string $descripcion,
+        ?string $referencia = null
+    ): MovimientoBancario {
+        $saldoAnterior = (float) $cuenta->saldo;
+        $saldoNuevo = round($saldoAnterior + $monto, 2);
+
+        $cuenta->saldo = $saldoNuevo;
+        $cuenta->save();
+
+        return MovimientoBancario::create([
+            'cuenta_bancaria_id' => $cuenta->id,
+            'tipo' => 'entrada',
+            'monto' => $monto,
+            'descripcion' => $descripcion,
+            'referencia' => $referencia,
+            'saldo_anterior' => $saldoAnterior,
+            'saldo_nuevo' => $saldoNuevo,
+            'usuario_id' => Auth::id(),
+            'fecha' => now(),
+        ]);
+    }
+
     /**
      * Descuenta un monto del saldo de una cuenta bancaria y registra el
      * movimiento de salida. Valida fondos suficientes antes de aplicar.

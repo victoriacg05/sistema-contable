@@ -61,6 +61,7 @@ class CuentaPagarController extends Controller
         DB::transaction(function () use ($request, $numero_compra, $proveedor_id) {
             $cuenta = CuentaPagar::where('numero_compra', $numero_compra)
                 ->where('proveedor_id', $proveedor_id)
+                ->lockForUpdate()
                 ->firstOrFail();
 
             if ($request->monto_pagado > $cuenta->saldo_pendiente) {
@@ -69,7 +70,7 @@ class CuentaPagarController extends Controller
 
             $saldoAnterior = $cuenta->saldo_pendiente;
 
-            PagoCuentaPagar::create([
+            $pago = PagoCuentaPagar::create([
                 'numero_compra' => $cuenta->numero_compra,
                 'proveedor_id' => $cuenta->proveedor_id,
                 'fecha_pago' => now(),
@@ -143,7 +144,7 @@ class CuentaPagarController extends Controller
             AsientoContableService::generar(now(), "Pago de compra a crédito {$numero_compra}", [
                 ['codigo_cuenta' => '2.1.1', 'debe' => $request->monto_pagado, 'haber' => 0, 'descripcion' => "Pago cuenta por pagar {$numero_compra}"],
                 ['codigo_cuenta' => '1.1.2', 'debe' => 0, 'haber' => $request->monto_pagado, 'descripcion' => "Pago desde {$cuentaBancaria->banco_nombre}"],
-            ]);
+            ], 'PAGO-PROVEEDOR:' . $pago->getKey());
 
             BitacoraService::registrar('pago', 'cuentas_pagar', "Pago de ₡{$request->monto_pagado} a compra $numero_compra");
         });

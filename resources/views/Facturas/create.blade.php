@@ -88,6 +88,26 @@
 
                     <div>
                         <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Cuenta bancaria de destino
+                        </label>
+
+                        <select name="cuenta_bancaria_id"
+                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition">
+                            <option value="">No aplica para pagos en efectivo o a crédito</option>
+                            @foreach($cuentasBancarias as $cuentaBancaria)
+                                <option value="{{ $cuentaBancaria->id }}" {{ old('cuenta_bancaria_id') == $cuentaBancaria->id ? 'selected' : '' }}>
+                                    {{ $cuentaBancaria->banco_nombre }} — {{ $cuentaBancaria->numero_cuenta }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        @error('cuenta_bancaria_id')
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
                             Tipo de comprobante
                         </label>
 

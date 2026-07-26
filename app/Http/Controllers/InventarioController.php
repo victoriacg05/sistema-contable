@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Producto;
 use App\Services\BitacoraService;
+use App\Services\AsientoContableService;
 use App\Services\CodigoProductoService;
+use Illuminate\Validation\ValidationException;
 
 class InventarioController extends Controller
 {
@@ -73,25 +75,45 @@ class InventarioController extends Controller
             return back()->withErrors(['cantidad' => 'Stock insuficiente. Disponible: ' . $producto->stock])->withInput();
         }
 
-        $referencia = 'MOV-' . now()->format('YmdHis');
+        $referencia = 'MOV-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
-        DB::table('movimientos_inventario')->insert([
-            'referencia_movimiento' => $referencia,
-            'producto_id' => $request->producto_id,
-            'usuario_id' => Auth::id(),
-            'tipo_movimiento_inventario_id' => $request->tipo_movimiento_inventario_id,
-            'cantidad' => $request->cantidad,
-            'descripcion' => $request->descripcion ?? '',
-            'fecha' => $request->fecha,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        DB::transaction(function () use ($request, $tipo, $esEntrada, $referencia) {
+            $producto = Producto::whereKey($request->producto_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($esEntrada) {
-            $producto->increment('stock', $request->cantidad);
-        } else {
-            $producto->decrement('stock', $request->cantidad);
-        }
+            if (! $esEntrada && $producto->stock < $request->cantidad) {
+                throw ValidationException::withMessages([
+                    'cantidad' => 'Stock insuficiente. Disponible: ' . $producto->stock,
+                ]);
+            }
+
+            DB::table('movimientos_inventario')->insert([
+                'referencia_movimiento' => $referencia,
+                'producto_id' => $request->producto_id,
+                'usuario_id' => Auth::id(),
+                'tipo_movimiento_inventario_id' => $request->tipo_movimiento_inventario_id,
+                'cantidad' => $request->cantidad,
+                'descripcion' => $request->descripcion ?? '',
+                'fecha' => $request->fecha,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            if ($esEntrada) {
+                $producto->increment('stock', $request->cantidad);
+            } else {
+                $producto->decrement('stock', $request->cantidad);
+            }
+
+            AsientoContableService::registrarMovimientoInventario(
+                $request->fecha,
+                $referencia,
+                round((float) $producto->precio * $request->cantidad, 2),
+                $esEntrada,
+                $tipo->nombre
+            );
+        });
 
         BitacoraService::registrar('crear', 'movimientos_inventario', "Movimiento $referencia: {$tipo->nombre} x{$request->cantidad} - {$producto->nombre}");
 

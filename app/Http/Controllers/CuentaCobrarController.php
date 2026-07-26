@@ -7,7 +7,10 @@ use App\Models\PagoCuentaCobrar;
 use App\Models\PlazoVenta;
 use App\Models\MetodoPago;
 use App\Models\Estado;
+use App\Models\CuentaBancaria;
 use App\Services\BitacoraService;
+use App\Services\AsientoContableService;
+use App\Services\BancoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,8 +38,11 @@ class CuentaCobrarController extends Controller
         $metodosPago = MetodoPago::where('nombre', '!=', 'Crédito')
             ->orderBy('nombre')
             ->get();
+        $cuentasBancarias = CuentaBancaria::where('estado', true)
+            ->orderBy('banco_nombre')
+            ->get();
 
-        return view('cuentas-cobrar.pago', compact('cuenta', 'metodosPago'));
+        return view('cuentas-cobrar.pago', compact('cuenta', 'metodosPago', 'cuentasBancarias'));
     }
 
     public function storePago(Request $request, $numero_factura, $cliente_id)
@@ -47,9 +53,16 @@ class CuentaCobrarController extends Controller
             'observacion' => 'nullable|string|max:500',
         ]);
 
+        if (AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)) {
+            $request->validate([
+                'cuenta_bancaria_id' => 'required|exists:cuentas_bancarias,id',
+            ]);
+        }
+
         DB::transaction(function () use ($request, $numero_factura, $cliente_id) {
             $cuenta = CuentaCobrar::where('numero_factura', $numero_factura)
                 ->where('cliente_id', $cliente_id)
+                ->lockForUpdate()
                 ->firstOrFail();
 
             if ($request->monto_pagado > $cuenta->saldo_pendiente) {
@@ -57,14 +70,16 @@ class CuentaCobrarController extends Controller
             }
 
             $saldoAnterior = $cuenta->saldo_pendiente;
+            $referenciaPago = 'PCL-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
             PagoCuentaCobrar::create([
                 'numero_factura' => $cuenta->numero_factura,
                 'cliente_id' => $cuenta->cliente_id,
+                'referencia_pago' => $referenciaPago,
+                'usuario_id' => Auth::id(),
                 'fecha_pago' => now(),
-                'monto_pagado' => $request->monto_pagado,
+                'monto' => $request->monto_pagado,
                 'metodo_pago_id' => $request->metodo_pago_id,
-                'observacion' => $request->observacion,
             ]);
 
             $nuevoSaldo = $cuenta->saldo_pendiente - $request->monto_pagado;
@@ -116,6 +131,26 @@ class CuentaCobrarController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            AsientoContableService::registrarCobro(
+                now(),
+                $referenciaPago,
+                $numero_factura,
+                (float) $request->monto_pagado,
+                (int) $request->metodo_pago_id
+            );
+
+            if (AsientoContableService::requiereCuentaBancaria((int) $request->metodo_pago_id)) {
+                $cuentaBancaria = CuentaBancaria::lockForUpdate()
+                    ->findOrFail($request->cuenta_bancaria_id);
+
+                BancoService::acreditar(
+                    $cuentaBancaria,
+                    (float) $request->monto_pagado,
+                    "Cobro de factura {$numero_factura}",
+                    $referenciaPago
+                );
+            }
 
             BitacoraService::registrar('pago', 'cuentas_cobrar', "Pago de ₡{$request->monto_pagado} a factura $numero_factura");
         });
