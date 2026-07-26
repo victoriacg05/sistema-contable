@@ -548,7 +548,7 @@ class FacturaController extends Controller
             ->with('success', 'Factura actualizada correctamente.');
     }
 
-    public function destroy(Factura $factura)
+    public function destroy(Request $request, Factura $factura)
     {
         if ($this->estaAnulada($factura)) {
             throw ValidationException::withMessages([
@@ -601,11 +601,21 @@ class FacturaController extends Controller
                     ->increment('stock', $detalle->cantidad);
             }
 
-            $factura->delete();
+            DB::table('movimientos_inventario')
+                ->where('referencia_movimiento', $factura->numero_factura)
+                ->delete();
+
+            Factura::where('numero_factura', $factura->numero_factura)
+                ->where('cliente_id', $factura->cliente_id)
+                ->delete();
         });
 
+        $rutaDestino = $request->input('origen') === 'compras-clientes'
+            ? 'compras.clientes'
+            : 'facturas.index';
+
         return redirect()
-            ->route('facturas.index')
+            ->route($rutaDestino)
             ->with('success', 'Factura eliminada correctamente.');
     }
 

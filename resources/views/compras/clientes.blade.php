@@ -36,6 +36,17 @@
             </div>
         @endif
 
+        @if($errors->any())
+            <div class="mb-6 rounded-2xl border border-red-300 bg-red-50 px-6 py-4 text-red-800">
+                <p class="font-bold">No fue posible eliminar la compra del cliente:</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
             <table class="w-full">
                 <thead class="bg-[#2b2b2b] text-white">
@@ -90,10 +101,30 @@
                             </td>
 
                             <td class="px-6 py-5 text-center whitespace-nowrap">
+                                @php
+                                    $estadoFactura = strtolower(optional($factura->estado)->nombre ?? '');
+                                @endphp
+
                                 <a href="{{ route('facturas.show', $factura) }}"
                                    class="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-xl font-bold transition">
                                     Ver factura
                                 </a>
+
+                                @if($estadoFactura !== 'anulado')
+                                    <form action="{{ route('facturas.destroy', $factura) }}"
+                                          method="POST"
+                                          class="inline-block"
+                                          onsubmit="return confirm('¿Está segura de eliminar esta compra del cliente? Se revertirán el inventario y los registros automáticos asociados.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="origen" value="compras-clientes">
+
+                                        <button type="submit"
+                                                class="ml-2 rounded-xl bg-[#b71c1c] px-5 py-2 font-bold text-white transition hover:bg-red-700">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
 
