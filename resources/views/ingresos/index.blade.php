@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto">
 
-        <div class="flex items-center justify-between mb-8">
+        <div class="mb-8">
             <div>
                 <h1 class="text-4xl font-extrabold text-[#1f2937]">
                     Ingresos
@@ -11,11 +11,6 @@
                     Registro y control de ingresos financieros
                 </p>
             </div>
-
-            <a href="{{ route('ingresos.create') }}"
-               class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
-                Nuevo Ingreso
-            </a>
         </div>
 
         @if(session('success'))
