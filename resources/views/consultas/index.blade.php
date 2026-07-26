@@ -256,13 +256,17 @@
         @endif
     </div>
 
+    @php
+        $configuracionesConsulta = collect($modulos)->map(fn ($modulo) => [
+            'placeholder' => $modulo['placeholder'],
+            'descripcion' => $modulo['descripcion'],
+            'usaFechas' => (bool) $modulo['campo_fecha'],
+        ]);
+    @endphp
+
     <script>
         (function () {
-            const configuraciones = @json(collect($modulos)->map(fn ($modulo) => [
-                'placeholder' => $modulo['placeholder'],
-                'descripcion' => $modulo['descripcion'],
-                'usaFechas' => (bool) $modulo['campo_fecha'],
-            ]));
+            const configuraciones = @json($configuracionesConsulta);
             const selectModulo = document.getElementById('modulo');
             const termino = document.getElementById('termino');
             const ayuda = document.getElementById('ayuda-busqueda');
