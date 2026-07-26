@@ -13,14 +13,10 @@ class ProductoController extends Controller
     public function __construct(
         private readonly CodigoProductoService $codigoProductoService
     ) {
-        $this->codigoProductoService->asegurarEstructuraPrecios();
-        $this->codigoProductoService->convertirPreciosExistentes();
     }
 
     public function index()
     {
-        $this->codigoProductoService->normalizarExistentes();
-
         $productos = Producto::with('categoria')
             ->orderByDesc('created_at')
             ->orderByDesc('id')

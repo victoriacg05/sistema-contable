@@ -14,7 +14,6 @@ use App\Models\CuentaBancaria;
 use App\Models\MovimientoBancario;
 use App\Services\BitacoraService;
 use App\Services\InventarioService;
-use App\Services\CodigoProductoService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
 use App\Services\IngresoAutomaticoService;
@@ -28,12 +27,6 @@ use Illuminate\Validation\ValidationException;
 
 class FacturaController extends Controller
 {
-    public function __construct(CodigoProductoService $codigoProductoService)
-    {
-        $codigoProductoService->asegurarEstructuraPrecios();
-        $codigoProductoService->convertirPreciosExistentes();
-    }
-
     public function index()
     {
         $facturas = Factura::with(['cliente', 'estado', 'metodoPago', 'detalles.producto'])

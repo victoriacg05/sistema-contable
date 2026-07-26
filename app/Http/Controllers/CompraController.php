@@ -21,7 +21,6 @@ use App\Services\BitacoraService;
 use App\Services\InventarioService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
-use App\Services\CodigoProductoService;
 use App\Services\IngresoAutomaticoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,12 +30,6 @@ use Illuminate\Validation\ValidationException;
 
 class CompraController extends Controller
 {
-    public function __construct(CodigoProductoService $codigoProductoService)
-    {
-        $codigoProductoService->asegurarEstructuraPrecios();
-        $codigoProductoService->convertirPreciosExistentes();
-    }
-
     public function index()
     {
         $compras = Compra::with(['proveedor', 'estado', 'metodoPago', 'detalles.producto', 'plazos'])

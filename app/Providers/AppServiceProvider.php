@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -34,21 +35,27 @@ class AppServiceProvider extends ServiceProvider
             $morosasPagar = null;
 
             try {
-                if (Schema::hasTable('cuentas_cobrar')) {
-                    $morosasCobrar = DB::table('cuentas_cobrar')
-                        ->where('saldo_pendiente', '>', 0)
-                        ->where('fecha_vencimiento', '<', now())
-                        ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
-                        ->first();
-                }
+                $alertas = Cache::remember('resumen-global-morosidad', 30, function () {
+                    $cobrar = Schema::hasTable('cuentas_cobrar')
+                        ? DB::table('cuentas_cobrar')
+                            ->where('saldo_pendiente', '>', 0)
+                            ->where('fecha_vencimiento', '<', now())
+                            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
+                            ->first()
+                        : null;
+                    $pagar = Schema::hasTable('cuentas_pagar')
+                        ? DB::table('cuentas_pagar')
+                            ->where('saldo_pendiente', '>', 0)
+                            ->where('fecha_vencimiento', '<', now())
+                            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
+                            ->first()
+                        : null;
 
-                if (Schema::hasTable('cuentas_pagar')) {
-                    $morosasPagar = DB::table('cuentas_pagar')
-                        ->where('saldo_pendiente', '>', 0)
-                        ->where('fecha_vencimiento', '<', now())
-                        ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
-                        ->first();
-                }
+                    return compact('cobrar', 'pagar');
+                });
+
+                $morosasCobrar = $alertas['cobrar'];
+                $morosasPagar = $alertas['pagar'];
             } catch (\Throwable $e) {
                 // Si la base de datos aún no está disponible (por ejemplo durante
                 // las migraciones) simplemente no mostramos las alertas.
