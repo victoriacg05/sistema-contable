@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use App\Services\BitacoraService;
 
 class ContabilidadController extends Controller
@@ -23,9 +24,12 @@ class ContabilidadController extends Controller
                     ->on('detalle_asientos_contables.fecha_asiento', '=', 'asientos_contables.fecha');
             })
             ->join('estados', 'asientos_contables.estado_id', '=', 'estados.id')
+            ->join('catalogo_cuentas', 'detalle_asientos_contables.codigo_cuenta', '=', 'catalogo_cuentas.codigo_cuenta')
+            ->join('users', 'asientos_contables.usuario_id', '=', 'users.id')
             ->orderByDesc('asientos_contables.created_at')
             ->orderByDesc('asientos_contables.fecha')
             ->orderByDesc('detalle_asientos_contables.numero_asiento')
+            ->orderByDesc('detalle_asientos_contables.codigo_cuenta')
             ->select(
                 'detalle_asientos_contables.numero_asiento',
                 'detalle_asientos_contables.fecha_asiento',
@@ -34,6 +38,8 @@ class ContabilidadController extends Controller
                 'detalle_asientos_contables.haber',
                 'detalle_asientos_contables.descripcion',
                 'asientos_contables.descripcion as asiento_descripcion',
+                'catalogo_cuentas.nombre as cuenta_nombre',
+                'users.name as usuario_nombre',
                 'estados.nombre as estado_nombre'
             )
             ->get();
@@ -470,9 +476,78 @@ class ContabilidadController extends Controller
             ->orderByDesc('asientos_contables.created_at')
             ->orderByDesc('asientos_contables.fecha')
             ->orderByDesc('asientos_contables.numero_asiento')
-            ->get();
+            ->paginate(20);
+
+        $pares = collect($asientos->items())
+            ->map(fn ($asiento) => [
+                'numero_asiento' => $asiento->numero_asiento,
+                'fecha' => $asiento->fecha,
+            ]);
+
+        $detalles = $pares->isEmpty()
+            ? collect()
+            : DB::table('detalle_asientos_contables')
+                ->join(
+                    'catalogo_cuentas',
+                    'detalle_asientos_contables.codigo_cuenta',
+                    '=',
+                    'catalogo_cuentas.codigo_cuenta'
+                )
+                ->where(function ($consulta) use ($pares) {
+                    foreach ($pares as $par) {
+                        $consulta->orWhere(function ($movimiento) use ($par) {
+                            $movimiento
+                                ->where(
+                                    'detalle_asientos_contables.numero_asiento',
+                                    $par['numero_asiento']
+                                )
+                                ->where(
+                                    'detalle_asientos_contables.fecha_asiento',
+                                    $par['fecha']
+                                );
+                        });
+                    }
+                })
+                ->orderBy('detalle_asientos_contables.created_at')
+                ->orderBy('detalle_asientos_contables.codigo_cuenta')
+                ->select(
+                    'detalle_asientos_contables.*',
+                    'catalogo_cuentas.nombre as cuenta_nombre'
+                )
+                ->get()
+                ->groupBy(fn ($detalle) => $detalle->numero_asiento . '|' . $detalle->fecha_asiento);
+
+        foreach ($asientos->items() as $asiento) {
+            $asiento->movimientos = $detalles->get(
+                $asiento->numero_asiento . '|' . $asiento->fecha,
+                collect()
+            );
+            $asiento->origen = $this->origenAsiento($asiento->descripcion);
+            $asiento->descripcion_visible = preg_replace(
+                '/^\[AUTO:[^\]]+\]\s*/',
+                '',
+                (string) $asiento->descripcion
+            ) ?: 'Movimiento contable automático';
+        }
 
         return view('contabilidad.asientos.index', compact('asientos'));
+    }
+
+    private function origenAsiento(?string $descripcion): string
+    {
+        $descripcion = Str::upper((string) $descripcion);
+
+        return match (true) {
+            Str::contains($descripcion, ['REVERSO', 'ANULACION']) => 'Reversión',
+            Str::contains($descripcion, 'PAGO-PROVEEDOR') => 'Pago a proveedor',
+            Str::contains($descripcion, 'COMPRA') => 'Compra',
+            Str::contains($descripcion, 'COBRO') => 'Cobro',
+            Str::contains($descripcion, 'VENTA') => 'Venta',
+            Str::contains($descripcion, 'GASTO') => 'Gasto',
+            Str::contains($descripcion, 'INGRESO') => 'Ingreso',
+            Str::contains($descripcion, 'INVENTARIO') => 'Inventario',
+            default => 'Movimiento contable',
+        };
     }
 
     public function createAsiento()

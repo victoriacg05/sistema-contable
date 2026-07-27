@@ -15,7 +15,11 @@
 
     $tDebe = $movs->sum('debe');
     $tHaber = $movs->sum('haber');
-    $saldo = $tDebe - $tHaber;
+    $grupoCuenta = $movs->isNotEmpty()
+        ? explode('.', $movs->first()->codigo_cuenta)[0]
+        : null;
+    $naturalezaAcreedora = in_array($grupoCuenta, ['2', '3', '4'], true);
+    $saldo = $naturalezaAcreedora ? $tHaber - $tDebe : $tDebe - $tHaber;
     $acumulado = $saldo;
 @endphp
 
@@ -137,67 +141,72 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-left text-gray-500 border-b border-gray-200">
-                        <th class="py-2 pr-3 font-semibold">Fecha</th>
-                        <th class="py-2 pr-3 font-semibold">Documento</th>
-                        <th class="py-2 pr-3 font-semibold">Cuenta</th>
-                        <th class="py-2 pr-3 font-semibold">Descripción</th>
-                        <th class="py-2 pr-3 font-semibold">Estado</th>
-                        <th class="py-2 pr-3 font-semibold text-right">Debe</th>
-                        <th class="py-2 pr-3 font-semibold text-right">Haber</th>
-                        <th class="py-2 pl-3 font-semibold text-right">Saldo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($movs as $mov)
-                        <tr class="border-b border-gray-100 hover:bg-white transition">
-                            <td class="py-2 pr-3 whitespace-nowrap text-gray-700">
-                                {{ \Carbon\Carbon::parse($mov->fecha_asiento)->format('d/m/Y') }}
-                            </td>
-                            <td class="py-2 pr-3 whitespace-nowrap">
-                                <a href="{{ route('contabilidad.asientos.show', [$mov->numero_asiento, $mov->fecha_asiento]) }}"
-                                   class="text-[#b71c1c] hover:text-red-800 font-semibold font-mono text-xs">
-                                    {{ $mov->numero_asiento }}
-                                </a>
-                            </td>
-                            <td class="py-2 pr-3 whitespace-nowrap font-mono text-xs text-gray-600">
-                                {{ $mov->codigo_cuenta }}
-                            </td>
-                            <td class="py-2 pr-3 text-gray-700">
-                                {{ $mov->descripcion ?: $mov->asiento_descripcion ?: '—' }}
-                            </td>
-                            <td class="py-2 pr-3 whitespace-nowrap">
-                                <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+        <div class="space-y-3">
+            @foreach($movs as $mov)
+                @php
+                    $esDebe = (float) $mov->debe > 0;
+                    $monto = $esDebe ? (float) $mov->debe : (float) $mov->haber;
+                    $aumenta = $naturalezaAcreedora ? ! $esDebe : $esDebe;
+                    $variacion = $naturalezaAcreedora
+                        ? ((float) $mov->haber - (float) $mov->debe)
+                        : ((float) $mov->debe - (float) $mov->haber);
+                @endphp
+
+                <div class="rounded-xl border bg-white p-4 {{ $esDebe ? 'border-blue-200' : 'border-amber-200' }}">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full px-2.5 py-1 text-xs font-extrabold uppercase
+                                    {{ $esDebe ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800' }}">
+                                    {{ $esDebe ? 'Debe' : 'Haber' }}
+                                </span>
+                                <span class="rounded-full px-2.5 py-1 text-xs font-bold
+                                    {{ $aumenta ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $aumenta ? 'Aumenta el saldo' : 'Disminuye el saldo' }}
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                    {{ \Carbon\Carbon::parse($mov->fecha_asiento)->format('d/m/Y') }}
+                                </span>
+                                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
                                     {{ $mov->estado_nombre }}
                                 </span>
-                            </td>
-                            <td class="py-2 pr-3 text-right whitespace-nowrap text-gray-800">
-                                {{ $mov->debe > 0 ? number_format($mov->debe, 2) : '—' }}
-                            </td>
-                            <td class="py-2 pr-3 text-right whitespace-nowrap text-gray-800">
-                                {{ $mov->haber > 0 ? number_format($mov->haber, 2) : '—' }}
-                            </td>
-                            <td class="py-2 pl-3 text-right whitespace-nowrap font-semibold {{ $acumulado >= 0 ? 'text-gray-800' : 'text-red-700' }}">
-                                {{ number_format($acumulado, 2) }}
-                            </td>
-                        </tr>
-                        @php $acumulado -= ($mov->debe - $mov->haber); @endphp
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr class="font-bold text-gray-800 border-t-2 border-gray-300">
-                        <td class="py-2 pr-3" colspan="5">Totales</td>
-                        <td class="py-2 pr-3 text-right">&#8353; {{ number_format($tDebe, 2) }}</td>
-                        <td class="py-2 pr-3 text-right">&#8353; {{ number_format($tHaber, 2) }}</td>
-                        <td class="py-2 pl-3 text-right {{ $saldo >= 0 ? 'text-green-700' : 'text-red-700' }}">
-                            &#8353; {{ number_format($saldo, 2) }}
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+                            </div>
+
+                            <p class="mt-2 font-bold text-gray-900">
+                                <span class="font-mono text-[#b71c1c]">{{ $mov->codigo_cuenta }}</span>
+                                · {{ $mov->cuenta_nombre }}
+                            </p>
+                            <p class="mt-1 text-sm text-gray-600">
+                                {{ $mov->descripcion ?: preg_replace('/^\[AUTO:[^\]]+\]\s*/', '', $mov->asiento_descripcion) ?: 'Movimiento contable' }}
+                            </p>
+                            <a href="{{ route('contabilidad.asientos.show', [$mov->numero_asiento, $mov->fecha_asiento]) }}"
+                               class="mt-2 inline-block font-mono text-xs font-bold text-[#b71c1c] hover:text-red-800">
+                                {{ $mov->numero_asiento }}
+                            </a>
+                            <span class="ml-2 text-xs text-gray-500">
+                                Registrado por {{ $mov->usuario_nombre }}
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 text-right lg:min-w-72">
+                            <div>
+                                <p class="text-xs font-bold uppercase text-gray-500">Movimiento</p>
+                                <p class="font-mono text-lg font-extrabold {{ $esDebe ? 'text-blue-800' : 'text-amber-800' }}">
+                                    ₡{{ number_format($monto, 2) }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold uppercase text-gray-500">Saldo posterior</p>
+                                <p class="font-mono text-lg font-extrabold {{ $acumulado >= 0 ? 'text-gray-900' : 'text-red-700' }}">
+                                    ₡{{ number_format($acumulado, 2) }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @php $acumulado -= $variacion; @endphp
+            @endforeach
         </div>
     @endif
 
