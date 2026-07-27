@@ -3,7 +3,7 @@
         <div class="mb-8">
             <h1 class="text-4xl font-extrabold text-[#1f2937]">Asientos Contables</h1>
             <p class="mt-2 text-lg text-gray-700">
-                Cada tarjeta muestra el origen y los movimientos individuales que afectaron las cuentas.
+                Consulte el resumen y despliegue el detalle cuando necesite revisar las cuentas afectadas.
             </p>
         </div>
 
@@ -59,55 +59,72 @@
                         </div>
                     </div>
 
-                    <div class="space-y-3 p-6">
-                        @foreach($asiento->movimientos as $movimiento)
-                            @php
-                                $esDebe = (float) $movimiento->debe > 0;
-                                $monto = $esDebe ? $movimiento->debe : $movimiento->haber;
-                                $grupoCuenta = explode('.', $movimiento->codigo_cuenta)[0];
-                                $naturalezaAcreedora = in_array($grupoCuenta, ['2', '3', '4'], true);
-                                $aumenta = $naturalezaAcreedora ? ! $esDebe : $esDebe;
-                            @endphp
+                    <details class="group">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 font-bold text-[#b71c1c] transition hover:bg-red-50">
+                            <span>
+                                <span class="group-open:hidden">Ver detalle del asiento</span>
+                                <span class="hidden group-open:inline">Ocultar detalle del asiento</span>
+                                <span class="ml-1 text-sm font-medium text-gray-500">
+                                    ({{ $asiento->movimientos->count() }} movimientos)
+                                </span>
+                            </span>
+                            <svg class="h-5 w-5 shrink-0 transition-transform group-open:rotate-180"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </summary>
 
-                            <div class="grid gap-4 rounded-2xl border px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center
-                                {{ $esDebe ? 'border-blue-200 bg-blue-50' : 'border-amber-200 bg-amber-50' }}">
-                                <div>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="font-mono text-sm font-extrabold text-gray-800">
-                                            {{ $movimiento->codigo_cuenta }}
-                                        </span>
-                                        <span class="font-bold text-gray-900">{{ $movimiento->cuenta_nombre }}</span>
+                        <div class="space-y-3 border-t border-gray-200 p-6">
+                            @foreach($asiento->movimientos as $movimiento)
+                                @php
+                                    $esDebe = (float) $movimiento->debe > 0;
+                                    $monto = $esDebe ? $movimiento->debe : $movimiento->haber;
+                                    $grupoCuenta = explode('.', $movimiento->codigo_cuenta)[0];
+                                    $naturalezaAcreedora = in_array($grupoCuenta, ['2', '3', '4'], true);
+                                    $aumenta = $naturalezaAcreedora ? ! $esDebe : $esDebe;
+                                @endphp
+
+                                <div class="grid gap-4 rounded-2xl border px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center
+                                    {{ $esDebe ? 'border-blue-200 bg-blue-50' : 'border-amber-200 bg-amber-50' }}">
+                                    <div>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-mono text-sm font-extrabold text-gray-800">
+                                                {{ $movimiento->codigo_cuenta }}
+                                            </span>
+                                            <span class="font-bold text-gray-900">{{ $movimiento->cuenta_nombre }}</span>
+                                        </div>
+                                        <p class="mt-1 text-sm text-gray-600">
+                                            {{ $movimiento->descripcion ?: $asiento->descripcion_visible }}
+                                        </p>
                                     </div>
-                                    <p class="mt-1 text-sm text-gray-600">
-                                        {{ $movimiento->descripcion ?: $asiento->descripcion_visible }}
-                                    </p>
-                                </div>
 
-                                <div class="text-left md:min-w-48 md:text-right">
-                                    <div class="flex flex-wrap gap-2 md:justify-end">
-                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold uppercase
-                                            {{ $esDebe ? 'bg-blue-200 text-blue-800' : 'bg-amber-200 text-amber-800' }}">
-                                            {{ $esDebe ? 'Movimiento al Debe' : 'Movimiento al Haber' }}
-                                        </span>
-                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold
-                                            {{ $aumenta ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800' }}">
-                                            {{ $aumenta ? 'Aumenta la cuenta' : 'Disminuye la cuenta' }}
-                                        </span>
+                                    <div class="text-left md:min-w-48 md:text-right">
+                                        <div class="flex flex-wrap gap-2 md:justify-end">
+                                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold uppercase
+                                                {{ $esDebe ? 'bg-blue-200 text-blue-800' : 'bg-amber-200 text-amber-800' }}">
+                                                {{ $esDebe ? 'Movimiento al Debe' : 'Movimiento al Haber' }}
+                                            </span>
+                                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold
+                                                {{ $aumenta ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800' }}">
+                                                {{ $aumenta ? 'Aumenta la cuenta' : 'Disminuye la cuenta' }}
+                                            </span>
+                                        </div>
+                                        <p class="mt-2 font-mono text-xl font-extrabold {{ $esDebe ? 'text-blue-800' : 'text-amber-800' }}">
+                                            ₡{{ number_format($monto, 2) }}
+                                        </p>
                                     </div>
-                                    <p class="mt-2 font-mono text-xl font-extrabold {{ $esDebe ? 'text-blue-800' : 'text-amber-800' }}">
-                                        ₡{{ number_format($monto, 2) }}
-                                    </p>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
+                            @endforeach
+                        </div>
 
-                    <div class="border-t border-gray-200 px-6 py-4 text-right">
-                        <a href="{{ route('contabilidad.asientos.show', [$asiento->numero_asiento, $asiento->fecha]) }}"
-                           class="font-bold text-[#b71c1c] hover:text-red-800">
-                            Ver comprobante completo →
-                        </a>
-                    </div>
+                        <div class="border-t border-gray-200 px-6 py-4 text-right">
+                            <a href="{{ route('contabilidad.asientos.show', [$asiento->numero_asiento, $asiento->fecha]) }}"
+                               class="font-bold text-[#b71c1c] hover:text-red-800">
+                                Ver comprobante completo →
+                            </a>
+                        </div>
+                    </details>
                 </article>
             @empty
                 <div class="rounded-3xl border border-gray-200 bg-white px-6 py-12 text-center text-gray-600">
