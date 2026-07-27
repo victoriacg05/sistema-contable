@@ -20,7 +20,7 @@ class ProductoController extends Controller
         $productos = Producto::with('categoria')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->get();
+            ->paginate(25);
 
         return view('productos.index', compact('productos'));
     }

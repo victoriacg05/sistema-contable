@@ -96,5 +96,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $cuentas->links() }}
+        </div>
+
     </div>
 </x-app-layout>

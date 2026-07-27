@@ -21,7 +21,7 @@ class IngresoController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('fecha')
             ->orderByDesc('referencia_ingreso')
-            ->get();
+            ->paginate(25);
 
         return view('ingresos.index', compact('ingresos'));
     }

@@ -119,5 +119,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $productos->links() }}
+        </div>
+
     </div>
 </x-app-layout>

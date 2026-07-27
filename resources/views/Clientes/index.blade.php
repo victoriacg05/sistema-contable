@@ -91,5 +91,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $clientes->links() }}
+        </div>
+
     </div>
 </x-app-layout>

@@ -11,7 +11,7 @@ class ClienteController extends Controller
     {
         $clientes = Cliente::orderByDesc('created_at')
             ->orderByDesc('id')
-            ->get();
+            ->paginate(25);
 
         return view('clientes.index', compact('clientes'));
     }

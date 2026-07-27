@@ -11,7 +11,7 @@ class ProveedorController extends Controller
     {
         $proveedores = Proveedor::orderByDesc('created_at')
             ->orderByDesc('id')
-            ->get();
+            ->paginate(25);
 
         return view('proveedores.index', compact('proveedores'));
     }

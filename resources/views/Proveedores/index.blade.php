@@ -91,5 +91,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $proveedores->links() }}
+        </div>
+
     </div>
 </x-app-layout>

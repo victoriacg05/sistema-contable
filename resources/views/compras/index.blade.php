@@ -229,5 +229,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $compras->links() }}
+        </div>
+
     </div>
 </x-app-layout>

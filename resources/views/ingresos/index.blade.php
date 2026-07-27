@@ -92,5 +92,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $ingresos->links() }}
+        </div>
+
     </div>
 </x-app-layout>

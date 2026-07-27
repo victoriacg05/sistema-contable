@@ -21,7 +21,7 @@ class GastoController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('fecha')
             ->orderByDesc('numero_comprobante')
-            ->get();
+            ->paginate(25);
 
         return view('gastos.index', compact('gastos'));
     }

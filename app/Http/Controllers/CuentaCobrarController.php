@@ -24,7 +24,7 @@ class CuentaCobrarController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('fecha_emision')
             ->orderByDesc('numero_factura')
-            ->get();
+            ->paginate(25);
 
         return view('cuentas-cobrar.index', compact('cuentas'));
     }

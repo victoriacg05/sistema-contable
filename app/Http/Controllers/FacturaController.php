@@ -33,7 +33,7 @@ class FacturaController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('fecha')
             ->orderByDesc('numero_factura')
-            ->get();
+            ->paginate(20);
 
         return view('facturas.index', compact('facturas'));
     }

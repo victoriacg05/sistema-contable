@@ -103,5 +103,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $gastos->links() }}
+        </div>
+
     </div>
 </x-app-layout>

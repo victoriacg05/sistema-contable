@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
             $morosasPagar = null;
 
             try {
-                $alertas = Cache::remember('resumen-global-morosidad', 30, function () {
+                $alertas = Cache::store('file')->remember('resumen-global-morosidad', 60, function () {
                     $cobrar = Schema::hasTable('cuentas_cobrar')
                         ? DB::table('cuentas_cobrar')
                             ->where('saldo_pendiente', '>', 0)

@@ -127,5 +127,9 @@
             </table>
         </div>
 
+        <div class="mt-6">
+            {{ $facturas->links() }}
+        </div>
+
     </div>
 </x-app-layout>

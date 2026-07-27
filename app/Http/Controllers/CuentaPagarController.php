@@ -23,7 +23,7 @@ class CuentaPagarController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('fecha_emision')
             ->orderByDesc('numero_compra')
-            ->get();
+            ->paginate(25);
 
         return view('cuentas-pagar.index', compact('cuentas'));
     }

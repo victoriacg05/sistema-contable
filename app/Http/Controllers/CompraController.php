@@ -36,7 +36,7 @@ class CompraController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('fecha')
             ->orderByDesc('numero_compra')
-            ->get();
+            ->paginate(20);
 
         return view('compras.index', compact('compras'));
     }
@@ -51,7 +51,7 @@ class CompraController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('fecha')
             ->orderByDesc('numero_factura')
-            ->get();
+            ->paginate(20);
 
         return view('compras.clientes', compact('facturas'));
     }
