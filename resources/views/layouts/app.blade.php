@@ -177,12 +177,29 @@
                     return;
                 }
 
+                const destino = new URL(enlace.href, window.location.href);
+
+                if (
+                    !['http:', 'https:'].includes(destino.protocol)
+                    || destino.origin !== window.location.origin
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
                 mostrarCarga();
-            });
+                window.location.assign(destino.href);
+            }, true);
 
             document.addEventListener('submit', function (event) {
                 if (!event.defaultPrevented) {
                     mostrarCarga();
+
+                    event.target.querySelectorAll('button[type="submit"], input[type="submit"]')
+                        .forEach(function (control) {
+                            control.disabled = true;
+                            control.classList.add('opacity-60', 'cursor-not-allowed');
+                        });
                 }
             });
         })();
