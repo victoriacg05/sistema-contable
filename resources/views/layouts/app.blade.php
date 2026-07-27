@@ -33,22 +33,7 @@
             max-width: 100%;
         }
 
-        #navigation-progress {
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.2s ease;
-        }
-        body.is-navigating #navigation-progress {
-            transform: scaleX(0.85);
-        }
-        body.is-navigating {
-            cursor: progress;
-        }
     </style>
-
-    <div id="navigation-progress"
-         class="fixed left-0 top-0 z-[100] h-1 w-full bg-[#b71c1c]"
-         aria-hidden="true"></div>
 
     @include('layouts.navigation')
 
@@ -147,61 +132,6 @@
                 }
             });
 
-            let temporizadorCarga;
-
-            function mostrarCarga() {
-                body.classList.add('is-navigating');
-                body.setAttribute('aria-busy', 'true');
-                clearTimeout(temporizadorCarga);
-                temporizadorCarga = setTimeout(function () {
-                    body.classList.remove('is-navigating');
-                    body.removeAttribute('aria-busy');
-                }, 15000);
-            }
-
-            document.addEventListener('click', function (event) {
-                const enlace = event.target.closest('a[href]');
-
-                if (
-                    !enlace
-                    || event.defaultPrevented
-                    || event.button !== 0
-                    || event.ctrlKey
-                    || event.metaKey
-                    || event.shiftKey
-                    || event.altKey
-                    || enlace.target === '_blank'
-                    || enlace.hasAttribute('download')
-                    || enlace.getAttribute('href').startsWith('#')
-                ) {
-                    return;
-                }
-
-                const destino = new URL(enlace.href, window.location.href);
-
-                if (
-                    !['http:', 'https:'].includes(destino.protocol)
-                    || destino.origin !== window.location.origin
-                ) {
-                    return;
-                }
-
-                event.preventDefault();
-                mostrarCarga();
-                window.location.assign(destino.href);
-            }, true);
-
-            document.addEventListener('submit', function (event) {
-                if (!event.defaultPrevented) {
-                    mostrarCarga();
-
-                    event.target.querySelectorAll('button[type="submit"], input[type="submit"]')
-                        .forEach(function (control) {
-                            control.disabled = true;
-                            control.classList.add('opacity-60', 'cursor-not-allowed');
-                        });
-                }
-            });
         })();
     </script>
 

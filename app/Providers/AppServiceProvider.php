@@ -16,7 +16,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if ($this->app->environment('local')) {
+            config([
+                'cache.default' => 'file',
+                'session.driver' => 'file',
+            ]);
+        }
     }
 
     /**
