@@ -162,8 +162,11 @@
             const categoriaOriginal = @json((string) $producto->categoria_producto_id);
             const codigoOriginal = @json($producto->codigo_barras);
             const url = @json(route('productos.codigo-sugerido'));
+            let codigoController = null;
 
             const actualizarCodigo = async () => {
+                codigoController?.abort();
+
                 if (categoria.value === categoriaOriginal) {
                     codigo.value = codigoOriginal;
                     ayuda.textContent = 'El código cambiará automáticamente si seleccionas otra categoría.';
@@ -171,6 +174,7 @@
                     return;
                 }
 
+                codigoController = new AbortController();
                 codigo.value = 'Generando...';
 
                 try {
@@ -178,6 +182,7 @@
                         headers: {
                             Accept: 'application/json',
                         },
+                        signal: codigoController.signal,
                     });
 
                     if (!respuesta.ok) {
@@ -189,6 +194,10 @@
                     ayuda.textContent = 'El nuevo código se confirmará al guardar el producto.';
                     ayuda.className = 'mt-2 text-sm text-gray-500';
                 } catch (error) {
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
+
                     codigo.value = '';
                     ayuda.textContent = 'No se pudo mostrar el código. Se generará al guardar.';
                     ayuda.className = 'mt-2 text-sm text-red-800 font-semibold';

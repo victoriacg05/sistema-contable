@@ -1,11 +1,14 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 test('login screen can be rendered', function () {
     $response = $this->get('/login');
 
     $response->assertStatus(200);
+
+    expect($response->headers->get('Cache-Control'))->toContain('no-store');
 });
 
 test('users can authenticate using the login screen', function () {
@@ -29,6 +32,27 @@ test('users can not authenticate with invalid password', function () {
     ]);
 
     $this->assertGuest();
+});
+
+test('password whitespace is preserved during authentication', function () {
+    $user = User::factory()->create([
+        'password' => Hash::make(' password '),
+    ]);
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => ' password ',
+    ]);
+
+    $this->assertAuthenticated();
+});
+
+test('csrf token can be refreshed', function () {
+    $response = $this->getJson(route('csrf.refresh'));
+
+    $response
+        ->assertOk()
+        ->assertJsonStructure(['token', 'authenticated']);
 });
 
 test('users can logout', function () {

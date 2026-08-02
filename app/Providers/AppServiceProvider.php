@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -16,12 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        if ($this->app->environment('local')) {
-            config([
-                'cache.default' => 'file',
-                'session.driver' => 'database',
-            ]);
-        }
+        //
     }
 
     /**
@@ -40,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
             $morosasPagar = null;
 
             try {
-                $alertas = Cache::store('file')->remember('resumen-global-morosidad', 60, function () {
+                $alertas = Cache::remember('resumen-global-morosidad', 60, function () {
                     $cobrar = Schema::hasTable('cuentas_cobrar')
                         ? DB::table('cuentas_cobrar')
                             ->where('saldo_pendiente', '>', 0)
@@ -62,8 +58,9 @@ class AppServiceProvider extends ServiceProvider
                 $morosasCobrar = $alertas['cobrar'];
                 $morosasPagar = $alertas['pagar'];
             } catch (\Throwable $e) {
-                // Si la base de datos aún no está disponible (por ejemplo durante
-                // las migraciones) simplemente no mostramos las alertas.
+                Log::warning('No se pudo cargar el resumen global de morosidad.', [
+                    'exception' => $e,
+                ]);
             }
 
             $view->with('alertaMorosasCobrar', $morosasCobrar)

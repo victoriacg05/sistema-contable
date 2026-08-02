@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
@@ -30,6 +31,15 @@ use App\Http\Controllers\BitacoraController;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get('/csrf-token', function (Request $request) {
+    return response()->json([
+        'token' => csrf_token(),
+        'authenticated' => $request->user() !== null,
+    ]);
+})
+    ->middleware('throttle:30,1')
+    ->name('csrf.refresh');
 
 Route::middleware(['auth'])->group(function () {
 

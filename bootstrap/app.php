@@ -13,6 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $trustedProxies = array_values(array_filter(array_map(
+            'trim',
+            (array) config('proxies.trusted', [])
+        )));
+
+        if ($trustedProxies !== []) {
+            $middleware->trustProxies(at: $trustedProxies);
+        }
+
         $middleware->alias([
             'permiso' => \App\Http\Middleware\CheckPermiso::class,
         ]);
@@ -20,10 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (TokenMismatchException $exception, Request $request) {
             if ($request->expectsJson()) {
-                return null;
+                return response()->json([
+                    'message' => 'La sesión venció. Actualice el token e intente nuevamente.',
+                    'code' => 'CSRF_TOKEN_MISMATCH',
+                ], 419);
             }
 
-            return redirect('/login')
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
                 ->with('status', 'La sesión venció. Ingrese nuevamente para continuar.');
         });
     })->create();

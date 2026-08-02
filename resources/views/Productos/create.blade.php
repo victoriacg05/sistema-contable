@@ -226,8 +226,11 @@
             const codigo = document.getElementById('codigo_barras');
             const ayuda = document.getElementById('codigo-ayuda');
             const url = @json(route('productos.codigo-sugerido'));
+            let codigoController = null;
 
             const actualizarCodigo = async () => {
+                codigoController?.abort();
+
                 if (!categoria.value) {
                     codigo.value = '';
                     ayuda.textContent = 'Se genera automáticamente según la categoría.';
@@ -235,6 +238,7 @@
                     return;
                 }
 
+                codigoController = new AbortController();
                 codigo.value = 'Generando...';
 
                 try {
@@ -242,6 +246,7 @@
                         headers: {
                             Accept: 'application/json',
                         },
+                        signal: codigoController.signal,
                     });
 
                     if (!respuesta.ok) {
@@ -253,6 +258,10 @@
                     ayuda.textContent = 'Este código se confirmará al guardar el producto.';
                     ayuda.className = 'mt-2 text-sm text-gray-500';
                 } catch (error) {
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
+
                     codigo.value = '';
                     ayuda.textContent = 'No se pudo mostrar el código. Se generará al guardar.';
                     ayuda.className = 'mt-2 text-sm text-red-800 font-semibold';

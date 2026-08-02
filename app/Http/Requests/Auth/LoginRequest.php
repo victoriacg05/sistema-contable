@@ -27,7 +27,6 @@ class LoginRequest extends FormRequest
     {
         $this->merge([
             'email' => trim(strtolower($this->email)),
-            'password' => trim($this->password),
         ]);
     }
 
@@ -53,7 +52,7 @@ class LoginRequest extends FormRequest
 
         $credentials = [
             'email' => trim(strtolower($this->email)),
-            'password' => trim($this->password),
+            'password' => $this->password,
         ];
 
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {

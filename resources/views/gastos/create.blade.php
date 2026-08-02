@@ -248,6 +248,7 @@
 
             const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
             let dispActual = null;
+            let presupuestoController = null;
 
             function fmt(n) {
                 return '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -277,6 +278,8 @@
             }
 
             function cargarPresupuesto() {
+                presupuestoController?.abort();
+
                 const categoria = categoriaSel.value;
                 const fecha = fechaInput.value;
                 if (!categoria || !fecha) {
@@ -292,7 +295,12 @@
                 const url = disponibleUrl + '?categoria_gasto_id=' + encodeURIComponent(categoria)
                     + '&anio=' + anio + '&mes=' + mes;
 
-                fetch(url, { headers: { 'Accept': 'application/json' } })
+                presupuestoController = new AbortController();
+
+                fetch(url, {
+                    headers: { 'Accept': 'application/json' },
+                    signal: presupuestoController.signal,
+                })
                     .then(r => r.json())
                     .then(data => {
                         if (!data.tiene_presupuesto) {
@@ -310,7 +318,11 @@
                         panel.classList.remove('hidden');
                         evaluarMonto();
                     })
-                    .catch(() => {
+                    .catch((error) => {
+                        if (error.name === 'AbortError') {
+                            return;
+                        }
+
                         panel.classList.add('hidden');
                         dispActual = null;
                     });

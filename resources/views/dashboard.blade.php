@@ -146,7 +146,7 @@
                                 <td class="px-6 py-3 text-right font-mono text-red-800">₡{{ number_format($cuenta->saldo_pendiente, 2) }}</td>
                                 <td class="px-6 py-3 text-center">
                                     <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
-                                        {{ $cuenta->dias_atraso }} días
+                                        {{ \Carbon\Carbon::parse($cuenta->fecha_vencimiento)->startOfDay()->diffInDays(now()->startOfDay()) }} días
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-sm">{{ \Carbon\Carbon::parse($cuenta->fecha_vencimiento)->format('d/m/Y') }}</td>
