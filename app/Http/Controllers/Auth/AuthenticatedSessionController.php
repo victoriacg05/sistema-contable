@@ -39,7 +39,7 @@ class AuthenticatedSessionController extends Controller
                 'Inicio de sesión exitoso'
             );
 
-            return redirect()->intended(route('dashboard', absolute: false));
+            return redirect()->route('dashboard');
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->registrarIntentoAccesoAlTerminar(
                 $request->email,

@@ -23,6 +23,19 @@ test('users can authenticate using the login screen', function () {
     $response->assertRedirect(route('dashboard', absolute: false));
 });
 
+test('users are always redirected to the dashboard after login', function () {
+    $user = User::factory()->create();
+
+    $this->get('/clientes')->assertRedirect(route('login'));
+
+    $response = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $response->assertRedirect(route('dashboard'));
+});
+
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
