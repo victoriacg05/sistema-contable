@@ -34,7 +34,7 @@
                 </h2>
             </div>
 
-            <form id="gasto-form" action="{{ route('gastos.store') }}" method="POST" class="p-8">
+            <form action="{{ route('gastos.store') }}" method="POST" class="p-8" data-submit-on-click>
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -192,8 +192,7 @@
                         Cancelar
                     </a>
 
-                    <button id="guardar-gasto"
-                            type="button"
+                    <button type="submit"
                             class="px-8 py-3 rounded-2xl bg-[#b71c1c] text-white font-bold hover:bg-red-700 transition shadow-md">
                         Guardar Gasto
                     </button>
@@ -244,29 +243,8 @@
             const ppDisponible = document.getElementById('pp-disponible');
             const ppAlerta = document.getElementById('pp-alerta');
             const montoAlerta = document.getElementById('monto-alerta');
-            const form = document.getElementById('gasto-form');
-            const submitBtn = document.getElementById('guardar-gasto');
+            const submitBtn = document.querySelector('button[type="submit"]');
             const disponibleUrl = "{{ route('presupuesto.disponible') }}";
-            let envioSolicitadoPorBoton = false;
-
-            form.addEventListener('submit', function (event) {
-                if (!envioSolicitadoPorBoton) {
-                    event.preventDefault();
-                    return;
-                }
-
-                submitBtn.disabled = true;
-            });
-
-            submitBtn.addEventListener('click', function () {
-                if (submitBtn.disabled) {
-                    return;
-                }
-
-                envioSolicitadoPorBoton = true;
-                form.requestSubmit();
-                envioSolicitadoPorBoton = false;
-            });
 
             const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
             let dispActual = null;

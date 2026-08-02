@@ -23,7 +23,7 @@
                 </h2>
             </div>
 
-            <form action="{{ route('categorias-productos.store') }}" method="POST" class="p-8">
+            <form action="{{ route('categorias-productos.store') }}" method="POST" class="p-8" data-submit-on-click>
                 @csrf
                 <input type="hidden" name="origen" value="{{ request('origen') }}">
 

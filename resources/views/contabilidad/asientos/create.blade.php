@@ -12,7 +12,7 @@
         @endif
 
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
-            <form method="POST" action="{{ route('contabilidad.asientos.store') }}" id="formAsiento">
+            <form method="POST" action="{{ route('contabilidad.asientos.store') }}" id="formAsiento" data-submit-on-click>
                 @csrf
 
                 <div class="grid grid-cols-2 gap-6 mb-8">

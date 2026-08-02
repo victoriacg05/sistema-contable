@@ -12,7 +12,7 @@
         @endif
 
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
-            <form method="POST" action="{{ route('inventario.store') }}">
+            <form method="POST" action="{{ route('inventario.store') }}" data-submit-on-click>
                 @csrf
 
                 <div class="space-y-6">

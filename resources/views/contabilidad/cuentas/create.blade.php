@@ -4,7 +4,7 @@
         <h1 class="text-4xl font-extrabold text-[#1f2937] mb-8">Nueva Cuenta Contable</h1>
 
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
-            <form method="POST" action="{{ route('contabilidad.cuentas.store') }}" x-data="{ esBanco: false }">
+            <form method="POST" action="{{ route('contabilidad.cuentas.store') }}" x-data="{ esBanco: false }" data-submit-on-click>
                 @csrf
 
                 <div class="space-y-6">

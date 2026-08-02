@@ -3,7 +3,7 @@
         <h1 class="text-4xl font-extrabold text-[#1f2937] mb-8">Nueva Categoría de Gasto</h1>
 
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 p-10">
-            <form method="POST" action="{{ route('categorias-gastos.store') }}">
+            <form method="POST" action="{{ route('categorias-gastos.store') }}" data-submit-on-click>
                 @csrf
                 <div class="space-y-6">
                     <div>

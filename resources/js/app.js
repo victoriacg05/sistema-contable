@@ -85,3 +85,37 @@ const limpiarMensajeValidacion = (event) => {
 
 document.addEventListener('input', limpiarMensajeValidacion, true);
 document.addEventListener('change', limpiarMensajeValidacion, true);
+
+document.querySelectorAll('form[data-submit-on-click]').forEach((form) => {
+    const submitControls = form.querySelectorAll(
+        'button[type="submit"], input[type="submit"]',
+    );
+    let envioSolicitadoPorBoton = false;
+
+    submitControls.forEach((control) => {
+        control.type = 'button';
+
+        control.addEventListener('click', () => {
+            if (control.disabled) {
+                return;
+            }
+
+            envioSolicitadoPorBoton = true;
+            form.requestSubmit();
+            envioSolicitadoPorBoton = false;
+        });
+    });
+
+    form.addEventListener('submit', (event) => {
+        if (!envioSolicitadoPorBoton) {
+            event.preventDefault();
+            return;
+        }
+
+        if (!event.defaultPrevented) {
+            submitControls.forEach((control) => {
+                control.disabled = true;
+            });
+        }
+    });
+});

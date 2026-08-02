@@ -37,7 +37,7 @@
                 </h2>
             </div>
 
-            <form action="{{ route('compras.store') }}" method="POST" class="p-8" id="form-compra">
+            <form action="{{ route('compras.store') }}" method="POST" class="p-8" id="form-compra" data-submit-on-click>
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
