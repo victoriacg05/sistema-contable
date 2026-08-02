@@ -99,6 +99,49 @@
                         @enderror
                     </div>
 
+                    <div class="md:col-span-2">
+                        <label class="block mb-2 text-sm font-bold text-gray-700">
+                            Productos que vende
+                        </label>
+                        <p class="mb-3 text-sm text-gray-600">
+                            Estos serán los productos disponibles al registrar una compra a este proveedor.
+                        </p>
+
+                        @php
+                            $seleccionados = old('productos', $productosSeleccionados);
+                        @endphp
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                            @forelse($productos as $producto)
+                                <label class="flex items-start gap-3 rounded-xl bg-white border border-gray-200 p-3 cursor-pointer hover:border-[#b71c1c] transition">
+                                    <input type="checkbox"
+                                           name="productos[]"
+                                           value="{{ $producto->id }}"
+                                           class="mt-1 rounded border-gray-300 text-[#b71c1c] focus:ring-[#b71c1c]"
+                                           {{ in_array($producto->id, $seleccionados) ? 'checked' : '' }}>
+                                    <span>
+                                        <span class="block font-semibold text-gray-800">
+                                            {{ $producto->nombre }}
+                                            @if(! $producto->estado)
+                                                <span class="text-amber-700">(inactivo)</span>
+                                            @endif
+                                        </span>
+                                        <span class="text-xs text-gray-600">Costo: ₡{{ number_format($producto->precio, 2) }}</span>
+                                    </span>
+                                </label>
+                            @empty
+                                <p class="sm:col-span-2 text-sm text-gray-600">
+                                    No hay productos activos para asignar.
+                                </p>
+                            @endforelse
+                        </div>
+                        @error('productos')
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
+                        @enderror
+                        @error('productos.*')
+                            <p class="mt-2 text-sm text-red-800 font-semibold">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div>
                         <label class="inline-flex items-center gap-3 mt-2">
                             <input type="checkbox" name="estado" value="1"

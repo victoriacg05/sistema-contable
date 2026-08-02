@@ -60,7 +60,9 @@ class CompraController extends Controller
     {
         $proveedores = Proveedor::orderBy('nombre')->get();
 
-        $productos = Producto::orderBy('nombre')->get();
+        $productos = Producto::with('proveedores:id')
+            ->orderBy('nombre')
+            ->get();
 
         $clientes = Cliente::orderBy('nombre')->get();
 
@@ -131,6 +133,11 @@ class CompraController extends Controller
             'metodo_pago_id' => 'required|exists:metodos_pago,id',
             'tipo_compra' => 'required|in:contado,credito',
         ]);
+
+        $this->validarProductosProveedor(
+            (int) $request->proveedor_id,
+            array_column($lineas, 'producto_id')
+        );
 
         $esCredito = $request->tipo_compra === 'credito';
 
@@ -535,7 +542,9 @@ class CompraController extends Controller
     {
         $proveedores = Proveedor::orderBy('nombre')->get();
 
-        $productos = Producto::orderBy('nombre')->get();
+        $productos = Producto::with('proveedores:id')
+            ->orderBy('nombre')
+            ->get();
 
         $detalles = $compra->detalles()->get();
 
@@ -567,6 +576,11 @@ class CompraController extends Controller
                 'productos' => 'No repita el mismo producto en la compra; ajuste la cantidad en una sola línea.',
             ]);
         }
+
+        $this->validarProductosProveedor(
+            (int) $request->proveedor_id,
+            $idsProductos
+        );
 
         $preciosExistentes = $compra->detalles()
             ->pluck('precio_unitario', 'producto_id')
@@ -848,5 +862,31 @@ class CompraController extends Controller
 
             return $linea;
         }, $lineas);
+    }
+
+    private function validarProductosProveedor(int $proveedorId, array $productosIds): void
+    {
+        $productosIds = array_values(array_unique(array_map('intval', $productosIds)));
+        $permitidos = DB::table('proveedor_producto')
+            ->where('proveedor_id', $proveedorId)
+            ->whereIn('producto_id', $productosIds)
+            ->pluck('producto_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $noPermitidos = array_values(array_diff($productosIds, $permitidos));
+
+        if ($noPermitidos === []) {
+            return;
+        }
+
+        $nombres = Producto::whereIn('id', $noPermitidos)
+            ->orderBy('nombre')
+            ->pluck('nombre')
+            ->implode(', ');
+
+        throw ValidationException::withMessages([
+            'productos' => 'El proveedor seleccionado no vende los siguientes productos: '
+                . $nombres . '. Actualice los productos del proveedor antes de continuar.',
+        ]);
     }
 }

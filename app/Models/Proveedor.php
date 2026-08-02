@@ -16,4 +16,14 @@ class Proveedor extends Model
         'correo',
         'estado',
     ];
+
+    public function productos()
+    {
+        return $this->belongsToMany(
+            Producto::class,
+            'proveedor_producto',
+            'proveedor_id',
+            'producto_id'
+        )->withTimestamps();
+    }
 }

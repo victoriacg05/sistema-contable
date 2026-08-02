@@ -49,4 +49,14 @@ class Producto extends Model
     {
         return $this->belongsTo(CategoriaProducto::class, 'categoria_producto_id');
     }
+
+    public function proveedores()
+    {
+        return $this->belongsToMany(
+            Proveedor::class,
+            'proveedor_producto',
+            'producto_id',
+            'proveedor_id'
+        )->withTimestamps();
+    }
 }

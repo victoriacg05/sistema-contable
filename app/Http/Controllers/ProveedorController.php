@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Proveedor;
+use App\Models\Producto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProveedorController extends Controller
 {
@@ -18,7 +20,11 @@ class ProveedorController extends Controller
 
     public function create()
     {
-        return view('proveedores.create');
+        $productos = Producto::where('estado', true)
+            ->orderBy('nombre')
+            ->get();
+
+        return view('proveedores.create', compact('productos'));
     }
 
     public function store(Request $request)
@@ -29,6 +35,8 @@ class ProveedorController extends Controller
             'empresa' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.&,\-]+$/'],
             'telefono' => ['required', 'string', 'max:20', 'regex:/^[245678]\d{3}-?\d{4}$/'],
             'correo' => ['required', 'email', 'max:255', 'unique:proveedores,correo', 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
+            'productos' => 'nullable|array',
+            'productos.*' => 'integer|exists:productos,id',
         ], [
             'nombre.regex' => 'El nombre solo puede contener letras y espacios.',
             'empresa.regex' => 'El nombre de la empresa contiene caracteres no válidos.',
@@ -36,14 +44,18 @@ class ProveedorController extends Controller
             'correo.regex' => 'El formato del correo electrónico no es válido.',
         ]);
 
-        Proveedor::create([
-            'identificacion' => $request->identificacion,
-            'nombre' => $request->nombre,
-            'empresa' => $request->empresa,
-            'telefono' => $request->telefono,
-            'correo' => $request->correo,
-            'estado' => 1,
-        ]);
+        DB::transaction(function () use ($request) {
+            $proveedor = Proveedor::create([
+                'identificacion' => $request->identificacion,
+                'nombre' => $request->nombre,
+                'empresa' => $request->empresa,
+                'telefono' => $request->telefono,
+                'correo' => $request->correo,
+                'estado' => 1,
+            ]);
+
+            $proveedor->productos()->sync($request->input('productos', []));
+        });
 
         return redirect()
             ->route('proveedores.index')
@@ -52,7 +64,19 @@ class ProveedorController extends Controller
 
     public function edit(Proveedor $proveedor)
     {
-        return view('proveedores.edit', compact('proveedor'));
+        $productos = Producto::where('estado', true)
+            ->orWhereHas('proveedores', function ($query) use ($proveedor) {
+                $query->where('proveedores.id', $proveedor->id);
+            })
+            ->orderBy('nombre')
+            ->get();
+        $productosSeleccionados = $proveedor->productos()->pluck('productos.id')->all();
+
+        return view('proveedores.edit', compact(
+            'proveedor',
+            'productos',
+            'productosSeleccionados'
+        ));
     }
 
     public function update(Request $request, Proveedor $proveedor)
@@ -63,6 +87,8 @@ class ProveedorController extends Controller
             'empresa' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.&,\-]+$/'],
             'telefono' => ['required', 'string', 'max:20', 'regex:/^[245678]\d{3}-?\d{4}$/'],
             'correo' => ['required', 'email', 'max:255', 'unique:proveedores,correo,' . $proveedor->id, 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
+            'productos' => 'nullable|array',
+            'productos.*' => 'integer|exists:productos,id',
         ], [
             'nombre.regex' => 'El nombre solo puede contener letras y espacios.',
             'empresa.regex' => 'El nombre de la empresa contiene caracteres no válidos.',
@@ -70,14 +96,18 @@ class ProveedorController extends Controller
             'correo.regex' => 'El formato del correo electrónico no es válido.',
         ]);
 
-        $proveedor->update([
-            'identificacion' => $request->identificacion,
-            'nombre' => $request->nombre,
-            'empresa' => $request->empresa,
-            'telefono' => $request->telefono,
-            'correo' => $request->correo,
-            'estado' => $request->has('estado') ? 1 : 0,
-        ]);
+        DB::transaction(function () use ($request, $proveedor) {
+            $proveedor->update([
+                'identificacion' => $request->identificacion,
+                'nombre' => $request->nombre,
+                'empresa' => $request->empresa,
+                'telefono' => $request->telefono,
+                'correo' => $request->correo,
+                'estado' => $request->has('estado') ? 1 : 0,
+            ]);
+
+            $proveedor->productos()->sync($request->input('productos', []));
+        });
 
         return redirect()
             ->route('proveedores.index')

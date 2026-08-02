@@ -164,6 +164,10 @@
 
                         <div id="lista-productos" class="space-y-3"></div>
 
+                        <p id="estado-productos-proveedor"
+                           class="mt-3 hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                        </p>
+
                         <p class="mt-2 text-sm text-gray-600">
                             Subtotal: <span id="subtotal-productos" class="font-bold">₡0.00</span>
                             &middot; Impuesto (13%): <span id="impuesto-productos" class="font-bold">₡0.00</span>
@@ -183,7 +187,8 @@
                                         <option value="{{ $producto->id }}"
                                                 data-precio-mayorista="{{ $producto->precio }}"
                                                 data-precio-venta="{{ $producto->precio_venta_sin_impuesto }}"
-                                                data-ganancia="{{ $producto->porcentaje_ganancia }}">
+                                                data-ganancia="{{ $producto->porcentaje_ganancia }}"
+                                                data-proveedores="{{ $producto->proveedores->pluck('id')->implode(',') }}">
                                             {{ $producto->nombre }} | Stock actual: {{ $producto->stock }}
                                         </option>
                                     @endforeach
@@ -353,6 +358,7 @@
             const subtotalEl = document.getElementById('subtotal-productos');
             const impuestoEl = document.getElementById('impuesto-productos');
             const totalProductosEl = document.getElementById('total-productos');
+            const estadoProductosProveedor = document.getElementById('estado-productos-proveedor');
 
             function reindexarProductos() {
                 const lineas = listaProductos.querySelectorAll('.linea-producto');
@@ -366,9 +372,62 @@
             function agregarProducto() {
                 const nodo = plantilla.content.firstElementChild.cloneNode(true);
                 listaProductos.appendChild(nodo);
+                filtrarProductosProveedor();
                 reindexarProductos();
                 aplicarPrecioLinea(nodo);
                 recalcular();
+            }
+
+            function filtrarProductosProveedor() {
+                const compraProveedor = !esCliente();
+                const proveedorId = proveedorSel.value;
+                let tieneProductos = false;
+
+                listaProductos.querySelectorAll('[data-campo="producto"]').forEach(function (select) {
+                    let seleccionValida = true;
+
+                    Array.from(select.options).forEach(function (opcion) {
+                        if (!opcion.value) {
+                            return;
+                        }
+
+                        const proveedoresProducto = (opcion.dataset.proveedores || '').split(',').filter(Boolean);
+                        const mostrar = !compraProveedor
+                            || (proveedorId && proveedoresProducto.includes(proveedorId));
+
+                        opcion.hidden = !mostrar;
+                        opcion.disabled = !mostrar;
+                        tieneProductos = tieneProductos || mostrar;
+
+                        if (opcion.selected && !mostrar) {
+                            seleccionValida = false;
+                        }
+                    });
+
+                    if (!seleccionValida) {
+                        select.value = '';
+                        aplicarPrecioLinea(select.closest('.linea-producto'));
+                    }
+                });
+
+                if (!compraProveedor) {
+                    estadoProductosProveedor.classList.add('hidden');
+                    agregarBtn.disabled = false;
+                } else if (!proveedorId) {
+                    estadoProductosProveedor.textContent = 'Seleccione un proveedor para ver los productos que vende.';
+                    estadoProductosProveedor.classList.remove('hidden');
+                    agregarBtn.disabled = true;
+                } else if (!tieneProductos) {
+                    estadoProductosProveedor.textContent = 'Este proveedor no tiene productos asignados. Edite el proveedor y seleccione los productos que vende.';
+                    estadoProductosProveedor.classList.remove('hidden');
+                    agregarBtn.disabled = true;
+                } else {
+                    estadoProductosProveedor.classList.add('hidden');
+                    agregarBtn.disabled = false;
+                }
+
+                agregarBtn.classList.toggle('opacity-50', agregarBtn.disabled);
+                agregarBtn.classList.toggle('cursor-not-allowed', agregarBtn.disabled);
             }
 
             function calcularSubtotal() {
@@ -465,6 +524,7 @@
 
                 toggleBanco();
 
+                filtrarProductosProveedor();
                 aplicarModoPrecios();
                 recalcular();
             }
@@ -622,6 +682,10 @@
 
             // Eventos de tipo de operación
             tipoOperacion.addEventListener('change', toggleOperacion);
+            proveedorSel.addEventListener('change', function () {
+                filtrarProductosProveedor();
+                recalcular();
+            });
             metodoPagoSel.addEventListener('change', toggleBanco);
             descuentoInput.addEventListener('input', recalcular);
 

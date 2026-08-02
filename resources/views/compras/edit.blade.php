@@ -49,6 +49,7 @@
                         </label>
 
                         <select name="proveedor_id"
+                                id="proveedor_id"
                                 class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                 required>
                             <option value="">Seleccione un proveedor</option>
@@ -77,6 +78,10 @@
 
                         <div id="lista-productos" class="space-y-3"></div>
 
+                        <p id="estado-productos-proveedor"
+                           class="mt-3 hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                        </p>
+
                         <p class="mt-2 text-sm text-gray-600">
                             Subtotal: <span id="subtotal-productos" class="font-bold">₡0.00</span>
                             &middot; Impuesto (13%): <span id="impuesto-productos" class="font-bold">₡0.00</span>
@@ -93,11 +98,16 @@
                                         class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-[#b71c1c] outline-none transition" required>
                                     <option value="">Seleccione un producto</option>
                                     @foreach($productos as $producto)
-                                        <option value="{{ $producto->id }}" data-precio-mayorista="{{ $producto->precio }}">
+                                        <option value="{{ $producto->id }}"
+                                                data-precio-mayorista="{{ $producto->precio }}"
+                                                data-proveedores="{{ $producto->proveedores->pluck('id')->implode(',') }}">
                                             {{ $producto->nombre }} | Stock actual: {{ $producto->stock }}
                                         </option>
                                     @endforeach
                                 </select>
+                                <p data-aviso-producto class="hidden mt-1 text-xs font-semibold text-amber-700">
+                                    El producto anterior ya no está asignado a este proveedor. Seleccione otro producto o actualice el proveedor.
+                                </p>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-semibold text-gray-500 mb-1">Cantidad</label>
@@ -157,6 +167,8 @@
             const impuestoEl = document.getElementById('impuesto-productos');
             const totalEl = document.getElementById('total-productos');
             const form = document.getElementById('form-compra');
+            const proveedor = document.getElementById('proveedor_id');
+            const estadoProductosProveedor = document.getElementById('estado-productos-proveedor');
 
             function formatear(valor) {
                 return '₡' + (valor || 0).toLocaleString('es-CR', {
@@ -181,11 +193,63 @@
                     nodo.querySelector('[data-campo="precio"]').value = datos.precio_unitario ?? '';
                 }
                 listaProductos.appendChild(nodo);
+                filtrarProductosProveedor();
                 reindexar();
                 if (!datos) {
                     aplicarPrecio(nodo);
                 }
                 recalcular();
+            }
+
+            function filtrarProductosProveedor() {
+                const proveedorId = proveedor.value;
+                let tieneProductos = false;
+
+                listaProductos.querySelectorAll('[data-campo="producto"]').forEach(function (select) {
+                    let seleccionValida = true;
+                    const aviso = select.parentElement.querySelector('[data-aviso-producto]');
+
+                    Array.from(select.options).forEach(function (opcion) {
+                        if (!opcion.value) {
+                            return;
+                        }
+
+                        const proveedoresProducto = (opcion.dataset.proveedores || '').split(',').filter(Boolean);
+                        const mostrar = proveedorId && proveedoresProducto.includes(proveedorId);
+
+                        opcion.hidden = !mostrar;
+                        opcion.disabled = !mostrar;
+                        tieneProductos = tieneProductos || mostrar;
+
+                        if (opcion.selected && !mostrar) {
+                            seleccionValida = false;
+                        }
+                    });
+
+                    if (!seleccionValida) {
+                        select.value = '';
+                        aplicarPrecio(select.closest('.linea-producto'));
+                        aviso.classList.remove('hidden');
+                    } else {
+                        aviso.classList.add('hidden');
+                    }
+                });
+
+                if (!proveedorId) {
+                    estadoProductosProveedor.textContent = 'Seleccione un proveedor para ver los productos que vende.';
+                    estadoProductosProveedor.classList.remove('hidden');
+                    agregarBtn.disabled = true;
+                } else if (!tieneProductos) {
+                    estadoProductosProveedor.textContent = 'Este proveedor no tiene productos asignados. Edite el proveedor y seleccione los productos que vende.';
+                    estadoProductosProveedor.classList.remove('hidden');
+                    agregarBtn.disabled = true;
+                } else {
+                    estadoProductosProveedor.classList.add('hidden');
+                    agregarBtn.disabled = false;
+                }
+
+                agregarBtn.classList.toggle('opacity-50', agregarBtn.disabled);
+                agregarBtn.classList.toggle('cursor-not-allowed', agregarBtn.disabled);
             }
 
             function aplicarPrecio(linea) {
@@ -213,6 +277,10 @@
             }
 
             agregarBtn.addEventListener('click', function () { agregarProducto(); });
+            proveedor.addEventListener('change', function () {
+                filtrarProductosProveedor();
+                recalcular();
+            });
             listaProductos.addEventListener('click', function (e) {
                 if (e.target.classList.contains('quitar-producto')) {
                     if (listaProductos.querySelectorAll('.linea-producto').length <= 1) {
