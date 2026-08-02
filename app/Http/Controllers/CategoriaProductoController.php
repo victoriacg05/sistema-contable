@@ -9,7 +9,8 @@ class CategoriaProductoController extends Controller
 {
     public function index()
     {
-        $categorias = CategoriaProducto::orderByDesc('created_at')
+        $categorias = CategoriaProducto::withCount('productos')
+            ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get();
 
