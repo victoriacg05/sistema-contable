@@ -13,15 +13,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $trustedProxies = array_values(array_filter(array_map(
-            'trim',
-            (array) config('proxies.trusted', [])
-        )));
-
-        if ($trustedProxies !== []) {
-            $middleware->trustProxies(at: $trustedProxies);
-        }
-
         $middleware->alias([
             'permiso' => \App\Http\Middleware\CheckPermiso::class,
         ]);
