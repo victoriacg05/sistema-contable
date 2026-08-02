@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('local')) {
             config([
                 'cache.default' => 'file',
-                'session.driver' => 'file',
+                'session.driver' => 'database',
             ]);
         }
     }
