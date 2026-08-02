@@ -28,7 +28,13 @@ class CategoriaProductoController extends Controller
             'descripcion' => 'required|string|max:500',
         ]);
 
-        CategoriaProducto::create($request->only('nombre', 'descripcion'));
+        $categoria = CategoriaProducto::create($request->only('nombre', 'descripcion'));
+
+        if ($request->input('origen') === 'producto') {
+            return redirect()
+                ->route('productos.create', ['categoria_producto_id' => $categoria->id])
+                ->with('success', 'Categoría creada y seleccionada correctamente.');
+        }
 
         return redirect()
             ->route('categorias-productos.index')

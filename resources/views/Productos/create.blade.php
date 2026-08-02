@@ -29,6 +29,12 @@
             </div>
         @endif
 
+        @if(session('success'))
+            <div class="mb-6 rounded-2xl border border-green-300 bg-green-100 px-6 py-4 font-semibold text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <div class="bg-white rounded-[2rem] shadow-lg border border-gray-200 overflow-hidden">
 
             <div class="bg-[#2b2b2b] px-8 py-5">
@@ -82,7 +88,7 @@
                                 Categoría
                             </label>
 
-                            <a href="{{ route('categorias-productos.create') }}"
+                            <a href="{{ route('categorias-productos.create', ['origen' => 'producto']) }}"
                                class="text-sm font-bold text-[#b71c1c] hover:underline">
                                 + Nueva categoría
                             </a>
@@ -96,7 +102,7 @@
 
                             @foreach($categorias as $categoria)
                                 <option value="{{ $categoria->id }}"
-                                    {{ old('categoria_producto_id') == $categoria->id ? 'selected' : '' }}>
+                                    {{ (string) old('categoria_producto_id', request('categoria_producto_id')) === (string) $categoria->id ? 'selected' : '' }}>
                                     {{ $categoria->nombre }}
                                 </option>
                             @endforeach

@@ -25,6 +25,7 @@
 
             <form action="{{ route('categorias-productos.store') }}" method="POST" class="p-8">
                 @csrf
+                <input type="hidden" name="origen" value="{{ request('origen') }}">
 
                 <div class="space-y-6">
 
@@ -38,6 +39,10 @@
                                value="{{ old('nombre') }}"
                                class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                required>
+
+                        @error('nombre')
+                            <p class="mt-2 text-sm font-semibold text-red-800">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
@@ -49,12 +54,16 @@
                                   rows="4"
                                   class="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:bg-white focus:border-[#b71c1c] focus:ring-2 focus:ring-[#b71c1c]/20 outline-none transition"
                                   required>{{ old('descripcion') }}</textarea>
+
+                        @error('descripcion')
+                            <p class="mt-2 text-sm font-semibold text-red-800">{{ $message }}</p>
+                        @enderror
                     </div>
 
                 </div>
 
                 <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
-                    <a href="{{ route('productos.create') }}"
+                    <a href="{{ request('origen') === 'producto' ? route('productos.create') : route('categorias-productos.index') }}"
                        class="px-7 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
                         Volver a Producto
                     </a>
