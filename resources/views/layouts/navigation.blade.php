@@ -1,6 +1,10 @@
 <nav id="sidebar" style="width: 320px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 50;"
      class="bg-white border-r border-gray-300 flex flex-col shadow-lg">
 
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     <!-- Logo -->
     <div class="px-8 py-6 text-center border-b border-gray-200 shrink-0">
         <img src="{{ asset('logo.png') }}" alt="Ipacarai" class="h-14 mx-auto mb-3">
@@ -26,12 +30,26 @@
 
             <!-- Módulo 7: Facturación Electrónica -->
             @if(Auth::user()->tienePermiso('ver_facturas') || Auth::user()->tienePermiso('ver_clientes') || Auth::user()->tienePermiso('ver_proveedores') || Auth::user()->tienePermiso('ver_productos') || Auth::user()->tienePermiso('ver_compras') || Auth::user()->tienePermiso('ver_inventario'))
-            <section>
-                <div class="px-5 py-2.5 rounded-2xl font-semibold transition duration-300
-                    {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'bg-gray-50 text-gray-800' }}">
-                    Facturación
-                </div>
-                <div class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
+            <section x-data="{ abierto: localStorage.getItem('menu-facturacion') === '1' }">
+                <button type="button"
+                        @click="abierto = !abierto; localStorage.setItem('menu-facturacion', abierto ? '1' : '0')"
+                        :aria-expanded="abierto.toString()"
+                        class="flex w-full items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
+                        {{ request()->routeIs('facturas.*', 'compras.*', 'clientes.*', 'proveedores.*', 'productos.*', 'inventario.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'bg-gray-50 text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
+                    <span>Facturación</span>
+                    <svg class="h-4 w-4 transition-transform duration-200"
+                         :class="{ 'rotate-180': abierto }"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="abierto"
+                     x-transition
+                     x-cloak
+                     class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
                     @if(Auth::user()->tienePermiso('ver_facturas'))
                     <a href="{{ route('facturas.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
@@ -80,12 +98,26 @@
 
             <!-- Módulo 2: Gestión Contable -->
             @if(Auth::user()->tienePermiso('ver_contabilidad'))
-            <section>
-                <div class="px-5 py-2.5 rounded-2xl font-semibold transition duration-300
-                    {{ request()->routeIs('contabilidad.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'bg-gray-50 text-gray-800' }}">
-                    Gestión Contable
-                </div>
-                <div class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
+            <section x-data="{ abierto: localStorage.getItem('menu-contabilidad') === '1' }">
+                <button type="button"
+                        @click="abierto = !abierto; localStorage.setItem('menu-contabilidad', abierto ? '1' : '0')"
+                        :aria-expanded="abierto.toString()"
+                        class="flex w-full items-center justify-between px-5 py-2.5 rounded-2xl font-semibold transition duration-300
+                        {{ request()->routeIs('contabilidad.*') ? 'bg-[#b71c1c] text-white shadow-md' : 'bg-gray-50 text-gray-800 hover:bg-red-100 hover:text-[#b71c1c]' }}">
+                    <span>Gestión Contable</span>
+                    <svg class="h-4 w-4 transition-transform duration-200"
+                         :class="{ 'rotate-180': abierto }"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="abierto"
+                     x-transition
+                     x-cloak
+                     class="ml-4 mt-1 space-y-1 border-l-2 border-red-200 pl-3">
                     <a href="{{ route('contabilidad.cuentas.index') }}"
                        class="block px-4 py-2 rounded-xl text-sm font-medium transition
                        {{ request()->routeIs('contabilidad.cuentas.*') ? 'bg-red-100 text-[#b71c1c] font-bold' : 'text-gray-700 hover:bg-red-50 hover:text-[#b71c1c]' }}">
