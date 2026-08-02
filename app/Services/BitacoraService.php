@@ -10,24 +10,40 @@ class BitacoraService
 {
     public static function registrar(string $accion, string $tablaAfectada, string $descripcion = ''): void
     {
-        try {
-            $usuarioId = Auth::id();
+        $usuarioId = Auth::id();
 
-            if (!$usuarioId) {
-                return;
+        if (!$usuarioId) {
+            return;
+        }
+
+        $registrar = function () use ($usuarioId, $accion, $tablaAfectada, $descripcion) {
+            try {
+                DB::table('bitacora')->insert([
+                    'usuario_id' => $usuarioId,
+                    'accion' => $accion,
+                    'tabla_afectada' => $tablaAfectada,
+                    'descripcion' => $descripcion,
+                    'fecha' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Error al registrar en bitácora: ' . $e->getMessage());
             }
+        };
 
-            DB::table('bitacora')->insert([
-                'usuario_id' => $usuarioId,
-                'accion' => $accion,
-                'tabla_afectada' => $tablaAfectada,
-                'descripcion' => $descripcion,
-                'fecha' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        } catch (\Exception $e) {
-            Log::warning('Error al registrar en bitácora: ' . $e->getMessage());
+        $programar = function () use ($registrar) {
+            if (app()->runningInConsole()) {
+                $registrar();
+            } else {
+                app()->terminating($registrar);
+            }
+        };
+
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit($programar);
+        } else {
+            $programar();
         }
     }
 

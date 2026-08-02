@@ -25,9 +25,6 @@
 
     </div>
 
-    {{-- Las alertas de morosidad ahora se muestran de forma global en el layout
-         (barra superior), por lo que aparecen en cualquier pantalla del sistema. --}}
-
     <!-- Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 

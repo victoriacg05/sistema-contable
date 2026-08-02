@@ -86,16 +86,9 @@ const limpiarMensajeValidacion = (event) => {
 document.addEventListener('input', limpiarMensajeValidacion, true);
 document.addEventListener('change', limpiarMensajeValidacion, true);
 
-const REQUEST_TIMEOUT_MS = 30000;
 const pendingForms = new Map();
-let navigationTimeout = null;
-
-const progressBar = document.createElement('div');
-progressBar.setAttribute('role', 'progressbar');
-progressBar.setAttribute('aria-label', 'Procesando solicitud');
-progressBar.className = 'fixed left-0 top-0 z-[100] hidden h-1 w-full overflow-hidden bg-red-100';
-progressBar.innerHTML = '<div class="h-full w-1/2 animate-pulse bg-[#b71c1c]"></div>';
-document.body.appendChild(progressBar);
+const CSRF_MAX_AGE_MS = 30 * 60 * 1000;
+let lastCsrfRefresh = Date.now();
 
 const notificationContainer = document.createElement('div');
 notificationContainer.className = 'fixed right-4 top-4 z-[110] flex max-w-md flex-col gap-3';
@@ -114,25 +107,11 @@ const mostrarMensaje = (message, type = 'error') => {
     window.setTimeout(() => notification.remove(), 6000);
 };
 
-const mostrarProgreso = () => {
-    progressBar.classList.remove('hidden');
-};
-
-const ocultarProgreso = () => {
-    progressBar.classList.add('hidden');
-};
-
 const restaurarFormulario = (form) => {
-    const pending = pendingForms.get(form);
-
-    if (pending) {
-        window.clearTimeout(pending.timeout);
-    }
-
     form.removeAttribute('aria-busy');
     delete form.dataset.requestPending;
 
-    form.querySelectorAll('button, input[type="submit"]').forEach((control) => {
+    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((control) => {
         if (control.dataset.originalDisabled === 'true') {
             control.disabled = true;
         } else {
@@ -153,10 +132,6 @@ const restaurarFormulario = (form) => {
     });
 
     pendingForms.delete(form);
-
-    if (pendingForms.size === 0) {
-        ocultarProgreso();
-    }
 };
 
 const bloquearFormulario = (form) => {
@@ -166,16 +141,13 @@ const bloquearFormulario = (form) => {
 
     form.dataset.requestPending = 'true';
     form.setAttribute('aria-busy', 'true');
-    mostrarProgreso();
 
-    form.querySelectorAll('button, input[type="submit"]').forEach((control) => {
+    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((control) => {
         control.dataset.originalDisabled = control.disabled ? 'true' : 'false';
 
         if (control.matches('button[type="submit"]')) {
             control.dataset.originalHtml = control.innerHTML;
-            control.innerHTML = '<span class="inline-flex items-center gap-2">'
-                + '<span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>'
-                + '<span>Procesando...</span></span>';
+            control.textContent = 'Procesando...';
         } else if (control.matches('input[type="submit"]')) {
             control.dataset.originalValue = control.value;
             control.value = 'Procesando...';
@@ -184,25 +156,19 @@ const bloquearFormulario = (form) => {
         control.disabled = true;
     });
 
-    const timeout = window.setTimeout(() => {
-        ocultarProgreso();
-
-        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((control) => {
-            if (control.dataset.originalHtml !== undefined) {
-                control.innerHTML = 'Solicitud en proceso';
-            } else if (control.dataset.originalValue !== undefined) {
-                control.value = 'Solicitud en proceso';
-            }
-        });
-
-        mostrarMensaje(
-            'La solicitud sigue procesándose. No la envíe nuevamente; actualice la página para comprobar el resultado.',
-        );
-    }, REQUEST_TIMEOUT_MS);
-
-    pendingForms.set(form, { timeout });
+    pendingForms.set(form, true);
 
     return true;
+};
+
+const refrescarCsrfSiEsNecesario = async () => {
+    if (Date.now() - lastCsrfRefresh < CSRF_MAX_AGE_MS
+        || typeof window.refreshCsrfToken !== 'function') {
+        return;
+    }
+
+    await window.refreshCsrfToken();
+    lastCsrfRefresh = Date.now();
 };
 
 document.querySelectorAll('form[data-submit-on-click]').forEach((form) => {
@@ -220,8 +186,41 @@ document.querySelectorAll('form[data-submit-on-click]').forEach((form) => {
 });
 
 document.querySelectorAll('form').forEach((form) => {
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
         if (event.defaultPrevented) {
+            return;
+        }
+
+        if (form.dataset.requestPending === 'true') {
+            event.preventDefault();
+            return;
+        }
+
+        if (Date.now() - lastCsrfRefresh >= CSRF_MAX_AGE_MS
+            && form.dataset.csrfReady !== 'true') {
+            event.preventDefault();
+            const submitter = event.submitter;
+            bloquearFormulario(form);
+
+            try {
+                await refrescarCsrfSiEsNecesario();
+                restaurarFormulario(form);
+                form.dataset.csrfReady = 'true';
+
+                if (submitter) {
+                    form.requestSubmit(submitter);
+                } else {
+                    form.requestSubmit();
+                }
+            } catch (error) {
+                restaurarFormulario(form);
+                mostrarMensaje(
+                    'No se pudo validar la sesión. Recargue la página e intente nuevamente.',
+                );
+            } finally {
+                delete form.dataset.csrfReady;
+            }
+
             return;
         }
 
@@ -231,53 +230,38 @@ document.querySelectorAll('form').forEach((form) => {
     });
 });
 
-document.addEventListener('click', (event) => {
-    const link = event.target.closest('a[href]');
+window.addEventListener('pageshow', (event) => {
+    pendingForms.forEach((_, form) => restaurarFormulario(form));
 
-    if (!link
-        || event.defaultPrevented
-        || event.button !== 0
-        || event.metaKey
-        || event.ctrlKey
-        || event.shiftKey
-        || event.altKey
-        || link.target === '_blank'
-        || link.hasAttribute('download')
-        || link.getAttribute('href').startsWith('#')) {
+    if (event.persisted && typeof window.refreshCsrfToken === 'function') {
+        window.refreshCsrfToken()
+            .then(() => {
+                lastCsrfRefresh = Date.now();
+            })
+            .catch(() => {});
+    }
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        refrescarCsrfSiEsNecesario().catch(() => {});
+    }
+});
+
+window.addEventListener('app:error', (event) => {
+    mostrarMensaje(event.detail?.message ?? 'Ocurrió un error inesperado.');
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.appNotified) {
         return;
     }
 
-    mostrarProgreso();
-    link.setAttribute('aria-disabled', 'true');
-    link.style.pointerEvents = 'none';
-
-    window.clearTimeout(navigationTimeout);
-    navigationTimeout = window.setTimeout(() => {
-        link.removeAttribute('aria-disabled');
-        link.style.pointerEvents = '';
-        ocultarProgreso();
-        mostrarMensaje(
-            'No se pudo completar la navegación. Verifique su conexión e inténtelo nuevamente.',
-        );
-    }, REQUEST_TIMEOUT_MS);
+    mostrarMensaje('No se pudo completar una operación. Inténtelo nuevamente.');
 });
 
-window.addEventListener('pageshow', (event) => {
-    pendingForms.forEach((_, form) => restaurarFormulario(form));
-    window.clearTimeout(navigationTimeout);
-    navigationTimeout = null;
-    ocultarProgreso();
-
-    document.querySelectorAll('a[aria-disabled="true"]').forEach((link) => {
-        link.removeAttribute('aria-disabled');
-        link.style.pointerEvents = '';
-    });
-
-    if (event.persisted && typeof window.refreshCsrfToken === 'function') {
-        window.refreshCsrfToken().catch(() => {
-            // El siguiente envío mostrará el error de sesión correspondiente.
-        });
-    }
+window.addEventListener('error', () => {
+    mostrarMensaje('Ocurrió un error en la interfaz. Recargue la página.');
 });
 
 window.addEventListener('online', () => {

@@ -3,11 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -17,7 +14,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if ($this->app->environment('local')) {
+            config([
+                'cache.default' => 'file',
+                'session.driver' => 'file',
+            ]);
+        }
     }
 
     /**
@@ -28,43 +30,17 @@ class AppServiceProvider extends ServiceProvider
         // El sistema es en español: forzamos el idioma sin depender del .env.
         App::setLocale('es');
 
-        // Compartimos las alertas de morosidad con el layout principal para que
-        // el aviso aparezca en cualquier pantalla del sistema, no solo en el
-        // panel de inicio.
-        View::composer('layouts.app', function ($view) {
-            $morosasCobrar = null;
-            $morosasPagar = null;
+        if (config('performance.log_slow_queries')) {
+            DB::listen(function ($query) {
+                if ($query->time >= config('performance.slow_query_ms')) {
+                    Log::warning('Consulta lenta detectada.', [
+                        'sql' => $query->sql,
+                        'time_ms' => $query->time,
+                        'connection' => $query->connectionName,
+                    ]);
+                }
+            });
+        }
 
-            try {
-                $alertas = Cache::remember('resumen-global-morosidad', 60, function () {
-                    $cobrar = Schema::hasTable('cuentas_cobrar')
-                        ? DB::table('cuentas_cobrar')
-                            ->where('saldo_pendiente', '>', 0)
-                            ->where('fecha_vencimiento', '<', now())
-                            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
-                            ->first()
-                        : null;
-                    $pagar = Schema::hasTable('cuentas_pagar')
-                        ? DB::table('cuentas_pagar')
-                            ->where('saldo_pendiente', '>', 0)
-                            ->where('fecha_vencimiento', '<', now())
-                            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
-                            ->first()
-                        : null;
-
-                    return compact('cobrar', 'pagar');
-                });
-
-                $morosasCobrar = $alertas['cobrar'];
-                $morosasPagar = $alertas['pagar'];
-            } catch (\Throwable $e) {
-                Log::warning('No se pudo cargar el resumen global de morosidad.', [
-                    'exception' => $e,
-                ]);
-            }
-
-            $view->with('alertaMorosasCobrar', $morosasCobrar)
-                ->with('alertaMorosasPagar', $morosasPagar);
-        });
     }
 }

@@ -21,11 +21,11 @@ use App\Services\BitacoraService;
 use App\Services\InventarioService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
+use App\Services\FacturaEmailService;
 use App\Services\IngresoAutomaticoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class CompraController extends Controller
@@ -187,8 +187,12 @@ class CompraController extends Controller
         }
 
         DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $total, $esCredito, $cuotas) {
-            $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
-            $estadoPagado = Estado::where('nombre', 'pagado')->first();
+            $estados = Estado::whereIn('nombre', ['pendiente', 'pagado'])
+                ->pluck('id', 'nombre');
+            $productos = Producto::whereIn('id', array_column($lineas, 'producto_id'))
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
             $numeroCompra = 'COM-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
@@ -199,8 +203,8 @@ class CompraController extends Controller
                 // Contado: la compra queda pagada de inmediato.
                 // Crédito: queda pendiente hasta liquidar la cuenta por pagar.
                 'estado_id' => $esCredito
-                    ? ($estadoPendiente?->id ?? 1)
-                    : ($estadoPagado?->id ?? 2),
+                    ? ($estados->get('pendiente') ?? 1)
+                    : ($estados->get('pagado') ?? 2),
                 'metodo_pago_id' => $request->metodo_pago_id,
                 'cuenta_bancaria_id' => $esCredito ? null : $request->cuenta_bancaria_id,
                 'tipo_compra' => $request->tipo_compra,
@@ -211,7 +215,13 @@ class CompraController extends Controller
             ]);
 
             foreach ($lineas as $linea) {
-                $producto = Producto::findOrFail($linea['producto_id']);
+                $producto = $productos->get((int) $linea['producto_id']);
+
+                if (! $producto) {
+                    throw ValidationException::withMessages([
+                        'productos' => 'Uno de los productos seleccionados ya no está disponible.',
+                    ]);
+                }
 
                 DetalleCompra::create([
                     'numero_compra' => $numeroCompra,
@@ -222,8 +232,8 @@ class CompraController extends Controller
                     'subtotal' => $linea['precio_unitario'] * $linea['cantidad'],
                 ]);
 
-                $producto->stock += $linea['cantidad'];
-                $producto->save();
+                Producto::whereKey($producto->id)
+                    ->increment('stock', $linea['cantidad']);
 
                 // Entrada automática al inventario por la compra a proveedor.
                 InventarioService::registrarMovimiento(
@@ -247,7 +257,7 @@ class CompraController extends Controller
                     'saldo_pendiente' => $total,
                     'fecha_emision' => now(),
                     'fecha_vencimiento' => $fechaVencimiento,
-                    'estado_id' => $estadoPendiente?->id ?? 1,
+                    'estado_id' => $estados->get('pendiente') ?? 1,
                 ]);
 
                 foreach ($cuotas as $indice => $cuota) {
@@ -373,22 +383,42 @@ class CompraController extends Controller
             }
         }
 
-        // Validar stock disponible antes de crear la factura.
-        $costoInventario = 0.0;
+        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito, $cuotas) {
+            $estados = Estado::whereIn('nombre', ['pendiente', 'pagado'])
+                ->pluck('id', 'nombre');
+            $productos = Producto::whereIn('id', array_column($lineas, 'producto_id'))
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+            $costoInventario = 0.0;
 
-        foreach ($lineas as $linea) {
-            $producto = Producto::findOrFail($linea['producto_id']);
-            $costoInventario += (float) $producto->precio * $linea['cantidad'];
-            if ($producto->stock < $linea['cantidad']) {
-                throw ValidationException::withMessages([
-                    'productos' => "No hay suficiente stock de {$producto->nombre} (disponible: {$producto->stock}).",
-                ]);
+            foreach ($lineas as $linea) {
+                $producto = $productos->get((int) $linea['producto_id']);
+
+                if (! $producto) {
+                    throw ValidationException::withMessages([
+                        'productos' => 'Uno de los productos seleccionados ya no está disponible.',
+                    ]);
+                }
+
+                $costoInventario += (float) $producto->precio * $linea['cantidad'];
+
+                if ($producto->stock < $linea['cantidad']) {
+                    throw ValidationException::withMessages([
+                        'productos' => "No hay suficiente stock de {$producto->nombre} (disponible: {$producto->stock}).",
+                    ]);
+                }
+
+                $stockActualizado = Producto::whereKey($producto->id)
+                    ->where('stock', '>=', $linea['cantidad'])
+                    ->decrement('stock', $linea['cantidad']);
+
+                if ($stockActualizado === 0) {
+                    throw ValidationException::withMessages([
+                        'productos' => "El stock de {$producto->nombre} cambió. Revise la cantidad e intente nuevamente.",
+                    ]);
+                }
             }
-        }
-
-        $factura = DB::transaction(function () use ($request, $lineas, $subtotal, $impuesto, $descuento, $total, $esCredito, $cuotas, $costoInventario) {
-            $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
-            $estadoPagado = Estado::where('nombre', 'pagado')->first();
 
             $numeroFactura = 'FAC-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
@@ -398,8 +428,8 @@ class CompraController extends Controller
                 'usuario_id' => Auth::id(),
                 'metodo_pago_id' => $request->metodo_pago_id,
                 'estado_id' => $esCredito
-                    ? ($estadoPendiente?->id ?? 1)
-                    : ($estadoPagado?->id ?? 2),
+                    ? ($estados->get('pendiente') ?? 1)
+                    : ($estados->get('pagado') ?? 2),
                 'tipo_comprobante_id' => $request->tipo_comprobante_id,
                 'fecha' => now(),
                 'subtotal' => $subtotal,
@@ -409,7 +439,7 @@ class CompraController extends Controller
             ]);
 
             foreach ($lineas as $linea) {
-                $producto = Producto::findOrFail($linea['producto_id']);
+                $producto = $productos->get((int) $linea['producto_id']);
 
                 DetalleFactura::create([
                     'numero_factura' => $numeroFactura,
@@ -419,9 +449,6 @@ class CompraController extends Controller
                     'precio_unitario' => $linea['precio_unitario'],
                     'subtotal' => $linea['precio_unitario'] * $linea['cantidad'],
                 ]);
-
-                $producto->stock -= $linea['cantidad'];
-                $producto->save();
 
                 // Salida automática del inventario por la venta a cliente.
                 InventarioService::registrarMovimiento(
@@ -443,7 +470,7 @@ class CompraController extends Controller
                     'saldo_pendiente' => $total,
                     'fecha_emision' => now(),
                     'fecha_vencimiento' => $fechaVencimiento,
-                    'estado_id' => $estadoPendiente?->id ?? 1,
+                    'estado_id' => $estados->get('pendiente') ?? 1,
                 ]);
 
                 foreach ($cuotas as $indice => $cuota) {
@@ -510,21 +537,7 @@ class CompraController extends Controller
             $cliente &&
             $cliente->email
         ) {
-            Mail::raw(
-                "Estimado/a {$cliente->nombre},\n\n" .
-                "Adjuntamos la información de su factura electrónica.\n\n" .
-                "Número de factura: {$factura->numero_factura}\n" .
-                "Subtotal: ₡" . number_format($factura->subtotal, 2) . "\n" .
-                "Impuesto: ₡" . number_format($factura->impuesto, 2) . "\n" .
-                "Descuento: ₡" . number_format($factura->descuento, 2) . "\n" .
-                "Total: ₡" . number_format($factura->total, 2) . "\n\n" .
-                "Gracias por su compra.\n\n" .
-                "Distribuidora Ipacaraí",
-                function ($message) use ($cliente, $factura) {
-                    $message->to($cliente->email)
-                        ->subject('Factura Electrónica ' . $factura->numero_factura);
-                }
-            );
+            FacturaEmailService::enviarAlTerminar($cliente, $factura);
         }
 
         BitacoraService::registrar('crear', 'facturas', "Factura {$factura->numero_factura} generada desde compras por ₡" . number_format($factura->total, 2));

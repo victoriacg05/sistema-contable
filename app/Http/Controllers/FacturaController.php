@@ -16,12 +16,12 @@ use App\Services\BitacoraService;
 use App\Services\InventarioService;
 use App\Services\AsientoContableService;
 use App\Services\BancoService;
+use App\Services\FacturaEmailService;
 use App\Services\IngresoAutomaticoService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
@@ -104,14 +104,23 @@ class FacturaController extends Controller
                 ]);
             }
 
-            $estadoPendiente = Estado::where('nombre', 'pendiente')->first();
-            $estadoPagado = Estado::where('nombre', 'pagado')->first();
+            $estados = Estado::whereIn('nombre', ['pendiente', 'pagado'])
+                ->pluck('id', 'nombre');
 
             $numeroFactura = 'FAC-' . now()->format('YmdHis') . '-' . strtoupper(str()->random(6));
 
             // La condición de pago determina si la venta queda pagada
             // (contado) o pendiente con cuenta por cobrar (crédito).
             $esCredito = $request->tipo_compra === 'credito';
+            $stockActualizado = Producto::whereKey($producto->id)
+                ->where('stock', '>=', $request->cantidad)
+                ->decrement('stock', $request->cantidad);
+
+            if ($stockActualizado === 0) {
+                throw ValidationException::withMessages([
+                    'cantidad' => 'El producto ya no tiene suficiente stock disponible.',
+                ]);
+            }
 
             $factura = Factura::create([
                 'numero_factura' => $numeroFactura,
@@ -119,8 +128,8 @@ class FacturaController extends Controller
                 'usuario_id' => Auth::id(),
                 'metodo_pago_id' => $request->metodo_pago_id,
                 'estado_id' => $esCredito
-                    ? ($estadoPendiente?->id ?? 1)
-                    : ($estadoPagado?->id ?? 2),
+                    ? ($estados->get('pendiente') ?? 1)
+                    : ($estados->get('pagado') ?? 2),
                 'tipo_comprobante_id' => $request->tipo_comprobante_id,
                 'fecha' => now(),
                 'subtotal' => $subtotal,
@@ -146,7 +155,7 @@ class FacturaController extends Controller
                     'saldo_pendiente' => $total,
                     'fecha_emision' => now(),
                     'fecha_vencimiento' => now()->addDays(30),
-                    'estado_id' => $estadoPendiente?->id ?? 1,
+                    'estado_id' => $estados->get('pendiente') ?? 1,
                 ]);
 
                 PlazoVenta::create([
@@ -158,9 +167,6 @@ class FacturaController extends Controller
                     'saldo_pendiente' => $total,
                 ]);
             }
-
-            $producto->stock -= $request->cantidad;
-            $producto->save();
 
             // Salida automática del inventario por la venta facturada.
             InventarioService::registrarMovimiento(
@@ -222,21 +228,7 @@ class FacturaController extends Controller
             $cliente &&
             $cliente->email
         ) {
-            Mail::raw(
-                "Estimado/a {$cliente->nombre},\n\n" .
-                "Adjuntamos la información de su factura electrónica.\n\n" .
-                "Número de factura: {$factura->numero_factura}\n" .
-                "Subtotal: ₡" . number_format($factura->subtotal, 2) . "\n" .
-                "Impuesto: ₡" . number_format($factura->impuesto, 2) . "\n" .
-                "Descuento: ₡" . number_format($factura->descuento, 2) . "\n" .
-                "Total: ₡" . number_format($factura->total, 2) . "\n\n" .
-                "Gracias por su compra.\n\n" .
-                "Distribuidora Ipacaraí",
-                function ($message) use ($cliente, $factura) {
-                    $message->to($cliente->email)
-                        ->subject('Factura Electrónica ' . $factura->numero_factura);
-                }
-            );
+            FacturaEmailService::enviarAlTerminar($cliente, $factura);
         }
 
         BitacoraService::registrar('crear', 'facturas', "Factura {$factura->numero_factura} creada por ₡" . number_format($factura->total, 2));
