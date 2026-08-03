@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -42,5 +44,28 @@ class AppServiceProvider extends ServiceProvider
             });
         }
 
+        View::composer('layouts.app', function ($view) {
+            $alertas = Cache::remember(
+                'resumen-global-morosidad',
+                now()->addSeconds(config('performance.morosidad_cache_seconds')),
+                function () {
+                    return [
+                        'cobrar' => DB::table('cuentas_cobrar')
+                            ->where('saldo_pendiente', '>', 0)
+                            ->where('fecha_vencimiento', '<', now())
+                            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
+                            ->first(),
+                        'pagar' => DB::table('cuentas_pagar')
+                            ->where('saldo_pendiente', '>', 0)
+                            ->where('fecha_vencimiento', '<', now())
+                            ->selectRaw('COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as monto')
+                            ->first(),
+                    ];
+                }
+            );
+
+            $view->with('alertaMorosasCobrar', $alertas['cobrar'])
+                ->with('alertaMorosasPagar', $alertas['pagar']);
+        });
     }
 }
