@@ -116,7 +116,7 @@
                                     Productos nuevos del proveedor
                                 </h3>
                                 <p class="mt-1 text-sm text-gray-600">
-                                    Se crearán automáticamente en el módulo de productos con stock inicial en cero.
+                                    Las categorías y productos se crearán automáticamente; el stock inicial será cero.
                                 </p>
                             </div>
 
@@ -129,7 +129,8 @@
 
                         @php
                             $productosNuevos = old('productos_nuevos', [[
-                                'categoria_producto_id' => '',
+                                'categoria_nombre' => '',
+                                'categoria_descripcion' => '',
                                 'nombre' => '',
                                 'descripcion' => '',
                                 'stock_minimo' => 0,
@@ -155,18 +156,13 @@
 
                                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                         <div>
-                                            <label class="mb-2 block text-sm font-bold text-gray-700">Categoría</label>
-                                            <select name="productos_nuevos[{{ $indice }}][categoria_producto_id]"
-                                                    class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
-                                                    required>
-                                                <option value="">Seleccione una categoría</option>
-                                                @foreach($categorias as $categoria)
-                                                    <option value="{{ $categoria->id }}"
-                                                        {{ (string) ($productoNuevo['categoria_producto_id'] ?? '') === (string) $categoria->id ? 'selected' : '' }}>
-                                                        {{ $categoria->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <label class="mb-2 block text-sm font-bold text-gray-700">Nueva categoría</label>
+                                            <input type="text"
+                                                   name="productos_nuevos[{{ $indice }}][categoria_nombre]"
+                                                   value="{{ $productoNuevo['categoria_nombre'] ?? '' }}"
+                                                   class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
+                                                   placeholder="Nombre de la categoría"
+                                                   required>
                                         </div>
 
                                         <div>
@@ -200,6 +196,14 @@
                                                    step="0.01"
                                                    class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
                                                    required>
+                                        </div>
+
+                                        <div class="md:col-span-2">
+                                            <label class="mb-2 block text-sm font-bold text-gray-700">Descripción de la categoría</label>
+                                            <textarea name="productos_nuevos[{{ $indice }}][categoria_descripcion]"
+                                                      rows="2"
+                                                      class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
+                                                      required>{{ $productoNuevo['categoria_descripcion'] ?? '' }}</textarea>
                                         </div>
 
                                         <div>
@@ -259,15 +263,12 @@
 
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                    <label class="mb-2 block text-sm font-bold text-gray-700">Categoría</label>
-                    <select name="productos_nuevos[__INDEX__][categoria_producto_id]"
-                            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
-                            required>
-                        <option value="">Seleccione una categoría</option>
-                        @foreach($categorias as $categoria)
-                            <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
-                        @endforeach
-                    </select>
+                    <label class="mb-2 block text-sm font-bold text-gray-700">Nueva categoría</label>
+                    <input type="text"
+                           name="productos_nuevos[__INDEX__][categoria_nombre]"
+                           class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
+                           placeholder="Nombre de la categoría"
+                           required>
                 </div>
 
                 <div>
@@ -299,6 +300,14 @@
                            step="0.01"
                            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
                            required>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-bold text-gray-700">Descripción de la categoría</label>
+                    <textarea name="productos_nuevos[__INDEX__][categoria_descripcion]"
+                              rows="2"
+                              class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3"
+                              required></textarea>
                 </div>
 
                 <div>

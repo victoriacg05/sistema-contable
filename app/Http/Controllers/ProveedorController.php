@@ -8,6 +8,7 @@ use App\Models\CategoriaProducto;
 use App\Services\CodigoProductoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProveedorController extends Controller
 {
@@ -27,9 +28,7 @@ class ProveedorController extends Controller
 
     public function create()
     {
-        $categorias = CategoriaProducto::orderBy('nombre')->get();
-
-        return view('proveedores.create', compact('categorias'));
+        return view('proveedores.create');
     }
 
     public function store(Request $request)
@@ -41,7 +40,8 @@ class ProveedorController extends Controller
             'telefono' => ['required', 'string', 'max:20', 'regex:/^[245678]\d{3}-?\d{4}$/'],
             'correo' => ['required', 'email', 'max:255', 'unique:proveedores,correo', 'regex:/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
             'productos_nuevos' => 'required|array|min:1|max:50',
-            'productos_nuevos.*.categoria_producto_id' => 'required|integer|exists:categorias_productos,id',
+            'productos_nuevos.*.categoria_nombre' => 'required|string|max:255',
+            'productos_nuevos.*.categoria_descripcion' => 'required|string|max:500',
             'productos_nuevos.*.nombre' => 'required|string|max:255',
             'productos_nuevos.*.descripcion' => 'required|string|max:500',
             'productos_nuevos.*.stock_minimo' => 'required|integer|min:0|max:2147483647',
@@ -67,20 +67,31 @@ class ProveedorController extends Controller
             ]);
 
             $productosNuevos = collect($request->input('productos_nuevos'));
-
-            CategoriaProducto::whereIn(
-                'id',
-                $productosNuevos->pluck('categoria_producto_id')->unique()
-            )
-                ->orderBy('id')
+            $categorias = CategoriaProducto::orderBy('id')
                 ->lockForUpdate()
-                ->get(['id']);
+                ->get()
+                ->keyBy(fn (CategoriaProducto $categoria) => $this->claveCategoria(
+                    $categoria->nombre
+                ));
 
-            $productosIds = $productosNuevos->map(function (array $datos) {
+            $productosIds = $productosNuevos->map(function (array $datos) use ($categorias) {
+                $nombreCategoria = Str::squish($datos['categoria_nombre']);
+                $claveCategoria = $this->claveCategoria($nombreCategoria);
+                $categoria = $categorias->get($claveCategoria);
+
+                if (! $categoria) {
+                    $categoria = CategoriaProducto::create([
+                        'nombre' => $nombreCategoria,
+                        'descripcion' => trim($datos['categoria_descripcion']),
+                    ]);
+
+                    $categorias->put($claveCategoria, $categoria);
+                }
+
                 return Producto::create([
-                    'categoria_producto_id' => $datos['categoria_producto_id'],
+                    'categoria_producto_id' => $categoria->id,
                     'codigo_barras' => $this->codigoProductoService->siguiente(
-                        (int) $datos['categoria_producto_id']
+                        (int) $categoria->id
                     ),
                     'nombre' => $datos['nombre'],
                     'descripcion' => $datos['descripcion'],
@@ -98,6 +109,11 @@ class ProveedorController extends Controller
         return redirect()
             ->route('proveedores.index')
             ->with('success', 'Proveedor y productos creados correctamente.');
+    }
+
+    private function claveCategoria(string $nombre): string
+    {
+        return Str::lower(Str::ascii(Str::squish($nombre)));
     }
 
     public function edit(Proveedor $proveedor)
