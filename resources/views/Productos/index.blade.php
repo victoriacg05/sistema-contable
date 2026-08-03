@@ -12,10 +12,6 @@
                 </p>
             </div>
 
-            <a href="{{ route('productos.create') }}"
-               class="bg-[#b71c1c] hover:bg-red-700 text-white px-8 py-4 rounded-2xl font-bold shadow-md transition">
-                Nuevo Producto
-            </a>
         </div>
 
         @if(session('success'))
